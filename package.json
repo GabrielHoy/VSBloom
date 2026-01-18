@@ -1,9 +1,11 @@
 {
 	"preview": true,
 	"name": "vsbloom",
-	"displayName": "VSBloom",
+	"displayName": "VS: Bloom",
 	"description": "Pretty, animated and gamified UI theming for VSCode, providing an overhauled programming experience with a goal of being visually impressive -- without crossing the line into 'obnoxious' or slowing down development speeds.",
-	"author": "Tampered Reality",
+	"author": {
+		"name": "Tampered Reality"
+	},
 	"version": "1.0.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",
@@ -71,11 +73,12 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"copy-injected": "copyfiles -u 1 \"src/Injected/**/*\" build",
-		"compile": "tsc -p ./ && npm run copy-injected",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
+		"vscode:prepublish": "npm run package",
+		"compile": "node esbuild.js",
+		"watch": "node esbuild.js --watch",
+		"package": "node esbuild.js --production",
+		"compile-tests": "tsc -p . --outDir build",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"lint": "eslint src",
 		"test": "vscode-test"
 	},
@@ -85,7 +88,7 @@
 		"@types/vscode": "^1.108.1",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
-		"copyfiles": "^2.4.1",
+		"esbuild": "^0.27.2",
 		"eslint": "^9.39.2",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.52.0"

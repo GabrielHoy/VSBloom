@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as FileInjection from './FileInjection';
 
+//returns whether or not the CSS import configurations
+//needed to be changed from what they were before the
+//call to this function was made
 async function UpdateCustomCSSImportSettings() {
   const config = vscode.workspace.getConfiguration();
 
@@ -13,26 +16,27 @@ async function UpdateCustomCSSImportSettings() {
     injectedFilePaths.some(file => !previousImportCfg.includes(file)) ||
     previousImportCfg.some(file => !injectedFilePaths.includes(file))
   );
-
-  await config.update("vscode_custom_css.imports", injectedFilePaths, true);
   
-  await vscode.workspace.saveAll();
-  await vscode.commands.executeCommand("extension.updateCustomCSS");
-
   if (prevImportCfgIsDifferent) {
+    await config.update("vscode_custom_css.imports", injectedFilePaths, true);
+    
+    await vscode.workspace.saveAll();
+    await vscode.commands.executeCommand("extension.updateCustomCSS");
+    
     return true;
   }
+
+  return false;
 }
 
 export function activate(context: vscode.ExtensionContext) {
   FileInjection.UpdateInjectedFiles();
   
-  vscode.window.showInformationMessage("bruh");
   FileInjection.ExportCurrentExtensionSettings();
 
-  const wasImportCfgUpToDate = UpdateCustomCSSImportSettings();
-
-  vscode.window.showInformationMessage("WasImportCfgUpToDate: " + wasImportCfgUpToDate);
+  UpdateCustomCSSImportSettings().then(wasImportCfgOutOfDate => {
+    vscode.window.showInformationMessage("Were Configs Out of Date: " + wasImportCfgOutOfDate);
+  });
 
 }
 
