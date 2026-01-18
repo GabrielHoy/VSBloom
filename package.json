@@ -1,0 +1,93 @@
+{
+	"preview": true,
+	"name": "vsbloom",
+	"displayName": "VSBloom",
+	"description": "Pretty, animated and gamified UI theming for VSCode, providing an overhauled programming experience with a goal of being visually impressive -- without crossing the line into 'obnoxious' or slowing down development speeds.",
+	"author": "Tampered Reality",
+	"version": "1.0.0",
+	"publisher": "tamperedreality",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/GabrielHoy/VSBloom"
+	},
+	"icon": "logo.png",
+	"engines": {
+		"vscode": "^1.22.0"
+	},
+	"categories": [
+		"Themes"
+	],
+	"extensionKind": [
+		"ui"
+	],
+	"main": "./build/VSBloom.js",
+	"activationEvents": [
+		"*"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "vsbloom.enable-theming",
+				"title": "VSBloom: Enable"
+			},
+			{
+				"command": "vsbloom.disable-theming",
+				"title": "VSBloom: Disable"
+			},
+			{
+				"command": "vsbloom.dev-dbg-cmd",
+				"title": "VSBloom: (Developer Debug Command: You shouldn't see this...)"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "VSBloom",
+			"properties": {
+				"vsbloom.windowFocus.enabled": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Enable or disable effects surrounding the window becoming unfocused *(and later refocused)*",
+					"description": "Enable or disable window-focus based effects"
+				},
+				"vsbloom.windowFocus.longTermUnfocusThreshold": {
+					"type": "number",
+					"default": 30,
+					"markdownDescription": "A threshold - in **seconds** - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect",
+					"description": "A threshold - in seconds - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect"
+				},
+				"vsbloom.cursorTrail.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable or disable the cursor trail effect"
+				},
+				"vsbloom.cursorTrail.duration": {
+					"type": "number",
+					"default": 750,
+					"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
+					"markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"copy-injected": "copyfiles -u 1 \"src/Injected/**/*\" build",
+		"compile": "tsc -p ./ && npm run copy-injected",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src",
+		"test": "vscode-test"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.10",
+		"@types/node": "22.x",
+		"@types/vscode": "^1.108.1",
+		"@vscode/test-cli": "^0.0.12",
+		"@vscode/test-electron": "^2.5.2",
+		"copyfiles": "^2.4.1",
+		"eslint": "^9.39.2",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.52.0"
+	}
+}
