@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as FileInjection from './FileInjection';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as ClientPatcher from './ClientPatcher';
+
+async function TriggerCustomCSSImportUpdate() {
+  await vscode.workspace.saveAll();
+  await vscode.commands.executeCommand("extension.updateCustomCSS");
+}
 
 //returns whether or not the CSS import configurations
 //needed to be changed from what they were before the
@@ -8,7 +15,7 @@ import * as FileInjection from './FileInjection';
 async function UpdateCustomCSSImportSettings() {
   const config = vscode.workspace.getConfiguration();
 
-  const injectedFilePaths = FileInjection.GetInjectedFileNames().map(file => "file://" + path.join(FileInjection.injectedFileDirectory, file));
+  const injectedFilePaths: string[] = fs.readdirSync(FileInjection.injectedFileDirectory).map(filePath => "file://" + path.join(FileInjection.injectedFileDirectory, path.basename(filePath)));
   const previousImportCfg = config.get<string[]>("vscode_custom_css.imports", []);
 
   const prevImportCfgIsDifferent = (
@@ -20,8 +27,7 @@ async function UpdateCustomCSSImportSettings() {
   if (prevImportCfgIsDifferent) {
     await config.update("vscode_custom_css.imports", injectedFilePaths, true);
     
-    await vscode.workspace.saveAll();
-    await vscode.commands.executeCommand("extension.updateCustomCSS");
+    await TriggerCustomCSSImportUpdate();
     
     return true;
   }
@@ -30,13 +36,21 @@ async function UpdateCustomCSSImportSettings() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  FileInjection.UpdateInjectedFiles();
-  
-  FileInjection.ExportCurrentExtensionSettings();
+  // FileInjection.UnpackDefaultInjectedFiles();
+  // FileInjection.ExportCurrentExtensionSettings();
 
-  UpdateCustomCSSImportSettings().then(wasImportCfgOutOfDate => {
-    vscode.window.showInformationMessage("Were Configs Out of Date: " + wasImportCfgOutOfDate);
+  // UpdateCustomCSSImportSettings().then(wasImportCfgOutOfDate => {
+  //   vscode.window.showInformationMessage("Were Configs Out of Date: " + wasImportCfgOutOfDate);
+  // });
+
+  const onUsrCfgChangeDisposable = vscode.workspace.onDidChangeConfiguration((cfgChangeEvent: vscode.ConfigurationChangeEvent) => {
+    console.log("User Configuration Changed: ", cfgChangeEvent);
   });
+
+  context.subscriptions.push(onUsrCfgChangeDisposable);
+
+  // const initFilePath = ClientPatcher.GetElectronInitFilePath();
+  // ClientPatcher.PatchElectronHTMLFile(initFilePath);
 
 }
 

@@ -1,46 +1,7 @@
 const esbuild = require("esbuild");
-const fs = require("fs");
-const path = require("path");
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
-
-function copyDir(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
-}
-
-const copyInjectedPlugin = {
-  name: "copy-injected",
-  setup(build) {
-    build.onEnd((result) => {
-      if (result.errors.length === 0) {
-        const srcDir = path.join(__dirname, "src", "Injected");
-        const destDir = path.join(__dirname, "build", "Injected");
-        
-        // Remove old Injected folder if it exists
-        if (fs.existsSync(destDir)) {
-          fs.rmSync(destDir, { recursive: true });
-        }
-        
-        // Copy fresh
-        copyDir(srcDir, destDir);
-        console.log("[copy-injected] Copied Injected folder to build/Injected");
-      }
-    });
-  },
-};
 
 const esbuildProblemMatcherPlugin = {
   name: "esbuild-problem-matcher",
@@ -73,7 +34,6 @@ async function main() {
     external: ["vscode"],
     logLevel: "silent",
     plugins: [
-      copyInjectedPlugin,
       esbuildProblemMatcherPlugin,
     ],
   });

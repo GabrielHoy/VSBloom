@@ -2,7 +2,7 @@
 	"preview": true,
 	"name": "vsbloom",
 	"displayName": "VS: Bloom",
-	"description": "Pretty, animated and gamified UI theming for VSCode, providing an overhauled programming experience with a goal of being visually impressive -- without crossing the line into 'obnoxious' or slowing down development speeds.",
+	"description": "Overhauls VSCode's look and feel, adding a variety of animations and 'eye candy' to the UI.",
 	"author": {
 		"name": "Tampered Reality"
 	},
@@ -46,6 +46,35 @@
 			"type": "object",
 			"title": "VSBloom",
 			"properties": {
+				"vsbloom.patcher.workbenchDir": {
+					"type": "string",
+					"default": "auto",
+					"description": "The path to the internal 'workbench' directory used by the VSCode Electron client. Setting this to 'auto' will attempt to locate the appropriate path automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\code\\electron-browser\\workbench",
+					"markdownDescription": "The path to the internal 'workbench' directory used by the VSCode Electron client. Setting this to '**auto**' will attempt to locate the appropriate path automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\code\\electron-browser\\workbench`"
+				},
+				"vsbloom.patcher.initFiles": {
+					"type": "array",
+					"minItems": 1,
+					"uniqueItems": true,
+					"description": "A list of HTML file names inside of the (workbenchDir) directory utilized by the VSCode Electron client when launching; the first file among the provided values found will be used as the 'injection' point for VSBloom.",
+					"markdownDescription": "A list of HTML file names inside of the `vsbloom.patcher.workbenchDir` directory utilized by the VSCode Electron client when launching; the **first** file among the provided values found will be used as the 'injection' point for VSBloom.",
+					"default": [
+						"workbench.html",
+						"workbench-dev.html",
+						"workbench.esm.html"
+					],
+					"items": {
+						"title": "HTML File Name",
+						"type": "string",
+						"description": "The name of an HTML file to search for inside of the electron client's workbench directory for VSBloom initialization."
+					}
+				},
+				"vsbloom.patcher.appPackageFile": {
+					"type": "string",
+					"default": "auto",
+					"description": "The path to the 'package.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\package.json",
+					"markdownDescription": "The path to the `package.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\package.json`"
+				},
 				"vsbloom.windowFocus.enabled": {
 					"type": "boolean",
 					"default": true,
@@ -92,5 +121,8 @@
 		"eslint": "^9.39.2",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.52.0"
+	},
+	"dependencies": {
+		"async-mutex": "^0.5.0"
 	}
 }
