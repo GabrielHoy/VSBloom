@@ -3,6 +3,7 @@ import * as FileInjection from './FileInjection';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ClientPatcher from './ClientPatcher';
+import * as Common from './Common';
 
 async function TriggerCustomCSSImportUpdate() {
   await vscode.workspace.saveAll();
@@ -49,7 +50,25 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(onUsrCfgChangeDisposable);
 
-  // const initFilePath = ClientPatcher.GetElectronInitFilePath();
+  const initFilePath = ClientPatcher.GetElectronInitFilePath();
+  console.log("Electron Init File Path: ", initFilePath);
+  
+  ClientPatcher.IsElectronHTMLFilePatched(initFilePath).then(isPatched => {
+    console.log("Is Electorn HTML File Currently Patched: ", isPatched);
+    if (isPatched) {
+      console.log("Electron HTML File is already patched, no need to patch again");
+      return;
+    }
+    return Promise.resolve(true);
+
+    console.log("Calling file patching function...");
+    ClientPatcher.PatchElectronHTMLFile(initFilePath).then(() => {
+      console.log("File patching function completed successfully");
+    }).catch(err => {
+      throw new Error(Common.RaiseError(`VSBloom encountered an error attempting to patch the VSC Electron init file, the extension cannot function without this process succeeding: ${err.message}`));
+    });
+  });
+
   // ClientPatcher.PatchElectronHTMLFile(initFilePath);
 
 }

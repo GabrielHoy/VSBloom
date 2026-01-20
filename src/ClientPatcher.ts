@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import * as crypto from "crypto";
 import * as fs from "fs";
 import * as Common from "./Common";
+import { Mutex } from "async-mutex";
 
 export const HTML_FILE_PATCH_INDICATOR = `<!--\n\n\tThis file has been modified by the VSBloom Extension.\n\n\tIf you wish to revert the modifications made to this file,\n\tyou can do so at any time by simply disabling the VSBloom\n\textension inside of VSCode.\n\n\tAlternatively in the case that something has gone\n\twrong with VSBloom, you can manually restore the contents\n\tof this file by finding the '${Common.VSBLOOM_FILE_EXTENSION}.bak' file by the same name\n\tas this one inside of the same directory this\n\tfile is located in, deleting this file, and renaming the backup\n\tto this file's name accordingly.\n\n-->\n\n`;
 
@@ -75,43 +75,46 @@ export function GetElectronInitFilePath() {
     throw new Error(Common.RaiseError("Unable to locate the initialization files for the Electron Client VSCode uses; none of the provided file names inside of the 'vsbloom.patcher.initFiles' extension config setting were able to be found inside of the workbench directory."));
 }
 
-export async function GetMainApplicationPackageFile() {
+export async function GetMainApplicationProductFile() {
     const config = vscode.workspace.getConfiguration();
-    const appPkgFileCfg = config.get<string>("vsbloom.patcher.appPackageFile");
+    const appProductFileCfg = config.get<string>("vsbloom.patcher.appProductFile");
 
-    if (appPkgFileCfg === "auto") {
+    if (appProductFileCfg === "auto") {
         const vsOutputDir = require.main ? path.dirname(require.main.filename) : (globalThis as any)._VSCODE_FILE_ROOT;
         if (!vsOutputDir) {
-            throw new Error(Common.RaiseError("Unable to locate the output directory for the VSCode client; the extension cannot function without this information: Please provide the appropriate path for the 'package.json' file in the 'vsbloom.patcher.appPackageFile' extension config to resolve this error."));
+            throw new Error(Common.RaiseError("Unable to locate the output directory for the VSCode client; the extension cannot function without this information: Please provide the appropriate path for the 'product.json' file in the 'vsbloom.patcher.appProductFile' extension config to resolve this error."));
         }
 
         const mainVSAppDirectoryPath = path.join(vsOutputDir, "..");
         if (!await Common.IsThereADirectoryAtPath(mainVSAppDirectoryPath)) {
-            throw new Error(Common.RaiseError("Unable to locate the main application directory for the VSCode client automatically, the extension cannot function without this information: Please provide the appropriate path for the 'package.json' file in the 'vsbloom.patcher.appPackageFile' extension config to resolve this error."));
+            throw new Error(Common.RaiseError("Unable to locate the main application directory for the VSCode client automatically, the extension cannot function without this information: Please provide the appropriate path for the 'product.json' file in the 'vsbloom.patcher.appProductFile' extension config to resolve this error."));
         }
 
-        const hopefullyPackageFilePath = path.join(mainVSAppDirectoryPath, "package.json");
-        if (!await Common.IsThereAFileAtPath(hopefullyPackageFilePath)) {
-            throw new Error(Common.RaiseError("Unable to locate the 'package.json' file for the VSCode client automatically, the extension cannot function without this information: Please provide the appropriate path for the 'package.json' file in the 'vsbloom.patcher.appPackageFile' extension config to resolve this error."));
+        const hopefullyProductFilePath = path.join(mainVSAppDirectoryPath, "product.json");
+        if (!await Common.IsThereAFileAtPath(hopefullyProductFilePath)) {
+            throw new Error(Common.RaiseError("Unable to locate the 'product.json' file for the VSCode client automatically, the extension cannot function without this information: Please provide the appropriate path for the 'product.json' file in the 'vsbloom.patcher.appProductFile' extension config to resolve this error."));
         }
-        if (!await Common.CanIMessWithThisFile(hopefullyPackageFilePath)) {
-            throw new Error(Common.RaiseError("The 'package.json' file associated with the VSCode client does not currently appear to be modifiable; depending on your operating system and VSC's installation path, you may need to re-launch the application as an administrator to allow this file to be modified by the VSBloom extension."));
+        if (!await Common.CanIMessWithThisFile(hopefullyProductFilePath)) {
+            throw new Error(Common.RaiseError("The 'product.json' file associated with the VSCode client does not currently appear to be modifiable; depending on your operating system and VSC's installation path, you may need to re-launch the application as an administrator to allow this file to be modified by the VSBloom extension."));
         }
 
-        return hopefullyPackageFilePath;
-    } else if (typeof appPkgFileCfg === "string") {
-        if (!fs.existsSync(appPkgFileCfg)) {
-            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appPackageFile - path does not exist: ${appPkgFileCfg}`));
+        return hopefullyProductFilePath;
+    } else if (typeof appProductFileCfg === "string") {
+        if (!fs.existsSync(appProductFileCfg)) {
+            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appProductFile - path does not exist: ${appProductFileCfg}`));
         }
-        if (path.basename(appPkgFileCfg) !== "package.json") {
-            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appPackageFile - path does not point to a 'package.json' file: ${appPkgFileCfg}`));
+        if (path.basename(appProductFileCfg) !== "product.json") {
+            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appProductFile - path does not point to a 'product.json' file: ${appProductFileCfg}`));
         }
-        if (!fs.statSync(appPkgFileCfg).isFile()) {
-            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appPackageFile - path is not a file`));
+        if (!fs.statSync(appProductFileCfg).isFile()) {
+            throw new Error(Common.RaiseError(`Invalid filesystem path provided for vsbloom.patcher.appProductFile - path is not a file`));
         }
-        return appPkgFileCfg;
+        if (!await Common.CanIMessWithThisFile(appProductFileCfg)) {
+            throw new Error(Common.RaiseError("The 'product.json' file specified in the 'vsbloom.patcher.appProductFile' extension config does not currently appear to be modifiable; depending on your operating system and VSC's installation path, you may need to re-launch the application as an administrator to allow this file to be modified by the VSBloom extension."));
+        }
+        return appProductFileCfg;
     } else {
-        throw new Error(Common.RaiseError("Invalid value provided for vsbloom.patcher.appPackageFile - expected 'auto' or a filesystem path"));
+        throw new Error(Common.RaiseError("Invalid value provided for vsbloom.patcher.appProductFile - expected 'auto' or a filesystem path"));
     }
 }
 
@@ -130,10 +133,34 @@ export async function IsElectronHTMLFilePatched(initFilePath: string): Promise<b
     });
 }
 
-export async function UpdateChecksumTrackedFile(filePath: string) {
-    const mainAppPkgFile = await GetMainApplicationPackageFile();
+const applicationProductFileMutex = new Mutex();
+export async function UpdateChecksumForTrackedFile(filePath: string) {
+    const mainAppProductFile = await GetMainApplicationProductFile();
+    return applicationProductFileMutex.runExclusive(async () => {
+        const mainProductContents = await fs.promises.readFile(mainAppProductFile, "utf8");
+        try {
+            const productJSON = JSON.parse(mainProductContents);
+            const checksums: Record<string, string> = productJSON.checksums;
+            if (!checksums) {
+                throw new Error(Common.RaiseError(`The main VSC application 'product.json' file is missing the 'checksums' field, thus we cannot update internal VSC file checksums: This likely means that VSCode has updated their product.json format and VSBloom is out of date.`));
+            }
 
-    
+            const fileName = path.basename(filePath);
+            const fileKeyInProductJSON = Object.keys(checksums).find(key => key.includes(fileName));
+            if (!fileKeyInProductJSON) {
+                throw new Error(Common.RaiseError(`Attempt to update the VSC product checksum tracking for a file which does not seem to be currently tracked: '${filePath}'`));
+            }
+
+            const updatedFileChecksum = await Common.GetFileChecksum(filePath);
+            productJSON.checksums[fileKeyInProductJSON] = updatedFileChecksum;
+
+            await fs.promises.writeFile(mainAppProductFile, JSON.stringify(productJSON, null, '\t')).catch(err => {
+                throw new Error(Common.RaiseError(`Unable to save the main VSC application 'product.json' file after updating a tracked file's checksum: ${err.message}`));
+            });
+        } catch (err) {
+            throw new Error(Common.RaiseError(`Unable to parse the main VSC application 'product.json' file, is the file corrupted or otherwise invalid JSON?`));
+        }
+    });
 }
 
 export async function PatchElectronHTMLFile(initFilePath: string) {
@@ -160,10 +187,13 @@ export async function PatchElectronHTMLFile(initFilePath: string) {
     //though said css needs to be injected just before the head
     //element is closed in order to ensure that our styles end
     //up overriding any stylesheets etc VSC may have declared
-    patchedFileContents = patchedFileContents.replace(/<\/head([^>]*)>/i, `<style> body { background-color: red !important; } </style></head$1>`);
+    patchedFileContents = patchedFileContents.replace(/<\/head([^>]*)>/i, `<style>  </style></head$1>`);
 
-    console.log("PATCHED HTML FILE CONTENTS:");
-    console.log("--------------------------------");
-    console.log(patchedFileContents);
-    console.log("--------------------------------");
+    console.log("PATCHING HTML FILE CONTENTS...");
+    await fs.promises.writeFile(initFilePath, patchedFileContents).catch(err => {
+        throw new Error(Common.RaiseError(`Unable to save patches applied to VSC's Electron init file at '${initFilePath}': ${err.message}`));
+    });
+    console.log("UPDATING CHECKSUM FOR TRACKED FILE...");
+    await UpdateChecksumForTrackedFile(initFilePath);
+    console.log("CHECKSUM FUNC COMPLETE");
 }

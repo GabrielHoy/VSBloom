@@ -69,11 +69,11 @@
 						"description": "The name of an HTML file to search for inside of the electron client's workbench directory for VSBloom initialization."
 					}
 				},
-				"vsbloom.patcher.appPackageFile": {
+				"vsbloom.patcher.appProductFile": {
 					"type": "string",
 					"default": "auto",
-					"description": "The path to the 'package.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\package.json",
-					"markdownDescription": "The path to the `package.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\package.json`"
+					"description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
+					"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
 				},
 				"vsbloom.windowFocus.enabled": {
 					"type": "boolean",
