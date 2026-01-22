@@ -1,7 +1,5 @@
-import * as vscode from "vscode";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import * as path from "path";
 
 export const VSBLOOM_FILE_EXTENSION = ".vsbloom";
 
@@ -58,6 +56,19 @@ export async function IsThereADirectoryAtPath(filePath: string): Promise<boolean
     }).catch(() => false);
 }
 
+export async function DoesFileRequireElevation(filePath: string): Promise<boolean> {
+    try {
+        const handle = await fs.promises.open(filePath, fs.constants.O_RDWR);
+        await handle.close();
+        return false;
+    } catch (err: any) {
+        if (err.code === "EACCES" || err.code === "EPERM") {
+            return true;
+        }
+        return false;
+    }
+}
+
 export async function CanIMessWithThisFile(filePath: string): Promise<boolean> {
     return fs.promises.stat(filePath).then(stat => {
         if (!stat.isFile()) {
@@ -81,11 +92,11 @@ export async function GetFileChecksum(filePath: string): Promise<string> {
 //Intended to always be provided as an argument to
 //a throw clause via `throw new Error(RaiseError(...))`
 export function RaiseError(errMsg: string) {
-    vscode.window.showErrorMessage(`[VSBloom]: ${errMsg}`);
+    // vscode?.window.showErrorMessage(`[VSBloom]: ${errMsg}`);
     return `[VSBloom]: ${errMsg}`;
 }
 
 export function RaiseWarning(warnMsg: string) {
-    vscode.window.showWarningMessage(`[VSBloom]: ${warnMsg}`);
+    // vscode?.window.showWarningMessage(`[VSBloom]: ${warnMsg}`);
     console.warn(`[VSBloom]: ${warnMsg}`);
 }

@@ -15,7 +15,7 @@
 	},
 	"icon": "logo.png",
 	"engines": {
-		"vscode": "^1.22.0"
+		"vscode": "^1.105.1"
 	},
 	"categories": [
 		"Themes"
@@ -30,76 +30,86 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "vsbloom.enable-theming",
-				"title": "VSBloom: Enable"
+				"command": "vsbloom.enable",
+				"title": "VSBloom: Enable and Patch Electron Client"
 			},
 			{
-				"command": "vsbloom.disable-theming",
-				"title": "VSBloom: Disable"
+				"command": "vsbloom.retryPatch",
+				"title": "VSBloom: Retry Electron Client Patching"
 			},
 			{
-				"command": "vsbloom.dev-dbg-cmd",
-				"title": "VSBloom: (Developer Debug Command: You shouldn't see this...)"
+				"command": "vsbloom.disable",
+				"title": "VSBloom: Disable and Un-Patch Electron Client"
 			}
 		],
-		"configuration": {
-			"type": "object",
-			"title": "VSBloom",
-			"properties": {
-				"vsbloom.patcher.workbenchDir": {
-					"type": "string",
-					"default": "auto",
-					"description": "The path to the internal 'workbench' directory used by the VSCode Electron client. Setting this to 'auto' will attempt to locate the appropriate path automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\code\\electron-browser\\workbench",
-					"markdownDescription": "The path to the internal 'workbench' directory used by the VSCode Electron client. Setting this to '**auto**' will attempt to locate the appropriate path automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\code\\electron-browser\\workbench`"
-				},
-				"vsbloom.patcher.initFiles": {
-					"type": "array",
-					"minItems": 1,
-					"uniqueItems": true,
-					"description": "A list of HTML file names inside of the (workbenchDir) directory utilized by the VSCode Electron client when launching; the first file among the provided values found will be used as the 'injection' point for VSBloom.",
-					"markdownDescription": "A list of HTML file names inside of the `vsbloom.patcher.workbenchDir` directory utilized by the VSCode Electron client when launching; the **first** file among the provided values found will be used as the 'injection' point for VSBloom.",
-					"default": [
-						"workbench.html",
-						"workbench-dev.html",
-						"workbench.esm.html"
-					],
-					"items": {
-						"title": "HTML File Name",
+		"configuration": [
+			{
+				"title": "VS: Bloom",
+				"order": 1,
+				"properties": {
+					"vsbloom.patcher.enabled": {
+						"order": 1,
+						"type": "boolean",
+						"default": true,
+						"description": "Whether or not to patch the Electron Client, disabling this will effectively disable the VSBloom extension.",
+						"markdownDescription": "Whether or not to patch the Electron Client, **disabling this will effectively disable the VSBloom extension**"
+					},
+					"vsbloom.patcher.appProductFile": {
+						"order": 2,
 						"type": "string",
-						"description": "The name of an HTML file to search for inside of the electron client's workbench directory for VSBloom initialization."
+						"default": "auto",
+						"description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
+						"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
+					},
+					"vsbloom.patcher.suppressCorruptionWarning": {
+						"order": 3,
+						"type": "boolean",
+						"default": true,
+						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer.",
+						"markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer."
 					}
-				},
-				"vsbloom.patcher.appProductFile": {
-					"type": "string",
-					"default": "auto",
-					"description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
-					"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
-				},
-				"vsbloom.windowFocus.enabled": {
-					"type": "boolean",
-					"default": true,
-					"markdownDescription": "Enable or disable effects surrounding the window becoming unfocused *(and later refocused)*",
-					"description": "Enable or disable window-focus based effects"
-				},
-				"vsbloom.windowFocus.longTermUnfocusThreshold": {
-					"type": "number",
-					"default": 30,
-					"markdownDescription": "A threshold - in **seconds** - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect",
-					"description": "A threshold - in seconds - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect"
-				},
-				"vsbloom.cursorTrail.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable or disable the cursor trail effect"
-				},
-				"vsbloom.cursorTrail.duration": {
-					"type": "number",
-					"default": 750,
-					"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
-					"markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
+				}
+			},
+			{
+				"title": "Window Effects",
+				"order": 2,
+				"properties": {
+					"vsbloom.windowFocus.enabled": {
+						"order": 1,
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Enable or disable effects surrounding the window becoming unfocused *(and later refocused)*",
+						"description": "Enable or disable window-focus based effects"
+					},
+					"vsbloom.windowFocus.longTermUnfocusThreshold": {
+						"order": 2,
+						"type": "number",
+						"default": 30,
+						"markdownDescription": "A threshold - in **seconds** - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect",
+						"description": "A threshold - in seconds - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect"
+					}
+				}
+			},
+			{
+				"title": "Code Editor Effects",
+				"order": 3,
+				"properties": {
+					"vsbloom.cursorTrail.enabled": {
+						"order": 1,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable the cursor trail effect"
+					},
+					"vsbloom.cursorTrail.duration": {
+						"order": 2,
+						"type": "number",
+						"default": 750,
+						"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
+						"markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
+					}
 				}
 			}
-		}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
@@ -114,7 +124,8 @@
 	"devDependencies": {
 		"@types/mocha": "^10.0.10",
 		"@types/node": "22.x",
-		"@types/vscode": "^1.108.1",
+		"@types/vscode": "^1.105.1",
+		"@vscode/sudo-prompt": "^9.3.2",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
 		"esbuild": "^0.27.2",
