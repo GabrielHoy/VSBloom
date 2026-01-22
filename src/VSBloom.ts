@@ -283,9 +283,9 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-
+    
     if (wasClientAlreadyPatchedDuringExtensionActivation) {
-      vscode.window.showInformationMessage("Welcome to VSBloom!");
+      ExtensionActivatedAndClientPatchingVerified(context, appProductFilePath);
     }
 
   }).catch(err => {
