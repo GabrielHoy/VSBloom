@@ -44,25 +44,18 @@
 		],
 		"configuration": [
 			{
-				"title": "VS: Bloom",
+				"title": "Electron Patcher",
 				"order": 1,
 				"properties": {
-					"vsbloom.patcher.enabled": {
-						"order": 1,
-						"type": "boolean",
-						"default": true,
-						"description": "Whether or not to patch the Electron Client, disabling this will effectively disable the VSBloom extension.",
-						"markdownDescription": "Whether or not to patch the Electron Client, **disabling this will effectively disable the VSBloom extension**"
-					},
 					"vsbloom.patcher.appProductFile": {
-						"order": 2,
+						"order": 1,
 						"type": "string",
 						"default": "auto",
 						"description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
 						"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
 					},
 					"vsbloom.patcher.suppressCorruptionWarning": {
-						"order": 3,
+						"order": 2,
 						"type": "boolean",
 						"default": true,
 						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer.",
@@ -75,14 +68,14 @@
 				"order": 2,
 				"properties": {
 					"vsbloom.windowFocus.enabled": {
-						"order": 1,
+						"order": 3,
 						"type": "boolean",
 						"default": true,
 						"markdownDescription": "Enable or disable effects surrounding the window becoming unfocused *(and later refocused)*",
 						"description": "Enable or disable window-focus based effects"
 					},
 					"vsbloom.windowFocus.longTermUnfocusThreshold": {
-						"order": 2,
+						"order": 4,
 						"type": "number",
 						"default": 30,
 						"markdownDescription": "A threshold - in **seconds** - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect",
@@ -95,13 +88,13 @@
 				"order": 3,
 				"properties": {
 					"vsbloom.cursorTrail.enabled": {
-						"order": 1,
+						"order": 5,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the cursor trail effect"
 					},
 					"vsbloom.cursorTrail.duration": {
-						"order": 2,
+						"order": 6,
 						"type": "number",
 						"default": 750,
 						"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
@@ -131,11 +124,12 @@
 		"@vscode/test-electron": "^2.5.2",
 		"esbuild": "^0.27.2",
 		"eslint": "^9.39.2",
+		"terser": "^5.46.0",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.52.0",
-		"ws": "^8.19.0"
+		"typescript-eslint": "^8.52.0"
 	},
 	"dependencies": {
-		"async-mutex": "^0.5.0"
+		"async-mutex": "^0.5.0",
+		"ws": "^8.19.0"
 	}
 }

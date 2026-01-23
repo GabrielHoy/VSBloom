@@ -10,13 +10,36 @@ const action = args[0];
 const mainAppProductFilePath = args[1];
 
 if (action === "patch") {
-    if (args.length < 3) {
-        console.error("[VSBloom]: ElevatedClientPatcher's process was not provided with the desired suppression state of the client corruption warning as an argument(?)");
+    // expected args for patch:
+    // [1] mainAppProductFilePath - string
+    // [2] suppressClientCorruptWarning - boolean
+    // [3] bridgePort - number
+    // [4] authToken - string
+    if (args.length < 6) {
+        console.error("[VSBloom]: ElevatedClientPatcher's patch action requires: suppressCorruptWarning, bridgePort, authToken, and extensionPath arguments");
         process.exit(1);
     }
-    const suppressClientCorruptWarning = args[2] === "true";
 
-    ClientPatcher.PerformClientPatching(mainAppProductFilePath, suppressClientCorruptWarning).then(() => {
+    const suppressClientCorruptWarning = args[2] === "true";
+    const bridgePort = parseInt(args[3], 10);
+    const authToken = args[4];
+
+    if (isNaN(bridgePort)) {
+        console.error("[VSBloom]: ElevatedClientPatcher's bridgePort argument is not a valid number");
+        process.exit(1);
+    }
+
+    if (!authToken) {
+        console.error("[VSBloom]: ElevatedClientPatcher's authToken argument is empty");
+        process.exit(1);
+    }
+
+    ClientPatcher.PerformClientPatching(
+        mainAppProductFilePath,
+        suppressClientCorruptWarning,
+        bridgePort,
+        authToken
+    ).then(() => {
         console.log("Patching successful");
         process.exit(0);
     }).catch(err => {
@@ -33,4 +56,5 @@ if (action === "patch") {
     });
 } else {
     console.error("[VSBloom]: ElevatedClientPatcher's process was not provided with a valid action to perform(?)");
+    process.exit(1);
 }

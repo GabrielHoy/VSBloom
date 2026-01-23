@@ -1,0 +1,8 @@
+.vscode
+.vscode-test.mjs
+node_modules
+src/
+tsconfig.json
+esbuild.js
+eslint.config.mjs
+.gitignore

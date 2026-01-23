@@ -1,3 +1,31 @@
+/**
+ * VSBloom Client Patcher
+ * 
+ * This module houses functionality relating to the actual
+ * patching process that gets performed by the VSBloom
+ * extension in order to facilitate more powerful and
+ * flexible implementations of client effects/features
+ * 
+ * NOTE FOR CURIOUS READERS:
+ * It's quite important that the patching process held
+ * within this module is NOT performed 'completely' in
+ * the background or otherwise without the user of the
+ * extension being explicitly informed about, and approving
+ * of, the modifications to the client that will be performed
+ * during the patching process - Tampering with the client
+ * in general can be a little bit of a touchy or 'suspicious'
+ * subject(for good reason) so it's imperitive to maintain
+ * transparency about the patching process and only perform
+ * any kind of modifications upon explicit user approval,
+ * as well as only providing means for 'automation' of
+ * this patching(i.e re-patching when the client updates) on
+ * a user-initiated basis that is DISABLED by default and
+ * entirely opt-in by the user -- the core ideology I am
+ * following with this patcher is that the user should
+ * never, ever be surprised about what this extension does,
+ * how it does it, or what it tampers with.
+ * 
+ */
 import * as path from "path";
 import * as fs from "fs";
 import * as Common from "./Common";
@@ -147,7 +175,109 @@ export async function UpdateChecksumForTrackedFile(mainAppProductFilePath: strin
     });
 }
 
-export async function PatchElectronHTMLFile(mainAppProductFilePath: string, initFilePath: string) {
+/**
+ * Generates the payload that should be
+ * patched into the Electron Workbench HTML file as a <script>;
+ * 
+ * This script payload comes from the `VSBloomClient.js` file,
+ * which is assumed to be bundled&compiled accordingly by the time
+ * this function gets called
+ * 
+ * This 'step' is where static patching into the VSBloom Client
+ * occurs of things like the auth/port constants
+ * 
+ * @param port The WebSocket server port
+ * @param authToken The authentication token for WebSocket connections
+ * @returns The complete script tag content to patch into the HTML
+ */
+export async function GetClientLauncherScriptElementString(port: number, authToken: string): Promise<string> {
+    const clientScriptPath = path.join(__dirname, "VSBloomClient.js");
+    
+    if (!await Common.IsThereAFileAtPath(clientScriptPath)) {
+        throw new Error(Common.RaiseError(`VSBloom Client script not found at '${clientScriptPath}'. Please ensure the extension is properly built.`));
+    }
+    
+    const clientScript = await fs.promises.readFile(clientScriptPath, "utf8");
+    
+    //prefix with our port/auth token constants
+    //so that the client can have a 'direct' reference
+    //to them at runtime in a static manner without
+    //needing to do any kind of handoff of communication
+    //with the extension ahead of time in a manner that
+    //would ultimately be much much more cumbersome and
+    //hacky than this...it's not fantastic, but it works
+    //nicely for our purposes here
+    const wrappedScript = `
+        var __VSBLOOM_PORT__ = ${port};
+        var __VSBLOOM_AUTH__ = "${authToken}";
+        ${clientScript}
+    `;
+    
+    return `<script>${wrappedScript}</script>`;
+}
+
+function PatchElectronWorkbenchCSPElement(wbHtmlSource: string) {
+    //i have come to learn to love regexes the more i have used
+    //them, so let's vomit several of them here with no explanation :)
+    const cspMetaElementExtractionRegex = /<meta\s+[^>]*http-equiv\s*=\s*(["'])Content-Security-Policy\1[^>]*content\s*=\s*(["'])(.*?)\2[^>]*\/?>/ims;
+
+    const cspElementMatch = wbHtmlSource.match(cspMetaElementExtractionRegex);
+    if (!cspElementMatch || !cspElementMatch.index) {
+        //no CSP element found, the regex either doesnt work anymore
+        //or the workbench file no longer uses CSP meta elements
+        return wbHtmlSource;
+    }
+
+    const quoteUsedForContentDef = cspElementMatch[1]; //third match is the quote character used for `content=<"'>` syntax
+    const unmodifiedCSPContent = cspElementMatch[3]; //fourth match is the actual content of the CSP directive, without quotes
+    let cspContent = unmodifiedCSPContent;
+
+    const scriptSrcRegex = /(script-src\s+)([^;]+)/i;
+    const scriptSrcMatch = cspContent.match(scriptSrcRegex);
+    const quoteUsedForScriptSrcSources = quoteUsedForContentDef === "'" ? '"' : "'";
+
+    if (scriptSrcMatch) {
+        //first match is the script-src directive along with whitespace between it and the first allowed source
+        const scriptSrcDirective = scriptSrcMatch[1];
+        //second match contains all of the allowed sources for the script-src directive (note though that this doesnt contain the semicolon to end the directive)
+        const scriptSrcSources = scriptSrcMatch[2];
+
+        if (!scriptSrcSources.includes("unsafe-inline")) {
+            //unsafe-inline isn't present in the script-src sources,
+            //we need to patch it in accordingly
+
+            //substitution thus that `script-src 'source1' 'source2'` becomes `script-src 'unsafe-inline' 'source1' 'source2'`
+            const patchedScriptSrcDirective = `${scriptSrcDirective}${quoteUsedForScriptSrcSources}unsafe-inline${quoteUsedForScriptSrcSources}\n${scriptSrcSources}`;
+    
+            //now we need to reconstruct the script-src directive in the acutal CSP content
+            cspContent = cspContent.replace(scriptSrcDirective, patchedScriptSrcDirective);
+        }
+
+    }
+
+    if (cspContent !== unmodifiedCSPContent) {
+        //csp content changed, we need to reconstruct the html source
+        //with the new CSP element and its associated content
+        const unmodifiedFullCSPElement = wbHtmlSource.substring(cspElementMatch.index, cspElementMatch.index + cspElementMatch[0].length);
+
+        const patchedFullCSPElement = unmodifiedFullCSPElement.replace(unmodifiedCSPContent, cspContent);
+
+        const patchedHTMLSrc = wbHtmlSource.replace(unmodifiedFullCSPElement, patchedFullCSPElement);
+
+        return patchedHTMLSrc;
+    }
+
+    //no patches were able to be applied to the workbench's source,
+    //so we can just return the original value
+    return wbHtmlSource;
+}
+
+export async function PatchElectronHTMLFile(
+    mainAppProductFilePath: string,
+    initFilePath: string,
+    bridgePort: number,
+    authToken: string,
+) {
     if (!await Common.IsThereAFileAtPath(initFilePath)) {
         throw new Error(Common.RaiseError(`The Electron init file at '${initFilePath}' does not exist or is not a file.`));
     }
@@ -160,18 +290,25 @@ export async function PatchElectronHTMLFile(mainAppProductFilePath: string, init
         throw new Error(Common.RaiseError(`Attempt to patch Electron init file at '${initFilePath}', but it was already patched(?)`));
     }
 
-    //prefix the file with the patch indicator
-    //to explain to any curious users what's up
+    //get a copy of the actual VSBloom Client script that we'll
+    //be patching into the Electron init file
+    const clientPayload = await GetClientLauncherScriptElementString(bridgePort, authToken);
+
+    //prefix the file with the patch indicator to explain to curious users what's up
     let patchedFileContents = HTML_FILE_PATCH_INDICATOR + fileContents;
 
-    //then find the <head> tag and inject our script contents accordingly
-    patchedFileContents = patchedFileContents.replace(/<head([^>]*)>/i, `<head$1><script>console.log('test pre-startup...');</script>`);
+    //add some declarations in the CSP meta element to allow the client to load
+    //things dynamically instead of being restricted to bundling all of the
+    //effects/configs/behaviors into the workbench.html file directly
+    patchedFileContents = PatchElectronWorkbenchCSPElement(patchedFileContents);
 
-    //we'll also inject any appropriate CSS into the head element,
-    //though said css needs to be injected just before the head
-    //element is closed in order to ensure that our styles end
-    //up overriding any stylesheets etc VSC may have declared
-    patchedFileContents = patchedFileContents.replace(/<\/head([^>]*)>/i, `<style>  </style></head$1>`);
+    //find the <head> tag and patch the VSBloom client script *directly* after
+    //it is defined so it's the first thing that loads in the client document
+    patchedFileContents = patchedFileContents.replace(/<head([^>]*)>/i, `<head$1>${clientPayload}`);
+
+    //TODO: Maybe patch a small CSS payload too in order to facilitate a nice
+    //TODO: animation or loading sequence etc while the VSBloom client & server
+    //TODO: are establishing their connection to each other?
 
     await fs.promises.writeFile(initFilePath, patchedFileContents).catch(err => {
         throw new Error(Common.RaiseError(`Unable to save patches applied to VSC's Electron init file at '${initFilePath}': ${err.message}`));
@@ -263,22 +400,26 @@ export async function WouldClientPatchingRequireElevation(mainAppProductFilePath
     return needsElevationToPatch;
 }
 
-export async function PerformClientPatching(mainAppProductFilePath: string, wantsClientCorruptWarningSupression: boolean) {
-    //handle patching workbench.html to inject the actual
-    //VSBloom launcher script and CSS
+export async function PerformClientPatching(
+    mainAppProductFilePath: string,
+    wantsClientCorruptWarningSupression: boolean,
+    bridgePort: number,
+    authToken: string
+) {
+    //handle patching workbench.html to embed the VSBloom Bridge client script
     await GetPathToAppFile(mainAppProductFilePath, "workbench.html").then(async htmlPath => {
         const isWorkbenchAlreadyPatched = await IsElectronHTMLFilePatched(htmlPath);
         if (!isWorkbenchAlreadyPatched) {
             if (await FileBackups.DoesFileHaveBackup(htmlPath)) {
                 //remove existing workbench.html vsbloom backup if
-                //it exists but the current workbench.html isnt patched,
-                //this will probably happen when cursor updates, assuming
-                //it doesnt just delete the backup too in the process
+                //it exists but the current workbench.html isn't patched,
+                //this will probably happen when VSCode updates, assuming
+                //it doesn't just delete the backup too in the process
                 await FileBackups.RemoveBackupFile(htmlPath);
             }
 
             await FileBackups.BackupFile(htmlPath);
-            await PatchElectronHTMLFile(mainAppProductFilePath, htmlPath);
+            await PatchElectronHTMLFile(mainAppProductFilePath, htmlPath, bridgePort, authToken);
         }
     }).catch(err => {
         throw new Error(Common.RaiseError(`VSBloom's client patching process encountered an error during the HTML phase: ${err.message}`));
@@ -293,14 +434,14 @@ export async function PerformClientPatching(mainAppProductFilePath: string, want
             if (!isWorkbenchJSAlreadyPatched) {
                 if (await FileBackups.DoesFileHaveBackup(wbJsPath)) {
                     //remove existing workbench JS vsbloom backup if
-                    //it exists but the current workbench JS isnt patched,
-                    //this will probably happen when cursor updates, assuming
-                    //it doesnt just delete the backup too in the process
+                    //it exists but the current workbench JS isn't patched,
+                    //this will probably happen when VSCode updates, assuming
+                    //it doesn't just delete the backup too in the process
                     await FileBackups.RemoveBackupFile(wbJsPath);
                 }
     
                 await FileBackups.BackupFile(wbJsPath);
-                const suppressionResult = await SuppressWorkbenchClientModificationWarning(mainAppProductFilePath, wbJsPath);
+                await SuppressWorkbenchClientModificationWarning(mainAppProductFilePath, wbJsPath);
             }
         }).catch(err => {
             throw new Error(Common.RaiseError(`VSBloom's client patching process encountered an error during the JS phase: ${err.message}`));
