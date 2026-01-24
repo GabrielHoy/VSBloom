@@ -6,6 +6,7 @@ import * as Elevation from "./Patcher/Elevation";
 import * as sudo from "@vscode/sudo-prompt";
 import { VSBloomBridgeServer } from "./ExtensionBridge/Server";
 import { EffectManager } from "./Effects/EffectManager";
+import { ConstructVSBloomLogPrefix } from "./Debug/Colorful";
 
 enum ClientPatchingStatus {
   PATCHED = 0,
@@ -103,8 +104,8 @@ async function EnsureClientIsPatched(
               }
             }
 
-            console.log("Elevated Client Patch - stdout:", stdout);
-            console.log("Elevated Client Patch - stderr:", stderr);
+            console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Elevated Client Patch - stdout:`, stdout);
+            console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Elevated Client Patch - stderr:`, stderr);
 
             //if there's no error from the elevated script's process,
             //we can assume that the patching was successful
@@ -177,8 +178,8 @@ async function EnsureClientIsUnpatched(appProductFilePath: string): Promise<Clie
               }
             }
 
-            console.log("Elevated Client Unpatch - stdout:", stdout);
-            console.log("Elevated Client Unpatch - stderr:", stderr);
+            console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Elevated Client Unpatch - stdout:`, stdout);
+            console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Elevated Client Unpatch - stderr:`, stderr);
 
             //if there's no error from the elevated script's process,
             //we can assume that the unpatching was successful
@@ -235,27 +236,30 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
     //initialize and start the WebSocket bridge
     const currentBridge = GetBridgeServer(context);
 
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Attempting to fire up the extension bridge server`);
     await currentBridge.Start();
-    
     //add the bridge server to the extension subscriptions for cleanup
     context.subscriptions.push(currentBridge);
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Extension bridge server started; we are now taking the role of the VSBloom master server`);
 
     //initialize the effect manager and do the same for it
     const manager = GetEffectManager(context);
     context.subscriptions.push(manager);
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Effect manager singleton initialized`);
 
     currentBridge.OnClientReady((windowId) => {
-      console.log(`[VSBloom] Client ready: ${windowId}`);
+      console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}A new client is ready, replicating current effects to it: ${windowId}`);
       //replicate all currently loaded effects to the new client
       manager.ReplicateCurrentEffectsToClient(windowId);
     });
 
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Loading debug effects for now`);
     //TODO: load effects based on configuration
     await manager.LoadDebugTestEffects();
 
-    console.log("[VSBloom] Bridge server started and effects loaded");
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Extension activation flow completed!`);
   } catch (error) {
-    console.error("[VSBloom] Failed to start bridge server:", error);
+    console.error(`${ConstructVSBloomLogPrefix("Extension", "error")}Failed to start bridge server:`, error);
     vscode.window.showWarningMessage(
       "[VSBloom]: Failed to start the bridge server. Some features may not work correctly. " +
       "Another VSCode window may already be hosting the bridge."
@@ -267,7 +271,10 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
  * VSCode's extension entry point
  */
 export function activate(context: vscode.ExtensionContext) {
+  console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}VSBloom extension activated by VSCode`);
   ClientPatcher.GetMainApplicationProductFile(vscode).then(async appProductFilePath => {
+    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Successfully located the application's 'product.json' file`);
+
     // First up, register our basic commands
     // Returns true if the client was just patched and the window needs to be reloaded
     const enableCmdDisp = vscode.commands.registerCommand("vsbloom.enable", async (showReloadPromptOnSuccess: boolean = true) => {
@@ -362,18 +369,25 @@ export function activate(context: vscode.ExtensionContext) {
     //logic and initialization
     const wasClientAlreadyPatchedDuringExtensionActivation = await ClientPatcher.IsClientPatched(appProductFilePath);
     if (!wasClientAlreadyPatchedDuringExtensionActivation) {
+      console.log(`${ConstructVSBloomLogPrefix("Extension", "warn")}Client is not currently patched`);
+
       const doNotAskToPatchClient = context.globalState.get<boolean>("vsbloom.patcher.doNotAskToPatchClient") ?? false;
       if (doNotAskToPatchClient) {
+        console.log(`${ConstructVSBloomLogPrefix("Extension", "warn")}User indicated previously not to display the client patch prompt; going dormant`);
         //the user previously said that they don't want us prompting them
         //to patch the client again in the future at some point, so we'll
         //assume they're going to patch it when they want and just go dormant
         return;
       }
 
+      console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Displaying client patch prompt, waiting for user response`);
+
       const shouldPatchClient = await ShowClientPatchRequestPrompt(context);
       if (shouldPatchClient) {
+        console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}User agreed to client patching`);
         await vscode.commands.executeCommand("vsbloom.enable", true);
       } else {
+        console.log(`${ConstructVSBloomLogPrefix("Extension", "warn")}User declined client patching; going dormant`);
         vscode.window.showInformationMessage("[VSBloom]: Not patching the Electron Client, VSBloom will not be able to function until this patch is performed - you can trigger this patch at any time in the future to enable VSBloom by running the 'VSBloom: Enable and Patch Electron Client' command!");
         return;
       }
@@ -381,6 +395,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     //If the client was already patched, let's get chugging along!
     if (wasClientAlreadyPatchedDuringExtensionActivation) {
+      console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Client is currently patched; continuing with extension activation`);
+
       await ExtensionActivatedAndClientPatchingVerified(context);
     }
 

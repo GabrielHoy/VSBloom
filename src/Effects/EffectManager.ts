@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import { GetExtensionConfigValue } from '../ExtensionBridge/Bridge';
+import { colorful, ConstructNonBrandedLogPrefix, ConstructVSBloomLogPrefix } from "../Debug/Colorful";
 
 interface LoadedEffect {
     id: string;
@@ -42,13 +43,13 @@ export class EffectManager implements vscode.Disposable {
 
         // Broadcast to all connected clients
         this.server.FireAllClients({
-            type: 'replicate-content',
-            contentType: 'js',
+            type: 'create-element',
+            nodeType: 'js',
             payload: code,
             id
         });
 
-        this.log(`Loaded JS effect: ${id}`);
+        this.Log('info', `Loaded JS effect: ${id}`);
     }
 
     /**
@@ -56,7 +57,7 @@ export class EffectManager implements vscode.Disposable {
      */
     public UnloadJSEffect(id: string): void {
         if (!this.currentEffects.has(id)) {
-            this.log(`Effect not loaded: ${id}`);
+            this.Log('warn', `UnloadJSEffect called for effect that was not loaded: ${id}`);
             return;
         }
 
@@ -64,11 +65,11 @@ export class EffectManager implements vscode.Disposable {
 
         // Broadcast removal to all clients
         this.server.FireAllClients({
-            type: 'remove',
+            type: 'remove-element',
             id,
         });
 
-        this.log(`Unloaded effect: ${id}`);
+        this.Log('info', `Unloaded effect: ${id}`);
     }
 
     /**
@@ -86,13 +87,13 @@ export class EffectManager implements vscode.Disposable {
 
         // Broadcast to all connected clients
         this.server.FireAllClients({
-            type: 'replicate-content',
-            contentType: 'css',
+            type: 'create-element',
+            nodeType: 'css',
             payload: css,
             id
         });
 
-        this.log(`Loaded CSS: ${id}`);
+        this.Log('info', `Loaded CSS: ${id}`);
     }
 
     /**
@@ -120,20 +121,20 @@ export class EffectManager implements vscode.Disposable {
      * Reload any and all currently loaded effects.
      */
     public ReloadAllEffects(): void {
-        this.log(`Reloading all effects (${this.currentEffects.size} total)`);
+        this.Log('info', `Reloading all effects (${this.currentEffects.size} total)`);
 
         for (const effect of this.currentEffects.values()) {
             if (effect.type === 'js') {
                 this.server.FireAllClients({
-                    type: 'replicate-content',
-                    contentType: 'js',
+                    type: 'create-element',
+                    nodeType: 'js',
                     payload: effect.code,
                     id: effect.id
                 });
             } else {
                 this.server.FireAllClients({
-                    type: 'replicate-content',
-                    contentType: 'css',
+                    type: 'create-element',
+                    nodeType: 'css',
                     payload: effect.code,
                     id: effect.id,
                 });
@@ -145,11 +146,11 @@ export class EffectManager implements vscode.Disposable {
      * Unload all effects.
      */
     public UnloadAllEffects(): void {
-        this.log(`Unloading all effects (${this.currentEffects.size} total)`);
+        this.Log('info', `Unloading all effects (${this.currentEffects.size} total)`);
 
         for (const id of this.currentEffects.keys()) {
             this.server.FireAllClients({
-                type: 'remove',
+                type: 'remove-element',
                 id,
             });
         }
@@ -162,20 +163,20 @@ export class EffectManager implements vscode.Disposable {
      * ensuring that newly joining clients are up to speed.
      */
     public ReplicateCurrentEffectsToClient(windowId: string): void {
-        this.log(`Sending initial payload to ${windowId}`);
+        this.Log('debug', `Sending initial payload to ${windowId}`);
 
         for (const effect of this.currentEffects.values()) {
             if (effect.type === 'js') {
                 this.server.FireClient(windowId, {
-                    type: 'replicate-content',
-                    contentType: 'js',
+                    type: 'create-element',
+                    nodeType: 'js',
                     payload: effect.code,
                     id: effect.id,
                 });
             } else {
                 this.server.FireClient(windowId, {
-                    type: 'replicate-content',
-                    contentType: 'css',
+                    type: 'create-element',
+                    nodeType: 'css',
                     payload: effect.code,
                     id: effect.id
                 });
@@ -189,7 +190,7 @@ export class EffectManager implements vscode.Disposable {
      */
     public async LoadDebugTestEffects(): Promise<void> {
         const config = this.server.GetCurrentExtensionConfig();
-        this.log('Loading "Debug Test" effects');
+        this.Log('info', 'Loading "Debug Test" effects');
 
         const cursorTrailEnabled = GetExtensionConfigValue(config, 'cursorTrail.enabled', true);
         const cursorTrailDuration = GetExtensionConfigValue(config, 'cursorTrail.duration', 750);
@@ -203,9 +204,9 @@ export class EffectManager implements vscode.Disposable {
                 test('test binding for console');
 
                 window.__VSBLOOM__.SendLog('debug', 'Test effect script running!', { cursorTrailEnabled: ${cursorTrailEnabled}, cursorTrailDuration: ${cursorTrailDuration} });
-                console.log('[VSBloom] Test effect loaded!');
-                console.log('[VSBloom] Cursor trail enabled:', ${cursorTrailEnabled});
-                console.log('[VSBloom] Cursor trail duration:', ${cursorTrailDuration});
+                console.log('[VSBloom/TEST_EFFECT]: Test effect loaded!');
+                console.log('[VSBloom/TEST_EFFECT]: Cursor trail enabled:', ${cursorTrailEnabled});
+                console.log('[VSBloom/TEST_EFFECT]: Cursor trail duration:', ${cursorTrailDuration});
             `);
         }
 
@@ -219,9 +220,9 @@ export class EffectManager implements vscode.Disposable {
     /**
      * Log a message to the output channel.
      */
-    private log(message: string): void {
-        const timestamp = new Date().toISOString();
-        this.outputChannel.appendLine(`[${timestamp}] ${message}`);
+    private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string): void {
+        this.outputChannel.appendLine(`[EffectManager/${level.toUpperCase()}]: ${message}`);
+        console.log(`${ConstructVSBloomLogPrefix("EffectManager", level)}${message}`);
     }
 
     /**

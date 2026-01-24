@@ -242,13 +242,19 @@ function PatchElectronWorkbenchCSPElement(wbHtmlSource: string) {
         //second match contains all of the allowed sources for the script-src directive (note though that this doesnt contain the semicolon to end the directive)
         const scriptSrcSources = scriptSrcMatch[2];
 
-        if (!scriptSrcSources.includes("unsafe-inline")) {
-            //unsafe-inline isn't present in the script-src sources,
-            //we need to patch it in accordingly
+        const directivesToPatchIntoScriptSrcDirective = [];
 
-            //substitution thus that `script-src 'source1' 'source2'` becomes `script-src 'unsafe-inline' 'source1' 'source2'`
-            const patchedScriptSrcDirective = `${scriptSrcDirective}${quoteUsedForScriptSrcSources}unsafe-inline${quoteUsedForScriptSrcSources}\n${scriptSrcSources}`;
-    
+        if (!scriptSrcSources.includes("unsafe-inline")) {
+            directivesToPatchIntoScriptSrcDirective.push(`${quoteUsedForScriptSrcSources}unsafe-inline${quoteUsedForScriptSrcSources}`);
+        }
+        if (!scriptSrcSources.includes("blob:")) {
+            directivesToPatchIntoScriptSrcDirective.push(`blob:`);
+        }
+
+        if (directivesToPatchIntoScriptSrcDirective.length > 0) {
+            //substitution thus that `script-src 'source1' 'source2'` becomes `script-src <...patchedInDirectives...> 'source1' 'source2'`
+            const patchedScriptSrcDirective = `${scriptSrcDirective}${directivesToPatchIntoScriptSrcDirective.join(`\n `)}\n`;
+
             //now we need to reconstruct the script-src directive in the acutal CSP content
             cspContent = cspContent.replace(scriptSrcDirective, patchedScriptSrcDirective);
         }

@@ -1,13 +1,80 @@
 const esbuild = require("esbuild");
 const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
 
+const effectsDir = "src/Effects";
+const effectsBuildDir = "build/Effects";
+const effectNameSentinel = "<EFFECT_NAME_SENTINEL>";
 const buildBanners = {
   "build/VSBloom.js": `/* VS: Bloom Main Extension */\n//\n//Hi!\n//\n//This is the main VSBloom extension that runs within the VSCode Extension Host.\n//It's responsible for bootstrapping and managing the VSBloom Bridge Server,\n//as well as applying patches to VSCode's Electron Client to facilitate various effects and modifications\n//to the VSCode application UI.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the extension-side of VSBloom does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "build/VSBloomClient.js": `/* VS: Bloom Client */\n//\n//Hi!\n//\n//This is the client at the core of VSBloom.\n//It's a small runtime that attempts to establish a WebSocket connection to the *actual* VSBloom extension\n//running inside of VSCode, creating a critical bridge between the VSCode Extension Host and the Electron Client which renders your VSCode application.\n//Once that connection is made, the client can send and receive data from the extension in real-time\n//to facilitate dynamically loading and unloading 'effects' and modifications to\n//the VSCode application UI, as well as maintaining real-time synchronization of things like user settings and preferences.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the client does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "build/ElevatedClientPatcher.js": `/* VS: Bloom Elevated Client Patcher */\n//\n//Hi!\n//\n//This is a NodeJS script designed to be run within an environment\n//that has elevated privileges, it is exclusively used in the event\n//of VSBloom running into permission errors when patching the Electron Client,\n//this normally doesn't require any elevation, but if VSCode is\n//installed system-wide instead of being local to the user, its files will\n//be located within a system directory(varying based on OS and 'flavor' of VSCode) which unfortunately\n//requires process elevation to be able to perform file read/write operations inside of.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the elevated patcher does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+  "__EFFECTS__": `/* VS: Bloom Effect */\n/* Effect Name: "${effectNameSentinel}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+  "__EFFECT_CSS__": `/* VS: Bloom Effect CSS */\n/* Effect Name: "${effectNameSentinel}" */\n/* */\n/* Hi! */\n/* */\n/* This is the source code for a componentized effect's corresponding CSS stylesheet that the VSBloom Extension dynamically */\n/* loads and unloads within the Electron Renderer's DOM. */\n/* */\n/* This won't be very readable within a production environment, */\n/* so if you'd like to know more about what effects or this CSS does, how effects work, or how to make your own */\n/* you should visit the GitHub repo associated with VSBloom */\n/* for an un-minified version of this file! */\n/* */\n/* Build Date: ${new Date().toISOString()} */\n/* */`,
+};
+
+const esbuildEffectPlugin = {
+  name: "esbuild-effect",
+  setup(build) {
+    build.onEnd(async (result) => {
+      if (result.outputFiles) {
+        return;
+      }
+      const outFile = build.initialOptions.outfile;
+      if (!outFile || !fs.existsSync(outFile)) {
+        return;
+      }
+      console.log(`[build]   pulling non-script files for effect "${outFile}"...`);
+
+      try {
+        const effectDirectory = path.dirname(build.initialOptions.entryPoints[0]);
+        const allFilesInEffectDir = fs.readdirSync(effectDirectory);
+        const fileCopyPromises = [];
+        for (const file of allFilesInEffectDir) {
+          if (file.endsWith(".ts")) {
+            //esbuild already handled the ts bundling&compilation side of things
+            continue;
+          }
+          if (file.endsWith("tsconfig.json")) {
+            //no need to pull the tsconfig.json file, it
+            //just gives the ts language server context
+            //on what in the world vsbloom is doing
+            continue;
+          }
+
+          if (file.endsWith(".css")) {
+            const csso = await import("csso");
+            const outputFilePath = path.join(path.dirname(outFile), file);
+            
+            fileCopyPromises.push(fs.promises.readFile(path.join(effectDirectory, file), "utf8").then(async (fileContents) => {
+              const minified = await csso.minify(fileContents, {
+                comments: false
+              });
+              const fileBanner = production ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, effectDirectory) + "\n" : "";
+              fs.promises.writeFile(outputFilePath, fileBanner + minified.css, "utf8");
+              console.log(`[build]     - minified CSS file "${file}" and copied to "${outputFilePath}"`);
+            }));
+          } else {
+            //unknown exact file type, just copy it over
+            const outputFilePath = path.join(path.dirname(outFile), file);
+            fileCopyPromises.push(fs.promises.copyFile(path.join(effectDirectory, file), outputFilePath).then(() => {
+              console.log(`[build]     - copied "${file}" to "${outputFilePath}"`);
+            }));
+          }
+
+        }
+
+        await Promise.all(fileCopyPromises);
+
+      } catch (err) {
+        console.error(`[build] Failed to update non-script files for effect "${outFile}":`, err.message);
+      }
+
+    });
+  }
 };
 
 const esbuildOneLinerPlugin = {
@@ -40,14 +107,21 @@ const esbuildOneLinerPlugin = {
         });
 
         if (terserResult.code) {
-          const singleLine = (buildBanners[outFile] ? buildBanners[outFile] + "\n" : "") + terserResult.code
+          const fileBannerIdentifier = outFile.includes(effectsBuildDir) ? "__EFFECTS__" : outFile;
+          let fileBanner = buildBanners[fileBannerIdentifier] ? buildBanners[fileBannerIdentifier] + "\n" : "";
+          if (fileBannerIdentifier === "__EFFECTS__") {
+            const effectName = outFile.split("/").pop().split(".")[0];
+            fileBanner = fileBanner.replace(effectNameSentinel, effectName);
+          }
+
+          const singleLine = fileBanner + terserResult.code
             .split("\n")
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .join(" ");
           
           fs.writeFileSync(outFile, singleLine, "utf8");
-          console.log(`[build]     - collapsed "${outFile}" to ${singleLine.length} chars`);
+          console.log(`[build]     - collapsed "${outFile}" to ${singleLine.length.toLocaleString()} chars`);
         }
       } catch (err) {
         console.error(`[build] Failed to collapse "${outFile}":`, err.message);
@@ -126,7 +200,43 @@ async function main() {
     } : undefined
   });
 
-  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx];
+  
+  //the src/Effects directory contains a variety of effects that can be loaded into the client
+  //each effect is a separate directory with .ts files inside of it,
+  //and each of these effects needs to be individually built and bundled
+  //into corresponding <EffectDirName>.js files so that their source can be
+  //loaded dynamically on the client
+  const effectContexts = [];
+  const effectDirectories = fs.readdirSync(effectsDir).filter(dir => fs.statSync(path.join(effectsDir, dir)).isDirectory());
+  
+  //delete the old effect build directory if it exists
+  //so that we can make sure any old effect build files are
+  //removed along with any non-script files that got
+  //pulled over to pair with those built effects
+  if (fs.existsSync(effectsBuildDir)) {
+    await fs.promises.rm(effectsBuildDir, { recursive: true, force: true });
+  }
+
+  for (const effectDir of effectDirectories) {
+    effectContexts.push(await esbuild.context({
+      bundle: true,
+      format: "esm",
+      minify: production,
+      sourcemap: production ? false : "inline",
+      sourcesContent: !production,
+      platform: "browser",
+      target: ["chrome120"], //electron's Chromium version
+      logLevel: "silent",
+      plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined, esbuildEffectPlugin].filter(Boolean),
+      entryPoints: [`src/Effects/${effectDir}/${effectDir}.ts`],
+      outfile: `build/Effects/${effectDir}/${effectDir}.js`,
+      banner: production ? {
+        js: buildBanners["__EFFECTS__"].replace(effectNameSentinel, effectDir)
+      } : undefined
+    }));
+  }
+
+  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, ...effectContexts];
 
   if (watch) {
     console.log("[watch] build started");

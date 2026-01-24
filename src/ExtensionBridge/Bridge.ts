@@ -10,14 +10,14 @@
  */
 
 //Extension -> Client Message
-export interface ContentReplicationRequestMessage {
-    type: 'replicate-content';
+export interface ElementCreationRequestMessage {
+    type: 'create-element';
     id: string;
-    contentType: "css" | "js";
+    nodeType: "css" | "js";
     payload: string;
 }
 export interface RemovalRequestMessage {
-    type: 'remove';
+    type: 'remove-element';
     id: string;
 }
 export interface ConfigMessage {
@@ -31,7 +31,7 @@ export interface RequestClientReloadMessage {
     type: 'request-client-reload';
 }
 export type ExtensionToClientMessage =
-    | ContentReplicationRequestMessage
+    | ElementCreationRequestMessage
     | RemovalRequestMessage
     | ConfigMessage
     | KeepAliveRequestMessage
@@ -56,11 +56,16 @@ export interface EventMessage {
     name: string;
     data: unknown;
 }
+export interface WindowIdChangeMessage {
+    type: 'change-window-id';
+    newWindowId: string;
+}
 export type ClientToExtensionMessage =
     | ReadyMessage
     | KeepAliveResponseMessage
     | LogMessage
-    | EventMessage;
+    | EventMessage
+    | WindowIdChangeMessage;
 
 //Configuration Types
 /**

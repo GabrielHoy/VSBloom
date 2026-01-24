@@ -9,6 +9,7 @@
 
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
+import { colorful, ConstructVSBloomLogPrefix, ConstructNonBrandedLogPrefix } from "../Debug/Colorful";
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import {
@@ -22,6 +23,7 @@ import {
     WS_CLOSE_CODES,
     LogMessage,
     EventMessage,
+    WindowIdChangeMessage,
 } from './Bridge';
 
 interface ConnectedClient {
@@ -79,7 +81,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
      */
     public async Start(): Promise<void> {
         if (this.wss) {
-            this.Log('Bridge server already running');
+            this.Log('warn', 'Bridge server already running');
             return;
         }
 
@@ -98,7 +100,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                 });
 
                 this.wss.on('listening', () => {
-                    this.Log(`Bridge server listening on ws://127.0.0.1:${VSBLOOM_BRIDGE_PORT}`);
+                    this.Log('info', `Bridge server listening on ws://127.0.0.1:${VSBLOOM_BRIDGE_PORT}`);
                     this.DispatchKeepAlivePingDaemon();
                     this.SetupExtensionConfigChangedListener();
                     resolve();
@@ -110,11 +112,11 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 
                 this.wss.on('error', (error: NodeJS.ErrnoException) => {
                     if (error.code === 'EADDRINUSE') {
-                        this.Log(`Port ${VSBLOOM_BRIDGE_PORT} is already in use. Another VSCode window may be running VSBloom.`);
+                        this.Log('error', `Port ${VSBLOOM_BRIDGE_PORT} is already in use. Another VSCode window may be running VSBloom.`);
                         // This is not necessarily an error - another window may be hosting
                         resolve();
                     } else {
-                        this.Log(`Bridge server error: ${error.message}`);
+                        this.Log('error', `Bridge server error: ${error.message}`);
                         reject(error);
                     }
                 });
@@ -147,7 +149,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
         if (this.wss) {
             this.wss.close();
             this.wss = null;
-            this.Log('Bridge server stopped');
+            this.Log('info', 'Bridge server stopped');
         }
     }
 
@@ -184,7 +186,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
      */
     public FireAllClients(message: ExtensionToClientMessage): void {
         if (message.type !== 'are-u-alive') {
-            this.Log(`Broadcasting message: ${JSON.stringify(message)}`);
+            this.Log('debug', `Broadcasting message: ${JSON.stringify(message)}`);
         }
         const data = JSON.stringify(message);
         for (const client of this.clients.values()) {
@@ -216,7 +218,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
             type: 'replicate-extension-config',
             settings: config,
         });
-        this.Log('Broadcasted config update to all clients');
+        this.Log('debug', 'Broadcasted config update to all clients');
     }
 
     /**
@@ -287,12 +289,12 @@ export class VSBloomBridgeServer implements vscode.Disposable {
         const token = url.searchParams.get('token');
 
         if (token !== this.authToken) {
-            this.Log('A connection attempt was rejected due to having an invalid auth token');
+            this.Log('error', 'A connection attempt was rejected due to having an invalid auth token');
             ws.close(WS_CLOSE_CODES.UNAUTHORIZED, 'Unauthorized');
             return;
         }
 
-        this.Log('Connection authenticated with a client; awaiting ready handshake');
+        this.Log('info', 'Connection authenticated with a client; awaiting ready handshake');
 
         ws.on('message', (data) => {
             try {
@@ -300,10 +302,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                 try {
                     this.ProcessClientMessage(ws, message);
                 } catch (err) {
-                    this.Log(`An error occurred handling a parsed client message: ${err}`);
+                    this.Log('error', `An error occurred handling a parsed client message: ${err}`);
                 }
             } catch (err) {
-                this.Log(`An error occurred attempting to parse a client's message as JSON: ${err}`);
+                this.Log('error', `An error occurred attempting to parse a client's message as JSON: ${err}`);
                 ws.close(WS_CLOSE_CODES.INVALID_MESSAGE, 'Invalid message format');
             }
         });
@@ -313,7 +315,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
             for (const [windowId, client] of this.clients.entries()) {
                 if (client.ws === ws) {
                     this.clients.delete(windowId);
-                    this.Log(`Client disconnected: ${windowId} (code: ${code})`);
+                    this.Log('info', `Client disconnected: ${windowId} (code: ${code})`);
                     //fire the onClientDisconnected event so external code
                     //can react accordingly
                     this._onClientDisconnected.fire(windowId);
@@ -323,7 +325,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
         });
 
         ws.on('error', (error) => {
-            this.Log(`A WebSocket error occurred with a client: ${error.message}`);
+            this.Log('error', `A WebSocket error occurred with a client: ${error.message}`);
         });
     }
 
@@ -348,8 +350,12 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                 this.HandleClientEvent(message);
                 break;
 
+            case 'change-window-id':
+                this.ChangeClientWindowId(ws, message.newWindowId);
+                break;
+
             default:
-                this.Log(`Unknown message type received`);
+                this.Log('error', `Unknown message type received`);
         }
     }
 
@@ -372,7 +378,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
             connectedAt: new Date(),
         });
 
-        this.Log(`Registered new window client as ready with window ID "${windowId}" (${this.clients.size} total clients)`);
+        this.Log('info', `Registered new window client as ready with window ID "${windowId}" (${this.clients.size} total clients)`);
 
         //send the current extension configuration over
         //to this client so they're synchronized appropriately
@@ -388,23 +394,54 @@ export class VSBloomBridgeServer implements vscode.Disposable {
         this._onClientReady.fire(windowId);
     }
 
+    private ChangeClientWindowId(ws: WebSocket, newWindowId: string): void {
+        for (const [windowId, client] of this.clients.entries()) {
+            if (client.ws === ws) {
+                this.clients.delete(windowId);
+                this.clients.set(newWindowId, {
+                    ws,
+                    windowId: newWindowId,
+                    connectedAt: new Date(),
+                });
+                this.Log('info', `A client is changing their window ID from "${windowId}" to "${newWindowId}"`);
+                break;
+            }
+        }
+    }
+
     /**
      * Handles log messages from clients
      */
     private ReplicateLogMessageFromClient(message: LogMessage): void {
-        const prefix = `[Client/${message.level.toUpperCase()}]`;
+        const prefix = `[Client/${message.level.toUpperCase()}]: `;
         const logLine = message.data 
-            ? `${prefix} ${message.message} ${JSON.stringify(message.data)}`
-            : `${prefix} ${message.message}`;
-        
+            ? `${prefix}${message.message} ${JSON.stringify(message.data)}`
+            : `${prefix}${message.message}`;
+
         this.outputChannel.appendLine(logLine);
+
+        const hasDataAssociatedWithLog = message.data ?? false;
+        let dataObject: unknown = null;
+        if (hasDataAssociatedWithLog) {
+            try {
+                dataObject = JSON.parse(message.data as string);
+            } catch (err) {
+                dataObject = null;
+            }
+        }
+
+        if (hasDataAssociatedWithLog) {
+            console.log(`${ConstructVSBloomLogPrefix("Client", message.level)}${message.message}`, dataObject ?? "(Data was supplied but was invalid JSON)");
+        } else {
+            console.log(`${ConstructVSBloomLogPrefix("Client", message.level)}${message.message}`);
+        }
     }
 
     /**
      * Handles receiving event messages from clients
      */
     private HandleClientEvent(message: EventMessage): void {
-        this.Log(`[Client/EVENT] ${message.name}: ${JSON.stringify(message.data)}`);
+        throw new Error('Not implemented yet');
         // TODO: figure out what to actually do with these events
     }
 
@@ -434,8 +471,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
     /**
      * Logs a server message to the output channel.
      */
-    private Log(message: string): void {
-        this.outputChannel.appendLine(`[Server]: ${message}`);
+    private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string): void {
+        this.outputChannel.appendLine(`[Server/${level.toUpperCase()}]: ${message}`);
+        console.log(`${ConstructVSBloomLogPrefix("Server", level)}${message}`);
+        // console.log(`[${colorful.cyanBright(`VSBloom`)}/${colorful.cyanBright("Server")}]: ${message}`);
     }
 
     /**

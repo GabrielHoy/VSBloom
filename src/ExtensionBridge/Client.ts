@@ -14,7 +14,6 @@
 /// <reference lib="dom.iterable" />
 
 import type {
-    VSBloomClientConfig,
     ExtensionToClientMessage,
     ClientToExtensionMessage,
 } from './Bridge';
@@ -24,71 +23,60 @@ import {
     INITIAL_RECONNECT_DELAY_MS,
 } from './Bridge';
 
+import type {
+    VSBloomClientConfig,
+    VSBloomGlobals,
+    TrustedTypePolicy,
+    IVSBloomClient,
+} from './ElectronGlobals';
+import './ElectronGlobals'; //side-effect import for global augmentation
+
 //these constants are replaced during the esbuild
 //compilation with their 'actual' values
 declare const __VSBLOOM_PORT__: number;
 declare const __VSBLOOM_AUTH__: string;
 
-//lib.dom.d.ts doesn't include trusted type api's so we'll define it here for
-//nice pretty typechecker support
-interface TrustedHTML {
-    toString(): string;
-}
-interface TrustedScript {
-    toString(): string;
-}
-interface TrustedTypePolicyOptions {
-    createHTML?: (input: string, ...args: unknown[]) => string;
-    createScript: (input: string, ...args: unknown[]) => TrustedScript;
-    createScriptURL?: (input: string, ...args: unknown[]) => string;
-}
-interface TrustedTypePolicy {
-    readonly name: string;
-    createHTML(input: string, ...args: unknown[]): TrustedHTML;
-    createScript(input: string, ...args: unknown[]): TrustedScript;
-    createScriptURL?(input: string, ...args: unknown[]): unknown;
-}
-interface TrustedTypePolicyFactory {
-    createPolicy(policyName: string, policyOptions?: TrustedTypePolicyOptions): TrustedTypePolicy;
-    isHTML?(value: unknown): value is TrustedHTML;
-    emptyHTML?(): TrustedHTML;
-    getAttributeType?(tagName: string, attribute: string, elementNs?: string, attrNs?: string): string | null;
-    getPropertyType?(tagName: string, property: string, elementNs?: string): string | null;
-}
-
-interface VSBloomWindowGlobals {
-    extensionConfig: VSBloomClientConfig | undefined;
-    client: VSBloomClient | undefined;
-
-    SendLog: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => void;
-}
-
-//global state extensions for the client
-declare global {
-    interface Window {
-        __VSBLOOM__: VSBloomWindowGlobals;
-        trustedTypes?: TrustedTypePolicyFactory;
-    }
-
-    //also available as above global in window.trustedTypes
-    const trustedTypes: TrustedTypePolicyFactory | undefined;
-}
-
 //actual client class object
-class VSBloomClient {
+class VSBloomClient implements IVSBloomClient {
     private ws: WebSocket | null = null;
     private reconnectAttempts = 0;
     private reconnectTimeout: number | null = null;
     private managedElements: Map<string, HTMLElement> = new Map();
-    private windowId: string;
-    private isConnected = false;
     private trustedPolicy: TrustedTypePolicy | null = null;
+
+    //public properties exposed via IVSBloomClient interface
+    private _windowId: string = "WINDOW_ID_NOT_ASSIGNED_FOR_SOME_REASON";
+    public get windowId(): string {
+        return this._windowId;
+    }
+    private set windowId(value: string) {
+        const isInitialWindowIdAssignment = this._windowId === "WINDOW_ID_NOT_ASSIGNED_FOR_SOME_REASON";
+        const lastWindowId = this._windowId;
+
+        this._windowId = value;
+        if (!isInitialWindowIdAssignment) {
+            this.Log('info', `My window ID is being changed from "${lastWindowId}" -> "${this._windowId}"`);
+            this.FireServer({
+                type: 'change-window-id',
+                newWindowId: this._windowId
+            });
+        }
+    }
+    private _isConnected = false;
+
+    /**
+     * Whether the client is currently connected to the extension's WebSocket server.
+     */
+    public get isConnected(): boolean {
+        return this._isConnected;
+    }
 
     constructor(
         private port: number,
         private authToken: string
     ) {
-        this.windowId = this.GenerateWindowId();
+        this.windowId = this.GetNewWindowId();
+        this.SyncWindowIDUpdatesWithWindowTitleUpdates();
 
         //create the trusted types policy we need to dynamically run
         //code in a way that satisfies the CSP directives in vsc's workbench.html
@@ -102,7 +90,7 @@ class VSBloomClient {
         this.ConnectToWebsocketServer();
 
         this.Log('info', 'VSBloom Client Bootstrap Complete:', { 
-            windowId: this.windowId,
+            windowId: this._windowId,
             trustedTypesEnabled: this.trustedPolicy !== null
         });
     }
@@ -124,19 +112,22 @@ class VSBloomClient {
             });
         } catch (error) {
             // Policy with this name might already exist (e.g., after hot reload)
-            this.Log('warn', 'Failed to create VSBloom\'s Trusted Types policy', { error: String(error) });
+            this.Log('warn', 'Failed to create a Trusted Types policy for use by the VSBloom Client', { error: String(error) });
             return null;
         }
     }
 
     /**
      * Generates a new unique id for this client instance
+     * and, if this isn't the first time assigning a window
+     * ID, sends a notification over to the extension so that
+     * it can update our window ID on the server too
      */
-    private GenerateWindowId(): string {
-        const timestamp = Date.now().toString(36);
-        const random = Math.random().toString(36).substring(2, 8);
+    private GetNewWindowId(): string {
+        const timestamp = Date.now().toString(36).slice(-3);
+        const random = Math.random().toString(36).slice(-3);
         
-        return `BloomClient#${random}${timestamp}`;
+        return `#${random}${timestamp}: "${window.document.title}"`;
     }
 
     /**
@@ -149,7 +140,7 @@ class VSBloomClient {
             this.ws = new WebSocket(url);
 
             this.ws.onopen = () => {
-                this.isConnected = true;
+                this._isConnected = true;
                 this.reconnectAttempts = 0;
                 this.Log('info', 'Established a connection to the VSBloom Extension!');
                 
@@ -172,7 +163,7 @@ class VSBloomClient {
             };
 
             this.ws.onclose = (event) => {
-                this.isConnected = false;
+                this._isConnected = false;
                 this.ws = null;
 
                 if (event.code === 4001) {
@@ -188,7 +179,7 @@ class VSBloomClient {
             this.ws.onerror = (error) => {
                 // WebSocket errors are typically followed by close events
                 // Log but don't take action here
-                this.Log('error', 'An internal error occurred with the WebSocket', { error: String(error) });
+                this.Log('error', 'An internal error occurred with the WebSocket', { error: error });
             };
         } catch (error) {
             this.Log('error', 'Failed to create WebSocket connection', { error: String(error) });
@@ -236,17 +227,17 @@ class VSBloomClient {
      */
     private HandleMessageFromExtension(message: ExtensionToClientMessage): void {
         switch (message.type) {
-            case 'replicate-content':
-                if (message.contentType === 'js') {
+            case 'create-element':
+                if (message.nodeType === 'js') {
                     this.CreateJSElement(message.id, message.payload);
-                } else if (message.contentType === 'css') {
+                } else if (message.nodeType === 'css') {
                     this.CreateCSSElement(message.id, message.payload);
                 } else {
                     this.Log('warn', 'Received a request to replicate content of an unknown type', { request: message });
                 }
                 break;
 
-            case 'remove':
+            case 'remove-element':
                 if (message.id) {
                     this.RemoveManagedElement(message.id);
                 }
@@ -266,7 +257,7 @@ class VSBloomClient {
                 this.Log('info', 'Reload requested by extension');
                 window.location.reload();
                 break;
-            
+
             default:
                 this.Log('warn', 'Received an unknown message type from the extension', { message: message });
                 break;
@@ -390,7 +381,7 @@ class VSBloomClient {
             type: 'replicate-log',
             level,
             message,
-            data
+            data: data ? JSON.stringify(data) : undefined,
         });
     }
 
@@ -406,7 +397,7 @@ class VSBloomClient {
         this.SendLogToExtension(level, message, data);
 
         //then just log to the Electron console as usual
-        const prefix = '[VSBloom]';
+        const prefix = '[VSBloom]:';
         switch (level) {
             case 'error':
                 console.error(prefix, message, data ?? '');
@@ -420,6 +411,92 @@ class VSBloomClient {
             default:
                 console.log(prefix, message, data ?? '');
         }
+    }
+
+    /**
+     * Syncronizes the window ID of this client with the title element
+     * inside of the Electron Renderer's DOM
+     */
+    private SyncWindowIDUpdatesWithWindowTitleUpdates(): void {
+        const getCurrentTitle = (): string => document.title;
+
+        let lastKnownTitle = getCurrentTitle();
+
+        let titleObserver: MutationObserver | null = null;
+
+        const onTitleChange = () => {
+            const newTitle = getCurrentTitle();
+            if (lastKnownTitle !== newTitle) {
+                lastKnownTitle = newTitle;
+                this.windowId = this.GetNewWindowId();
+            }
+        };
+
+        function observeTitleElement(titleEl: HTMLTitleElement) {
+            disconnectTitleObserver();
+
+            titleObserver = new MutationObserver(onTitleChange);
+            titleObserver.observe(titleEl, { characterData: true, childList: true, subtree: true });
+        }
+
+        function disconnectTitleObserver() {
+            if (titleObserver) {
+                try { titleObserver.disconnect(); } catch { /* no-op */ }
+                titleObserver = null;
+            }
+        }
+
+        const observeHeadForTitle = () => {
+            const head = document.head;
+            if (!head) {
+                //what
+                return;
+            }
+
+            let currentTitleEl = head.querySelector('title');
+            if (currentTitleEl) {
+                observeTitleElement(currentTitleEl);
+            }
+
+            //mutation observer for title element addition/removal/replacement
+            const headObserver = new MutationObserver((mutations) => {
+                let needsRescan = false;
+                mutations.forEach((mutation) => {
+                    if (
+                        mutation.type === 'childList' &&
+                        Array.from(mutation.addedNodes).concat(Array.from(mutation.removedNodes)).some(
+                            node => node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toLowerCase() === 'title'
+                        )
+                    ) {
+                        needsRescan = true;
+                    }
+                });
+                if (needsRescan) {
+                    disconnectTitleObserver();
+                    const newTitleEl = head.querySelector('title');
+                    if (newTitleEl) {
+                        observeTitleElement(newTitleEl);
+                        onTitleChange();
+                    } else {
+                        onTitleChange();
+                    }
+                }
+            });
+            headObserver.observe(head, { childList: true });
+
+            const pollInterval = 250;
+            let intervalId = setInterval(() => {
+                onTitleChange();
+            }, pollInterval);
+
+            window.addEventListener('beforeunload', () => {
+                headObserver.disconnect();
+                disconnectTitleObserver();
+                clearInterval(intervalId);
+            });
+        };
+
+        observeHeadForTitle();
     }
 
     /**
@@ -437,12 +514,11 @@ class VSBloomClient {
                     type: 'replicate-log',
                     level,
                     message,
-                    data,
+                    data: data ? JSON.stringify(data) : undefined,
                 });
             },
         };
     }
-
 
 }
 
