@@ -223,13 +223,13 @@ class VSBloomClient implements IVSBloomClient {
                 // WebSocket errors are typically followed by close events
                 // Log but don't take action here
                 if (error.target instanceof WebSocket && error.target.readyState === WebSocket.CLOSED) {
-                    this.Log('debug', "An error occurred with the WebSocket while it was closed, this likely means that the server is either still initializing or is generally not available", { error });
+                    this.Log('debug', "An error occurred with the WebSocket while it was closed, this likely means that the server is either still initializing or is generally not available", { errorMessage: String(error) });
                     return;
                 }
-                this.Log('error', 'An internal error occurred with the WebSocket', { error });
+                this.Log('error', 'An internal error occurred with the WebSocket', { errorMessage: String(error) });
             };
         } catch (error) {
-            this.Log('error', 'Failed to create WebSocket connection', { error });
+            this.Log('error', 'Failed to create WebSocket connection', { errorMessage: String(error) });
             this.ScheduleReconnect();
         }
     }
@@ -406,7 +406,7 @@ class VSBloomClient implements IVSBloomClient {
                 URL.revokeObjectURL(jsBlobUrl);
             }
 
-            this.Log('error', `Failed to load effect module for effect name "${effectName}"`, { error });
+            this.Log('error', `Failed to load effect module for effect with name "${effectName}"`, { errorMessage: String(error) });
             //re-throw to forward along the error
             throw error;
         }
@@ -453,7 +453,7 @@ class VSBloomClient implements IVSBloomClient {
             effectHandle.isEnabled = true;
             this.Log('debug', `Reloaded effect "${effectName}" successfully`, { effectHandle, stopResult, startResult });
         } catch (error) {
-            this.Log('error', `An error occurred while attempting to reload effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+            this.Log('error', `An error occurred while attempting to reload effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { errorMessage: String(error) });
         }
     }
 
@@ -476,7 +476,7 @@ class VSBloomClient implements IVSBloomClient {
             }
             effectHandle.isEnabled = false;
         } catch (error) {
-            this.Log('error', `An error occurred while attempting to stop effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+            this.Log('error', `An error occurred while attempting to stop effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { errorMessage: String(error) });
         } finally {
             //remove the CSS stylesheet associated with the
             //effect - if it exists
