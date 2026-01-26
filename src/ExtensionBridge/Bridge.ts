@@ -6,19 +6,22 @@
  * communication between the VSC extension
  * and the patched VSBloom client running
  * within the Electron Renderer process
- * 
  */
 
 //Extension -> Client Message
-export interface ElementCreationRequestMessage {
-    type: 'create-element';
-    id: string;
-    nodeType: "css" | "js";
-    payload: string;
+export interface EffectEnableRequestMessage {
+    type: 'enable-effect';
+    effectName: string;
+    js?: string;
+    css?: string;
 }
-export interface RemovalRequestMessage {
-    type: 'remove-element';
-    id: string;
+export interface EffectReloadRequestMessage {
+    type: 'reload-effect';
+    effectName: string;
+}
+export interface EffectStopRequestMessage {
+    type: 'stop-effect';
+    effectName: string;
 }
 export interface ConfigMessage {
     type: 'replicate-extension-config';
@@ -27,15 +30,12 @@ export interface ConfigMessage {
 export interface KeepAliveRequestMessage {
     type: 'are-u-alive';
 }
-export interface RequestClientReloadMessage {
-    type: 'request-client-reload';
-}
 export type ExtensionToClientMessage =
-    | ElementCreationRequestMessage
-    | RemovalRequestMessage
+    | EffectEnableRequestMessage
+    | EffectReloadRequestMessage
+    | EffectStopRequestMessage
     | ConfigMessage
-    | KeepAliveRequestMessage
-    | RequestClientReloadMessage;
+    | KeepAliveRequestMessage;
 
 //Client -> Extension Message
 export interface ReadyMessage {
@@ -51,11 +51,6 @@ export interface LogMessage {
     message: string;
     data?: unknown;
 }
-export interface EventMessage {
-    type: 'event';
-    name: string;
-    data: unknown;
-}
 export interface WindowIdChangeMessage {
     type: 'change-window-id';
     newWindowId: string;
@@ -64,10 +59,22 @@ export type ClientToExtensionMessage =
     | ReadyMessage
     | KeepAliveResponseMessage
     | LogMessage
-    | EventMessage
     | WindowIdChangeMessage;
 
 //Configuration Types
+
+/**
+ * Represents the configuration for a specific effect.
+ * 
+ * This object is gathered from the `${effectName}.json` file
+ * located in the `build/Effects/${effectName}` directory
+ * during runtime.
+ */
+export interface EffectConfiguration {
+    enableBasedOn?: string;
+    enabledByDefault?: boolean;
+}
+
 /**
  * General primitives that are 'expected' to be found within
  * the VSBloom extension configuration
@@ -143,6 +150,32 @@ export function GetExtensionConfigValue<T extends VSBloomConfigValue>(
     }
 
     return current as T;
+}
+
+/**
+ * Checks if a configuration value exists at the given path,
+ * navigates a dot-separated path (e.g., "cursorTrail.enabled") and returns
+ * true if the value exists, false otherwise
+ * 
+ * @param config The configuration object to access
+ * @param path Dot-separated path to the value (e.g., "cursorTrail.enabled")
+ * @returns True if the value exists, false otherwise
+ */
+export function DoesExtensionConfigValueExist(config: VSBloomClientConfig, path: string): boolean {
+    const parts = path.split('.');
+    let current: VSBloomConfigValue | VSBloomConfigObject = config;
+
+    for (const part of parts) {
+        if (current === null || current === undefined) {
+            return false;
+        }
+        if (typeof current !== 'object') {
+            return false;
+        }
+        current = (current as VSBloomConfigObject)[part];
+    }
+
+    return current !== null && current !== undefined;
 }
 
 /**

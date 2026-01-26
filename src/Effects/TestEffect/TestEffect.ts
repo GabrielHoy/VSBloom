@@ -3,16 +3,18 @@ import type { VSBloomConfigUpdateEvent } from '../../ExtensionBridge/ElectronGlo
 
 window.__VSBLOOM__.SendLog('info', 'Test effect script loaded!');
 
-
 const cleanupTasks: (() => void)[] = [];
 
 export function Start() {
     const vsbloom = window.__VSBLOOM__;
 
+    vsbloom.SendLog('debug', 'Test effect script Start() called');
+
     const config = vsbloom.extensionConfig;
     if (config) {
         vsbloom.SendLog('debug', 'Current config:', config);
     }
+    console.log("Test Effect: Start function called, console.log test");
 
     const container = document.createElement('div');
     cleanupTasks.push(() => { container.remove(); });
@@ -25,7 +27,7 @@ export function Start() {
         const { current, previous } = event.detail;
         vsbloom.SendLog('info', 'Configuration updated!', { 
             current, 
-            hadPrevious: !!previous 
+            hadPrevious: !!previous
         });
     }
 

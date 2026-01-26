@@ -245,17 +245,6 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
     //initialize the effect manager and do the same for it
     const manager = GetEffectManager(context);
     context.subscriptions.push(manager);
-    console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Effect manager singleton initialized`);
-
-    currentBridge.OnClientReady((windowId) => {
-      console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}A new client is ready, replicating current effects to it: ${windowId}`);
-      //replicate all currently loaded effects to the new client
-      manager.ReplicateCurrentEffectsToClient(windowId);
-    });
-
-    console.log(`${ConstructVSBloomLogPrefix("Extension", "debug")}Loading debug effects for now`);
-    //TODO: load effects based on configuration
-    await manager.LoadDebugTestEffects();
 
     console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Extension activation flow completed!`);
   } catch (error) {

@@ -22,7 +22,6 @@ import {
     PING_INTERVAL_MS,
     WS_CLOSE_CODES,
     LogMessage,
-    EventMessage,
     WindowIdChangeMessage,
 } from './Bridge';
 
@@ -89,13 +88,6 @@ export class VSBloomBridgeServer implements vscode.Disposable {
             try {
                 this.wss = new WebSocketServer({
                     port: VSBLOOM_BRIDGE_PORT,
-                    //before you inquire about the security implications behind
-                    //what this WebSocketServer facilitates, keep in mind that
-                    //the server is hardcoded to only listen on localhost and
-                    //unless someone goes out of their way to try and setup a
-                    //reverse proxy or something i believe there's negligible-to-no
-                    //practical risk left in terms of exploiting the endpoints
-                    //exposed by the bridge server
                     host: '127.0.0.1',
                 });
 
@@ -346,10 +338,6 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                 this.ReplicateLogMessageFromClient(message);
                 break;
 
-            case 'event':
-                this.HandleClientEvent(message);
-                break;
-
             case 'change-window-id':
                 this.ChangeClientWindowId(ws, message.newWindowId);
                 break;
@@ -435,14 +423,6 @@ export class VSBloomBridgeServer implements vscode.Disposable {
         } else {
             console.log(`${ConstructVSBloomLogPrefix("Client", message.level)}${message.message}`);
         }
-    }
-
-    /**
-     * Handles receiving event messages from clients
-     */
-    private HandleClientEvent(message: EventMessage): void {
-        throw new Error('Not implemented yet');
-        // TODO: figure out what to actually do with these events
     }
 
     /**

@@ -1,0 +1,4 @@
+{
+    "enableBasedOn": "testEffect.enabled",
+    "enabledByDefault": true
+}

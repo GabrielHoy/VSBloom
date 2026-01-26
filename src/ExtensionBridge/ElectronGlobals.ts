@@ -4,8 +4,8 @@
  * Shared type definitions for the VSBloom runtime environment.
  * This file serves as a single source of truth for the global API
  * available in the Electron Renderer after the VSBloom client has
- * been injected, and is utilized by both the Client.ts and effect scripts.
- * 
+ * been patched in, and is utilized by both  Client.ts and effect
+ * scripts.
  */
 
 /// <reference lib="dom" />
@@ -17,7 +17,7 @@ import type {
     VSBloomConfigObject,
 } from './Bridge';
 
-// Re-export config types for convenience
+//we'll re-export config types for convenience(laziness) here
 export type {
     VSBloomClientConfig,
     VSBloomConfigValue,
@@ -33,7 +33,6 @@ export type {
  * 
  * It's unexpected for effects to ever need to directly interact with the client,
  * but for robustness and type safety, we define it here regardless.
- * 
  */
 export interface IVSBloomClient {
     /**
@@ -136,44 +135,45 @@ export interface VSBloomEffectModule {
  * Internal tracking for a loaded effect module.
  */
 export interface LoadedVSBloomEffectHandle {
+    /**
+     * The exports from the loaded effect module.
+     */
     module: VSBloomEffectModule;
-    blobUrl: string;
-    loadedAt: Date;
-}
-
-//
-// polyfill for the "Trusted Types" API
-// lib.dom.d.ts doesn't include the Trusted Types API, so we define it here
-// for proper typechecker support when working with CSP-compliant dynamic script injection
-//
-
-export interface TrustedHTML {
-    toString(): string;
-}
-
-export interface TrustedScript {
-    toString(): string;
-}
-
-export interface TrustedTypePolicyOptions {
-    createHTML?: (input: string, ...args: unknown[]) => string;
-    createScript?: (input: string, ...args: unknown[]) => string;
-    createScriptURL?: (input: string, ...args: unknown[]) => string;
-}
-
-export interface TrustedTypePolicy {
-    readonly name: string;
-    createHTML(input: string, ...args: unknown[]): TrustedHTML;
-    createScript(input: string, ...args: unknown[]): TrustedScript;
-    createScriptURL?(input: string, ...args: unknown[]): unknown;
-}
-
-export interface TrustedTypePolicyFactory {
-    createPolicy(policyName: string, policyOptions?: TrustedTypePolicyOptions): TrustedTypePolicy;
-    isHTML?(value: unknown): value is TrustedHTML;
-    emptyHTML?(): TrustedHTML;
-    getAttributeType?(tagName: string, attribute: string, elementNs?: string, attrNs?: string): string | null;
-    getPropertyType?(tagName: string, property: string, elementNs?: string): string | null;
+    /**
+     * The blob URL of the effect's JS code.
+     */
+    jsBlobUrl?: string;
+    /**
+     * A hash of the effect's JS source code.
+     * Useful for differentiating between different versions
+     * of the same effect code, in the rare circumstance
+     * that an effect is re-loaded with the same name but
+     * different code(e.g. during development).
+     */
+    jsSrcHash?: string;
+    /**
+     * The ID of the CSS `<style>` element that was created
+     * for the effect in the DOM.
+     */
+    cssElementId?: string;
+    /**
+     * A hash of the effect's CSS source code.
+     * Useful for differentiating between different versions
+     * of the same effect code, in the rare circumstance
+     * that an effect is re-loaded with the same name but
+     * different code(e.g. during development).
+     */
+    cssSrcHash?: string;
+    /**
+     * A timestamp indicating when the effect was loaded.
+     */
+    moduleLoadedAt: Date;
+    /**
+     * An indicator of whether the effect is currently enabled
+     * on the client or not (*assuming that the effect's module
+     * actually behaves like it should upon Start/Stop calls!*)
+     */
+    isEnabled: boolean;
 }
 
 //
@@ -260,4 +260,39 @@ export function getEffectConfigValue<T extends VSBloomConfigValue>(
     }
 
     return current as T;
+}
+
+//
+// polyfill for the "Trusted Types" API
+// lib.dom.d.ts doesn't include the Trusted Types API, so we define it here
+// for proper typechecker support when working with CSP-compliant dynamic script injection
+//
+
+export interface TrustedHTML {
+    toString(): string;
+}
+
+export interface TrustedScript {
+    toString(): string;
+}
+
+export interface TrustedTypePolicyOptions {
+    createHTML?: (input: string, ...args: unknown[]) => string;
+    createScript?: (input: string, ...args: unknown[]) => string;
+    createScriptURL?: (input: string, ...args: unknown[]) => string;
+}
+
+export interface TrustedTypePolicy {
+    readonly name: string;
+    createHTML(input: string, ...args: unknown[]): TrustedHTML;
+    createScript(input: string, ...args: unknown[]): TrustedScript;
+    createScriptURL?(input: string, ...args: unknown[]): unknown;
+}
+
+export interface TrustedTypePolicyFactory {
+    createPolicy(policyName: string, policyOptions?: TrustedTypePolicyOptions): TrustedTypePolicy;
+    isHTML?(value: unknown): value is TrustedHTML;
+    emptyHTML?(): TrustedHTML;
+    getAttributeType?(tagName: string, attribute: string, elementNs?: string, attrNs?: string): string | null;
+    getPropertyType?(tagName: string, property: string, elementNs?: string): string | null;
 }

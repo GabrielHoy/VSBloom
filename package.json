@@ -58,8 +58,8 @@
 						"order": 2,
 						"type": "boolean",
 						"default": true,
-						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer.",
-						"markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer."
+						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
+						"markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. **Changes to this setting will take effect upon the next client patch!**"
 					}
 				}
 			},
@@ -101,6 +101,18 @@
 						"markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
 					}
 				}
+			},
+			{
+				"title": "Test Zone",
+				"order": 4,
+				"properties": {
+					"vsbloom.testEffect.enabled": {
+						"order": 7,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable a test effect"
+					}
+				}
 			}
 		]
 	},
@@ -122,6 +134,7 @@
 		"@vscode/sudo-prompt": "^9.3.2",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
+		"chokidar": "^5.0.0",
 		"csso": "^5.0.5",
 		"esbuild": "^0.27.2",
 		"eslint": "^9.39.2",

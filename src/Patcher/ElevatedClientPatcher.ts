@@ -1,3 +1,20 @@
+/**
+ * VSBloom Elevated Client Patcher
+ * 
+ * This script is used to perform the patching process for the
+ * VSBloom extension in a elevated context, this is necessary
+ * in circumstances where the VSC installation is installed
+ * system-wide instead of being installed to a user directory.
+ * 
+ * It's unfortunate that this script is necessary since the
+ * idea of patching the client will likely come off to end
+ * users as a little 'sketchy' to begin with and asking for
+ * process elevation won't help that much; but if we want
+ * to make the modifications we need to in order to bridge
+ * the extension host and the electron renderer - there is
+ * no other way I have currently found for doing so besides
+ * this.
+ */
 import * as ClientPatcher from "./ClientPatcher";
 
 const args = process.argv.slice(2);

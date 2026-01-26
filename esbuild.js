@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const chokidar = require("chokidar");
 const fs = require("fs");
 const path = require("path");
 
@@ -12,9 +13,34 @@ const buildBanners = {
   "build/VSBloom.js": `/* VS: Bloom Main Extension */\n//\n//Hi!\n//\n//This is the main VSBloom extension that runs within the VSCode Extension Host.\n//It's responsible for bootstrapping and managing the VSBloom Bridge Server,\n//as well as applying patches to VSCode's Electron Client to facilitate various effects and modifications\n//to the VSCode application UI.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the extension-side of VSBloom does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "build/VSBloomClient.js": `/* VS: Bloom Client */\n//\n//Hi!\n//\n//This is the client at the core of VSBloom.\n//It's a small runtime that attempts to establish a WebSocket connection to the *actual* VSBloom extension\n//running inside of VSCode, creating a critical bridge between the VSCode Extension Host and the Electron Client which renders your VSCode application.\n//Once that connection is made, the client can send and receive data from the extension in real-time\n//to facilitate dynamically loading and unloading 'effects' and modifications to\n//the VSCode application UI, as well as maintaining real-time synchronization of things like user settings and preferences.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the client does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "build/ElevatedClientPatcher.js": `/* VS: Bloom Elevated Client Patcher */\n//\n//Hi!\n//\n//This is a NodeJS script designed to be run within an environment\n//that has elevated privileges, it is exclusively used in the event\n//of VSBloom running into permission errors when patching the Electron Client,\n//this normally doesn't require any elevation, but if VSCode is\n//installed system-wide instead of being local to the user, its files will\n//be located within a system directory(varying based on OS and 'flavor' of VSCode) which unfortunately\n//requires process elevation to be able to perform file read/write operations inside of.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the elevated patcher does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
-  "__EFFECTS__": `/* VS: Bloom Effect */\n/* Effect Name: "${effectNameSentinel}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
-  "__EFFECT_CSS__": `/* VS: Bloom Effect CSS */\n/* Effect Name: "${effectNameSentinel}" */\n/* */\n/* Hi! */\n/* */\n/* This is the source code for a componentized effect's corresponding CSS stylesheet that the VSBloom Extension dynamically */\n/* loads and unloads within the Electron Renderer's DOM. */\n/* */\n/* This won't be very readable within a production environment, */\n/* so if you'd like to know more about what effects or this CSS does, how effects work, or how to make your own */\n/* you should visit the GitHub repo associated with VSBloom */\n/* for an un-minified version of this file! */\n/* */\n/* Build Date: ${new Date().toISOString()} */\n/* */`,
+  "__EFFECT_JS__": `/* VS: Bloom Effect JS */\n/* Effect Name: "${effectNameSentinel}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+  "__EFFECT_CSS__": `/* VS: Bloom Effect CSS */\n/* Effect Name: "${effectNameSentinel}" */\n/*-*/\n/* Hi! */\n/*-*/\n/* This is the source code for a componentized effect's corresponding CSS stylesheet that the VSBloom Extension dynamically */\n/* loads and unloads within the Electron Renderer's DOM. */\n/*-*/\n/* This won't be very readable within a production environment, */\n/* so if you'd like to know more about what effects or this CSS does, how effects work, or how to make your own */\n/* you should visit the GitHub repo associated with VSBloom */\n/* for an un-minified version of this file! */\n/*-*/\n/* Build Date: ${new Date().toISOString()} */\n/*-*/`,
 };
+
+async function ProcessEffectCSSFileChangedDuringWatch(cssFilePath) {
+  const fileName = path.basename(cssFilePath);
+  const effectDir = path.dirname(cssFilePath);
+  const effectName = path.basename(effectDir);
+  const outputDir = path.join(effectsBuildDir, effectName);
+  const outputFilePath = path.join(outputDir, fileName);
+
+  //make sure the output directory exists
+  await fs.promises.mkdir(outputDir, { recursive: true });
+
+  try {
+    const csso = await import("csso");
+    const fileContents = await fs.promises.readFile(cssFilePath, "utf8");
+    const minified = await csso.minify(fileContents, { comments: false });
+    const fileBanner = production 
+      ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, effectName) + "\n" 
+      : "";
+    
+    await fs.promises.writeFile(outputFilePath, fileBanner + minified.css, "utf8");
+    console.log(`[watch]   CSS updated: ${fileName} -> ${outputFilePath}`);
+  } catch (err) {
+    console.error(`[watch]   Failed to process CSS "${cssFilePath}":`, err.message);
+  }
+}
 
 const esbuildEffectPlugin = {
   name: "esbuild-effect",
@@ -53,7 +79,7 @@ const esbuildEffectPlugin = {
               const minified = await csso.minify(fileContents, {
                 comments: false
               });
-              const fileBanner = production ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, effectDirectory) + "\n" : "";
+              const fileBanner = production ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, path.basename(effectDirectory)) + "\n" : "";
               fs.promises.writeFile(outputFilePath, fileBanner + minified.css, "utf8");
               console.log(`[build]     - minified CSS file "${file}" and copied to "${outputFilePath}"`);
             }));
@@ -107,9 +133,9 @@ const esbuildOneLinerPlugin = {
         });
 
         if (terserResult.code) {
-          const fileBannerIdentifier = outFile.includes(effectsBuildDir) ? "__EFFECTS__" : outFile;
+          const fileBannerIdentifier = outFile.includes(effectsBuildDir) ? "__EFFECT_JS__" : outFile;
           let fileBanner = buildBanners[fileBannerIdentifier] ? buildBanners[fileBannerIdentifier] + "\n" : "";
-          if (fileBannerIdentifier === "__EFFECTS__") {
+          if (fileBannerIdentifier === "__EFFECT_JS__") {
             const effectName = outFile.split("/").pop().split(".")[0];
             fileBanner = fileBanner.replace(effectNameSentinel, effectName);
           }
@@ -145,6 +171,17 @@ const esbuildErrorReporterPlugin = {
 };
 
 async function main() {
+  if (production) {
+    //if we're building for a production environment,
+    //let's make sure no lingering dev files or build
+    //artifacts are left over from previous dev builds
+    //no need to make this complicated, just delete
+    //the build directory and let esbuild take the wheel
+    if (fs.existsSync("build") && fs.statSync("build").isDirectory()) {
+      await fs.promises.rm("build", { recursive: true, force: true });
+    }
+  }
+
   //main actual extension which runs within the vscode extension host
   const mainCtx = await esbuild.context({
     bundle: true,
@@ -231,7 +268,7 @@ async function main() {
       entryPoints: [`src/Effects/${effectDir}/${effectDir}.ts`],
       outfile: `build/Effects/${effectDir}/${effectDir}.js`,
       banner: production ? {
-        js: buildBanners["__EFFECTS__"].replace(effectNameSentinel, effectDir)
+        js: buildBanners["__EFFECT_JS__"].replace(effectNameSentinel, effectDir)
       } : undefined
     }));
   }
@@ -244,6 +281,35 @@ async function main() {
     console.log("[watch] build finished");
 
     await Promise.all(allContexts.map(ctx => ctx.watch()));
+    console.log("[watch] setting up effect CSS file watchers...");
+    //watch for non-ts file changes within effect directories
+    const effectAssetWatcher = chokidar.watch(
+      effectDirectories.map(dir => path.join(effectsDir, dir, `${dir}.css`)),
+      {
+        ignoreInitial: true,  //file already copied in first build from the esbuild side
+        awaitWriteFinish: {   //wait for file write to complete
+          stabilityThreshold: 100,
+          pollInterval: 50,
+        },
+      }
+    );
+  
+    effectAssetWatcher
+      .on("add", ProcessEffectCSSFileChangedDuringWatch)
+      .on("change", ProcessEffectCSSFileChangedDuringWatch)
+      .on("unlink", async (filePath) => {
+        //css file got deleted, remove the corresponding built file
+        const effectDir = path.dirname(filePath);
+        const effectName = path.basename(effectDir);
+        const fileName = path.basename(filePath);
+        const outputFilePath = path.join(effectsBuildDir, effectName, fileName);
+        
+        if (fs.existsSync(outputFilePath)) {
+          await fs.promises.unlink(outputFilePath);
+          console.log(`[watch]   Removed deleted CSS file: ${outputFilePath}`);
+        }
+      });
+
     console.log("[watch] watching for changes...");
   } else {
     console.log("[build] build started");

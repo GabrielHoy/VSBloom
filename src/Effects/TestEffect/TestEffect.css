@@ -1,0 +1,17 @@
+/* test css styling for effect */
+
+@keyframes test-effect-animation {
+    0% {
+        filter: hue-rotate(90deg) contrast(1.5);
+    }
+    50% {
+        filter: hue-rotate(0) contrast(1);
+    }
+    100% {
+        filter: hue-rotate(45deg) contrast(1.5);
+    }
+}
+
+body > div.windows {
+    animation: test-effect-animation 1s ease-out forwards;
+}

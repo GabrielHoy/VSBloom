@@ -28,27 +28,52 @@ import type {
     VSBloomGlobals,
     TrustedTypePolicy,
     IVSBloomClient,
+    LoadedVSBloomEffectHandle,
+    VSBloomEffectModule
 } from './ElectronGlobals';
 import './ElectronGlobals'; //side-effect import for global augmentation
 
 //these constants are replaced during the esbuild
-//compilation with their 'actual' values
+//compilation step with their 'actual' values
 declare const __VSBLOOM_PORT__: number;
 declare const __VSBLOOM_AUTH__: string;
 
-//actual client class object
+//stub module interface for effect modules
+//that do not have actual JS code associated
+//with them
+const stubEffectModule: VSBloomEffectModule = {
+    Start: () => {},
+    Stop: () => {},
+};
+
+//actual client class implementation
 class VSBloomClient implements IVSBloomClient {
     private ws: WebSocket | null = null;
     private reconnectAttempts = 0;
     private reconnectTimeout: number | null = null;
-    private managedElements: Map<string, HTMLElement> = new Map();
+    /**
+     * Storage for HTML elements that have been created by the client.
+     * 
+     * Used for quick and easy tracking and removal of elements by their ID's.
+     * 
+     * Elements created by the client(at least by the top level VSBloomClient
+     * instance) will always have an associated ID, and thus this map stores
+     * those elements based upon elementID -> HTMLElement pairs.
+     */
+    private htmlElements: Map<string, HTMLElement> = new Map();
+    /**
+     * Storage for loaded effect 'handles', which correspond to
+     * bundles of JS/CSS code(or one of the two) that have been
+     * loaded into the client's DOM.
+     * 
+     * These 'effect handles' also facilitate easy tracking and
+     * removal of the effect's actual HTMLElement objects within
+     * the client's DOM.
+     */
+    private effectHandles: Map<string, LoadedVSBloomEffectHandle> = new Map();
     private trustedPolicy: TrustedTypePolicy | null = null;
 
-    //public properties exposed via IVSBloomClient interface
     private _windowId: string = "WINDOW_ID_NOT_ASSIGNED_FOR_SOME_REASON";
-    public get windowId(): string {
-        return this._windowId;
-    }
     private set windowId(value: string) {
         const isInitialWindowIdAssignment = this._windowId === "WINDOW_ID_NOT_ASSIGNED_FOR_SOME_REASON";
         const lastWindowId = this._windowId;
@@ -64,6 +89,15 @@ class VSBloomClient implements IVSBloomClient {
     }
     private _isConnected = false;
 
+    //public properties exposed via IVSBloomClient interface
+    /**
+     * A unique identifier for this client/window instance.
+     * 
+     * This is **NOT** a static identifier!
+     */
+    public get windowId(): string {
+        return this._windowId;
+    }
     /**
      * Whether the client is currently connected to the extension's WebSocket server.
      */
@@ -118,16 +152,18 @@ class VSBloomClient implements IVSBloomClient {
     }
 
     /**
-     * Generates a new unique id for this client instance
-     * and, if this isn't the first time assigning a window
-     * ID, sends a notification over to the extension so that
-     * it can update our window ID on the server too
+     * Generates a new unique id for this client, we
+     * could absolutely just use a proper GUID etc but
+     * this is a little easier on the eyes during
+     * development to identify which client corresponds
+     * to which window
      */
     private GetNewWindowId(): string {
         const timestamp = Date.now().toString(36).slice(-3);
         const random = Math.random().toString(36).slice(-3);
-        
-        return `#${random}${timestamp}: "${window.document.title}"`;
+        const currentWindowTitle = window.document.title.length > 0 ? window.document.title : "Untitled";
+
+        return `#${random}${timestamp}/${currentWindowTitle}`;
     }
 
     /**
@@ -162,23 +198,34 @@ class VSBloomClient implements IVSBloomClient {
                 }
             };
 
-            this.ws.onclose = (event) => {
+            this.ws.onclose = (event: CloseEvent) => {
                 this._isConnected = false;
                 this.ws = null;
 
                 if (event.code === 4001) {
-                    // Unauthorized - don't reconnect
+                    //unauthorized? don't reconnect, we won't have much luck with that
+                    //likely an outdated patch in relation to the extension version or similar
                     this.Log('error', 'Connection rejected: Invalid auth token(?) - A re-patch is likely required');
                     return;
                 }
 
-                this.Log('warn', `Disconnected from VSBloom Host (code: ${event.code})`, { reason: event.reason });
+                if (event.code === 1006 && event.reason === "" && event.target instanceof WebSocket && event.target.readyState === WebSocket.CLOSED) {
+                    this.Log('debug', "WebSocket connection closed with an internal error code, server likely still initializing or not available", { event });
+                    this.ScheduleReconnect();
+                    return;
+                }
+
+                this.Log('warn', `Disconnected from VSBloom Host (code: ${event.code})`, { event });
                 this.ScheduleReconnect();
             };
 
-            this.ws.onerror = (error) => {
+            this.ws.onerror = (error: Event) => {
                 // WebSocket errors are typically followed by close events
                 // Log but don't take action here
+                if (error.target instanceof WebSocket && error.target.readyState === WebSocket.CLOSED) {
+                    this.Log('debug', "An error occurred with the WebSocket while it was closed, this likely means that the server is either still initializing or is generally not available", { error });
+                    return;
+                }
                 this.Log('error', 'An internal error occurred with the WebSocket', { error: error });
             };
         } catch (error) {
@@ -227,22 +274,15 @@ class VSBloomClient implements IVSBloomClient {
      */
     private HandleMessageFromExtension(message: ExtensionToClientMessage): void {
         switch (message.type) {
-            case 'create-element':
-                if (message.nodeType === 'js') {
-                    this.CreateJSElement(message.id, message.payload);
-                } else if (message.nodeType === 'css') {
-                    this.CreateCSSElement(message.id, message.payload);
-                } else {
-                    this.Log('warn', 'Received a request to replicate content of an unknown type', { request: message });
-                }
+            case 'enable-effect':
+                this.EnableClientEffect(message.effectName, message.js, message.css);
                 break;
-
-            case 'remove-element':
-                if (message.id) {
-                    this.RemoveManagedElement(message.id);
-                }
+            case 'reload-effect':
+                this.ReloadClientEffect(message.effectName);
                 break;
-
+            case 'stop-effect':
+                this.StopClientEffect(message.effectName);
+                break;
             case 'replicate-extension-config':
                 if (message.settings) {
                     this.UpdateClientConfig(message.settings);
@@ -253,11 +293,6 @@ class VSBloomClient implements IVSBloomClient {
                 this.FireServer({ type: 'i-am-alive' });
                 break;
 
-            case 'request-client-reload':
-                this.Log('info', 'Reload requested by extension');
-                window.location.reload();
-                break;
-
             default:
                 this.Log('warn', 'Received an unknown message type from the extension', { message: message });
                 break;
@@ -265,86 +300,236 @@ class VSBloomClient implements IVSBloomClient {
     }
 
     /**
+     * Enables an effect module by name, loading it if necessary
+     * and calling the module's Start method.
+     */
+    private async EnableClientEffect(effectName: string, js?: string, css?: string): Promise<void> {
+        const effectHandle: LoadedVSBloomEffectHandle = await this.GetLoadedEffectHandle(effectName, js, css);
+
+        if (effectHandle.isEnabled) {
+            this.Log('error', `Effect "${effectName}" is already enabled during call to EnableClientEffect(?) - this is indicative of a synchronization issue`);
+            return;
+        }
+
+        try {
+            this.Log('debug', `Calling Start method on effect module "${effectName}"`, { effectHandle });
+            if (css) {
+                effectHandle.cssElementId = this.CreateCSSElement(`effect-css-${effectName}`, css);
+            }
+            const startResult = effectHandle.module.Start();
+            if (startResult instanceof Promise) {
+                await startResult;
+            }
+            effectHandle.isEnabled = true;
+            this.Log('debug', `Effect "${effectName}" started successfully`, { effectHandle, startResult });
+        } catch (error) {
+            this.Log('error', `An error occurred while attempting to start effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+        }
+    }
+
+    /**
+     * Gets a handle for a loaded effect module by name,
+     * creating a new one if necessary.
+     */
+    private async GetLoadedEffectHandle(effectName: string, js?: string, css?: string): Promise<LoadedVSBloomEffectHandle> {
+        const jsHash = js ? this.NaiveHash(js) : undefined;
+        const cssHash = css ? this.NaiveHash(css) : undefined;
+
+        const preExistingHandle: LoadedVSBloomEffectHandle | undefined = this.effectHandles.get(effectName);
+        if (preExistingHandle) {
+            //ensure the handle's JS and CSS match the new ones if they're provided
+
+            if (jsHash !== preExistingHandle.jsSrcHash || cssHash !== preExistingHandle.cssSrcHash) {
+                //hash mismatch! a new version of the effect code has been provided
+                //"invalidate" the existing handle and create a new one
+
+                if (preExistingHandle.isEnabled) {
+                    //stop the effect since it's currently enabled
+                    await this.StopClientEffect(effectName);
+                    preExistingHandle.isEnabled = false;
+                }
+
+                if (preExistingHandle.jsBlobUrl) {
+                    //get rid of the blob URL to free up memory
+                    //where we can at least 
+                    URL.revokeObjectURL(preExistingHandle.jsBlobUrl);
+                }
+                if (preExistingHandle.cssElementId) {
+                    this.RemoveCSSElement(preExistingHandle.cssElementId);
+                    preExistingHandle.cssElementId = undefined;
+                }
+
+                this.effectHandles.delete(effectName);
+            } else {
+                //hashes of the source codes match up,
+                //we can just return the existing handle
+                return preExistingHandle;
+            }
+        }
+
+        //at this point either no pre-existing handle was found,
+        //or the source code hashes didn't match up and the last
+        //handle was "invalidated" - in either case, we need to
+        //create a new handle and return it
+        const jsBlob = js ? new Blob([js], { type: 'text/javascript' }) : undefined;
+        const jsBlobUrl = jsBlob ? URL.createObjectURL(jsBlob) : undefined;
+
+        try {
+            const effectModule = jsBlobUrl ? await import(jsBlobUrl) : stubEffectModule;
+
+            //quick validation to ensure the effect module actually implements
+            //the required interface
+            if (typeof effectModule.Start !== 'function' || typeof effectModule.Stop !== 'function') {
+                //failed validation; revoke blob URL if we're not using a stub and complain
+                if (jsBlobUrl) {
+                    URL.revokeObjectURL(jsBlobUrl);
+                }
+                this.Log('error', `Effect module for effect name "${effectName}" does not export the required interface`, { effectModule });
+                throw new Error(`Effect module for effect name "${effectName}" does not export the required interface`);
+            }
+
+            const newEffectHandle: LoadedVSBloomEffectHandle = {
+                module: effectModule,
+                jsBlobUrl,
+                jsSrcHash: jsHash,
+                //CSS elements for these handles are created/removed on the fly as the effect is enabled/disabled
+                cssElementId: undefined,
+                cssSrcHash: cssHash,
+                moduleLoadedAt: new Date(),
+                isEnabled: false,
+            };
+            this.effectHandles.set(effectName, newEffectHandle);
+
+            return newEffectHandle;
+        } catch (error) {
+            if (jsBlobUrl) {
+                URL.revokeObjectURL(jsBlobUrl);
+            }
+
+            this.Log('error', `Failed to load effect module for effect name "${effectName}"`, { error });
+            //re-throw to forward along the error
+            throw error;
+        }
+    }
+
+    /**
+     * Calculates a quick, simple hash of a given string. Non-cryptographic.
+     * Purely used for differentiation purposes, not meant for security, don't worry.
+     * 
+     * Returns hash as a hex string
+     */
+    private NaiveHash(input: string): string {
+        // Simple FNV-1a 32-bit hash (thx chatgpt)
+        let hash = 2166136261;
+        for (let i = 0; i < input.length; i++) {
+            hash ^= input.charCodeAt(i);
+            hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+        // Ensure uint32 wrap and stringify as hex
+        return (hash >>> 0).toString(16).padStart(8, '0');
+    }
+
+    /**
+     * Reloads an effect module by name
+     */
+    private async ReloadClientEffect(effectName: string): Promise<void> {
+        const effectHandle: LoadedVSBloomEffectHandle | undefined = this.effectHandles.get(effectName);
+        if (!effectHandle) {
+            this.Log('error', `ReloadEffectModule called with effect name "${effectName}" but no effect by this name is currently loaded on the client`);
+            return;
+        }
+
+        try {
+            this.Log('debug', `Reloading effect "${effectName}"`, { effectHandle });
+            const stopResult = effectHandle.module.Stop();
+            if (stopResult instanceof Promise) {
+                await stopResult;
+            }
+            effectHandle.isEnabled = false;
+            const startResult = effectHandle.module.Start();
+            if (startResult instanceof Promise) {
+                await startResult;
+            }
+            effectHandle.isEnabled = true;
+            this.Log('debug', `Reloaded effect "${effectName}" successfully`, { effectHandle, stopResult, startResult });
+        } catch (error) {
+            this.Log('error', `An error occurred while attempting to reload effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+        }
+    }
+
+    /**
+     * Stops an effect module by name, calling its Stop method and
+     * cleaning up any CSS Stylesheets corresponding to it
+     */
+    private async StopClientEffect(effectName: string): Promise<void> {
+        const effectHandle: LoadedVSBloomEffectHandle | undefined = this.effectHandles.get(effectName);
+        if (!effectHandle) {
+            this.Log('error', `StopClientEffect called with effect name "${effectName}" but no effect by this name is currently loaded on the client`);
+            return;
+        }
+
+        try {
+            this.Log('debug', `Stopping effect "${effectName}"`, { effectHandle });
+            const stopResult = effectHandle.module.Stop();
+            if (stopResult instanceof Promise) {
+                await stopResult;
+            }
+            effectHandle.isEnabled = false;
+        } catch (error) {
+            this.Log('error', `An error occurred while attempting to stop effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+        } finally {
+            //remove the CSS stylesheet associated with the
+            //effect - if it exists
+            if (effectHandle.cssElementId) {
+                this.RemoveCSSElement(effectHandle.cssElementId);
+                effectHandle.cssElementId = undefined;
+            }
+
+            this.Log('debug', `Effect "${effectName}" stopped`, { effectHandle });
+        }
+    }
+
+    /**
      * Creates a new CSS stylesheet in the document,
      * replacing any existing stylesheet by the same ID
      * 
-     * Stylesheet ID's passed to this function are prefixed
-     * with `vsbloom-` as to avoid conflicts with other
+     * Stylesheet ID's passed to this function are internally
+     * prefixed with `vsbloom-` as to avoid conflicts with other
      * stylesheets that don't directly belong to VSBloom
+     * 
+     * Returns the (non-internal) ID of the created stylesheet
+     * for ease of use
      */
-    private CreateCSSElement(id: string, css: string): void {
+    private CreateCSSElement(id: string, css: string): string {
+        const internalDOMId = `vsbloom-${id}`;
         //if an element with the same ID already exists, remove it
-        this.RemoveManagedElement(id);
+        this.RemoveCSSElement(id);
 
-        const style = document.createElement('style');
-        style.id = `vsbloom-${id}`;
-        style.textContent = css;
-        
+        const newStyleElement: HTMLStyleElement = document.createElement('style');
+        newStyleElement.id = internalDOMId;
+        newStyleElement.textContent = css;
+        this.htmlElements.set(internalDOMId, newStyleElement);
+
         //append the new stylesheet to the end
         //of the <head> tag in an attempt to
         //ensure highest specificity
-        document.head.appendChild(style);
-        this.managedElements.set(id, style);
-
-        this.Log('debug', `Created a new CSS Stylesheet with ID "${id}"`, { length: css.length });
-    }
-
-    /**
-     * Creates a new JS script in the document,
-     * replacing any existing script with a matching ID
-     * 
-     * Script ID's passed to this function are prefixed
-     * with `vsbloom-` as to avoid conflicts with other
-     * scripts that don't directly belong to VSBloom
-     */
-    private CreateJSElement(id: string, code: string): void {
-        //if an element with the same ID already exists, remove it
-        this.RemoveManagedElement(id);
-
-        const script = document.createElement('script');
-        script.id = `vsbloom-${id}`;
+        document.head.appendChild(newStyleElement);
         
-        //wrap the script's source code as to
-        //forward along any issues or errors that may occur
-        //during its execution to the extension
-        const wrappedCode = `
-            try {
-                ${code}
-            } catch (e) {
-                window.__VSBLOOM__.SendLog('error', 'Effect error in "${id}": ' + e.message, { stack: e.stack });
-                console.error('[VSBloom/${id}]', e);
-            }
-        `;
+        this.Log('debug', `Created a new CSS Stylesheet with ID "${internalDOMId}"`, { length: css.length });
 
-        //utilize our trusted types policy to actually write the
-        //script's source code in a way that satisfies the CSP directives,
-        //assuming that the trusted policy is actually available and working
-        if (this.trustedPolicy) {
-            const trustedCode = this.trustedPolicy.createScript(wrappedCode);
-            //TS doesn't like this assignment so we'll cast into unknown
-            script.text = trustedCode as unknown as string;
-        } else {
-            //if there's no trusted types policy available for us to use,
-            //just assign to textContent and ~hope for the best~
-            script.textContent = wrappedCode;
-        }
-
-        //append the new script to the end of the <head> tag
-        document.head.appendChild(script);
-        this.managedElements.set(id, script);
-
-        this.Log('debug', `Created JS element with ID "${id}"`, { length: code.length });
+        return id;
     }
 
     /**
-     * Removes a managed element based upon its ID
+     * Removes a CSS stylesheet based upon its ID
      */
-    private RemoveManagedElement(id: string): void {
-        const element = this.managedElements.get(id);
+    private RemoveCSSElement(id: string): void {
+        const internalDOMId = `vsbloom-${id}`;
+        const element: HTMLElement | undefined = this.htmlElements.get(internalDOMId);
         if (element) {
             element.remove();
-            this.managedElements.delete(id);
-            this.Log('debug', `Removed managed element with ID "${id}"`);
+            this.htmlElements.delete(internalDOMId);
+            this.Log('debug', `Removed CSS Stylesheet with ID "${internalDOMId}"`);
         }
     }
 
