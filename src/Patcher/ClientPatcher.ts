@@ -216,6 +216,27 @@ export async function GetClientLauncherScriptElementString(port: number, authTok
     return `<script>${wrappedScript}</script>`;
 }
 
+/**
+ * Gets the SharedLibraries script content to be patched into workbench.html.
+ * 
+ * This script loads before the VSBloom Client and sets up window.__VSBLOOM__.libs
+ * with shared libraries that effects can use without bundling
+ * their own copies and sending them over a websocket connection
+ * because we're not going to do that
+ */
+export async function GetSharedLibrariesScriptElementString(): Promise<string> {
+    const sharedLibsPath = path.join(__dirname, "VSBloomSharedLibs.js");
+    
+    if (!await Common.IsThereAFileAtPath(sharedLibsPath)) {
+        throw new Error(Common.RaiseError(
+            `VSBloom SharedLibraries script not found at '${sharedLibsPath}'? Please ensure the extension is properly built.`
+        ));
+    }
+    
+    const sharedLibsScript = await fs.promises.readFile(sharedLibsPath, "utf8");
+    return `<script>${sharedLibsScript}</script>`;
+}
+
 function PatchElectronWorkbenchCSPElement(wbHtmlSource: string) {
     //i have come to learn to love regexes the more i have used
     //them, so let's vomit several of them here with no explanation :)
@@ -296,6 +317,9 @@ export async function PatchElectronHTMLFile(
         throw new Error(Common.RaiseError(`Attempt to patch Electron init file at '${initFilePath}', but it was already patched(?)`));
     }
 
+    //get the shared libraries script that loads before the client
+    const sharedLibsPayload = await GetSharedLibrariesScriptElementString();
+
     //get a copy of the actual VSBloom Client script that we'll
     //be patching into the Electron init file
     const clientPayload = await GetClientLauncherScriptElementString(bridgePort, authToken);
@@ -308,9 +332,9 @@ export async function PatchElectronHTMLFile(
     //effects/configs/behaviors into the workbench.html file directly
     patchedFileContents = PatchElectronWorkbenchCSPElement(patchedFileContents);
 
-    //find the <head> tag and patch the VSBloom client script *directly* after
-    //it is defined so it's the first thing that loads in the client document
-    patchedFileContents = patchedFileContents.replace(/<head([^>]*)>/i, `<head$1>${clientPayload}`);
+    //find the <head> tag and patch appropriate scripts *directly* after it is defined
+    //order matters here: sharedLibsPayload first, then clientPayload
+    patchedFileContents = patchedFileContents.replace(/<head([^>]*)>/i, `<head$1>${sharedLibsPayload}${clientPayload}`);
 
     //TODO: Maybe patch a small CSS payload too in order to facilitate a nice
     //TODO: animation or loading sequence etc while the VSBloom client & server

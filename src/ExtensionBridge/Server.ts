@@ -108,7 +108,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                         // This is not necessarily an error - another window may be hosting
                         resolve();
                     } else {
-                        this.Log('error', `Bridge server error: ${error.message}`);
+                        this.Log('error', `Bridge server error`, { error });
                         reject(error);
                     }
                 });
@@ -177,8 +177,13 @@ export class VSBloomBridgeServer implements vscode.Disposable {
      * Broadcast a message to all connected clients.
      */
     public FireAllClients(message: ExtensionToClientMessage): void {
+        if (this.clients.size === 0) {
+            this.Log('debug', `FireAllClients called with a message of type "${message.type}" but no clients connected; dropping message`, { message });
+            return;
+        }
+
         if (message.type !== 'are-u-alive') {
-            this.Log('debug', `Broadcasting message: ${JSON.stringify(message)}`);
+            this.Log('debug', `Broadcasting message`, { message });
         }
         const data = JSON.stringify(message);
         for (const client of this.clients.values()) {
@@ -451,9 +456,9 @@ export class VSBloomBridgeServer implements vscode.Disposable {
     /**
      * Logs a server message to the output channel.
      */
-    private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string): void {
-        this.outputChannel.appendLine(`[Server/${level.toUpperCase()}]: ${message}`);
-        console.log(`${ConstructVSBloomLogPrefix("Server", level)}${message}`);
+    private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
+        this.outputChannel.appendLine(`[Server/${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`);
+        console.log(`${ConstructVSBloomLogPrefix("Server", level)}${message}`, data ?? '');
         // console.log(`[${colorful.cyanBright(`VSBloom`)}/${colorful.cyanBright("Server")}]: ${message}`);
     }
 

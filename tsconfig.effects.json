@@ -13,6 +13,12 @@
 		"skipLibCheck": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
-		"types": []
+		"types": [],
+		"baseUrl": ".",
+		"paths": {
+			"bloom": ["src/EffectLib/BloomDOM"],
+			"gsap": ["node_modules/gsap"],
+			"motion": ["node_modules/motion"]
+		}
 	}
 }

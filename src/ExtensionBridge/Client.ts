@@ -226,10 +226,10 @@ class VSBloomClient implements IVSBloomClient {
                     this.Log('debug', "An error occurred with the WebSocket while it was closed, this likely means that the server is either still initializing or is generally not available", { error });
                     return;
                 }
-                this.Log('error', 'An internal error occurred with the WebSocket', { error: error });
+                this.Log('error', 'An internal error occurred with the WebSocket', { error });
             };
         } catch (error) {
-            this.Log('error', 'Failed to create WebSocket connection', { error: String(error) });
+            this.Log('error', 'Failed to create WebSocket connection', { error });
             this.ScheduleReconnect();
         }
     }
@@ -690,19 +690,26 @@ class VSBloomClient implements IVSBloomClient {
      * over to the VSC extension as they see fit
      */
     private SetupGlobalAPI(): void {
+        //preserve libs that were set up by SharedLibraries.ts
+        //since it loads and runs before this client script and
+        //sets up a skeleton __VSBLOOM__ object which only
+        //contains the `libs` field
+        const existingLibs = (window as any).__VSBLOOM__?.libs;
+
         window.__VSBLOOM__ = {
+            libs: existingLibs,
             extensionConfig: undefined,
             client: this,
 
-            SendLog: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => {
-                this.FireServer({
-                    type: 'replicate-log',
-                    level,
-                    message,
-                    data: data ? JSON.stringify(data) : undefined,
-                });
+            Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => {
+                this.Log(level, message, data);
             },
         };
+
+        //quick sanity check to see if libs weren't loaded for ~some~ reason
+        if (!existingLibs) {
+            this.Log('error', 'SharedLibraries seem to not have loaded before the VSBloom Client - Many things are probably going to break very shortly');
+        }
     }
 
 }
@@ -712,7 +719,7 @@ class VSBloomClient implements IVSBloomClient {
 //so that it's executed asap once the script is loaded
 (function InitializeVSBloomClient() {
     //if we're already initialized for <some> reason, just return
-    if (window.__VSBLOOM__) {
+    if (window.__VSBLOOM__ && window.__VSBLOOM__.client) {
         console.warn('[VSBloom] Client already initialized, skipping');
         return;
     }

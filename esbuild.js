@@ -15,6 +15,7 @@ const buildBanners = {
   "build/ElevatedClientPatcher.js": `/* VS: Bloom Elevated Client Patcher */\n//\n//Hi!\n//\n//This is a NodeJS script designed to be run within an environment\n//that has elevated privileges, it is exclusively used in the event\n//of VSBloom running into permission errors when patching the Electron Client,\n//this normally doesn't require any elevation, but if VSCode is\n//installed system-wide instead of being local to the user, its files will\n//be located within a system directory(varying based on OS and 'flavor' of VSCode) which unfortunately\n//requires process elevation to be able to perform file read/write operations inside of.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the elevated patcher does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "__EFFECT_JS__": `/* VS: Bloom Effect JS */\n/* Effect Name: "${effectNameSentinel}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "__EFFECT_CSS__": `/* VS: Bloom Effect CSS */\n/* Effect Name: "${effectNameSentinel}" */\n/*-*/\n/* Hi! */\n/*-*/\n/* This is the source code for a componentized effect's corresponding CSS stylesheet that the VSBloom Extension dynamically */\n/* loads and unloads within the Electron Renderer's DOM. */\n/*-*/\n/* This won't be very readable within a production environment, */\n/* so if you'd like to know more about what effects or this CSS does, how effects work, or how to make your own */\n/* you should visit the GitHub repo associated with VSBloom */\n/* for an un-minified version of this file! */\n/*-*/\n/* Build Date: ${new Date().toISOString()} */\n/*-*/`,
+  "build/VSBloomSharedLibs.js": `/* VS: Bloom Shared Library Provider */\n//\n//Hi!\n//\n//This file serves to bundle shared libraries that are used across\n//multiple effects in VSBloom; it's meant to be loaded before the VSBloom Client to ensure that\n//libraries are available immediately when effects load.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what libraries we preload, how these shared imports are loaded, or how to add your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
 };
 
 async function ProcessEffectCSSFileChangedDuringWatch(cssFilePath) {
@@ -83,6 +84,22 @@ const esbuildEffectPlugin = {
               fs.promises.writeFile(outputFilePath, fileBanner + minified.css, "utf8");
               console.log(`[build]     - minified CSS file "${file}" and copied to "${outputFilePath}"`);
             }));
+          } else if (file.endsWith(".json")) {
+            //json files(apart from tsconfig.json) are simply copied over
+            //as-is, though without any 'pretty print' json formatting
+            //if we're in a production environment - after all we're not
+            //really trying to obfuscate or hide anything with them; moreso
+            //just micro-optimizing to reduce file size
+            const outputFilePath = path.join(path.dirname(outFile), file);
+            const jsonFileContents = fs.readFileSync(path.join(effectDirectory, file), "utf8");
+            try {
+              const json = JSON.parse(jsonFileContents);
+              const whitespaceRemoved = JSON.stringify(json, null, production ? 0 : 4);
+              fs.writeFileSync(outputFilePath, whitespaceRemoved, "utf8");
+              console.log(`[build]     - copied JSON file "${file}" to "${outputFilePath}"`);
+            } catch (err) {
+              console.error(`[build] Failed to shorten and copy JSON file "${file}":`, err.message);
+            }
           } else {
             //unknown exact file type, just copy it over
             const outputFilePath = path.join(path.dirname(outFile), file);
@@ -237,6 +254,28 @@ async function main() {
     } : undefined
   });
 
+  //shared libraries runtime - bundles libs used by effects to avoid
+  //us compiling and sending huge libraries to the client over a
+  //websocket connection for every effect that uses them
+  //this gets patched into workbench.html before the client
+  //so that libraries are available immediately when effects load
+  const sharedLibsCtx = await esbuild.context({
+    bundle: true,
+    format: "iife",
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    target: ["chrome120"], //electron's Chromium version
+    logLevel: "silent",
+    plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined].filter(Boolean),
+    entryPoints: ["src/EffectLib/SharedLibraries.ts"],
+    outfile: "build/VSBloomSharedLibs.js",
+    banner: production ? {
+      js: buildBanners["build/VSBloomSharedLibs.js"]
+    } : undefined
+  });
+
   
   //the src/Effects directory contains a variety of effects that can be loaded into the client
   //each effect is a separate directory with .ts files inside of it,
@@ -267,13 +306,21 @@ async function main() {
       plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined, esbuildEffectPlugin].filter(Boolean),
       entryPoints: [`src/Effects/${effectDir}/${effectDir}.ts`],
       outfile: `build/Effects/${effectDir}/${effectDir}.js`,
+      //alias shared library imports to appropriate shim files, so effects can use
+      //clean `import gsap from 'gsap'` syntax while the actual library
+      //is pre-loaded from window.__VSBLOOM__.libs
+      alias: {
+        'gsap': path.resolve('src/EffectLib/Shims/gsap.ts'),
+        'motion': path.resolve('src/EffectLib/Shims/motion.ts'),
+        'bloom': path.resolve('src/EffectLib/Shims/bloom.ts'),
+      },
       banner: production ? {
         js: buildBanners["__EFFECT_JS__"].replace(effectNameSentinel, effectDir)
       } : undefined
     }));
   }
 
-  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, ...effectContexts];
+  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, sharedLibsCtx, ...effectContexts];
 
   if (watch) {
     console.log("[watch] build started");

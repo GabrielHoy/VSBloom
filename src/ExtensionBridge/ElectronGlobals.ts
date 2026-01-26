@@ -56,6 +56,17 @@ export interface IVSBloomClient {
  */
 export interface VSBloomGlobals {
     /**
+     * Shared libraries pre-loaded by the SharedLibraries.ts file.
+     * 
+     * Should be available immediately by the time that
+     * effects - or even the client - loads, since they're
+     * pre-loaded by SharedLibraries.ts(which is patched
+     * into the electron renderer's DOM before the client
+     * even loads)
+     */
+    libs?: VSBloomSharedLibraries;
+
+    /**
      * The current extension configuration, synchronized from
      * the VSBloom extension. May be undefined if not yet received.
      */
@@ -75,10 +86,10 @@ export interface VSBloomGlobals {
      * @param data - Optional additional data to include
      * 
      * @example
-     * window.__VSBLOOM__.SendLog('info', 'Effect initialized!');
-     * window.__VSBLOOM__.SendLog('debug', 'Processing data', { count: 42 });
+     * window.__VSBLOOM__.Log('info', 'Effect initialized!');
+     * window.__VSBLOOM__.Log('debug', 'Processing data', { count: 42 });
      */
-    SendLog(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void;
+    Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void;
 }
 
 /**
@@ -96,6 +107,34 @@ export interface VSBloomConfigUpdateEvent extends CustomEvent<{
     previous: VSBloomClientConfig | undefined;
 }> {
     type: 'vsbloom-config-update';
+}
+
+/**
+ * Shared libraries loaded for use by VSBloom Client Effects.
+ * 
+ * These libraries are bundled once in SharedLibraries.ts, patched into
+ * workbench.html before the client, and made available to effects via
+ * aliases for the libraries redirecting to shim files that re-export
+ * from this object.
+ * 
+ * This is of course quite a hack internally, but it allows for
+ * nice and neat import syntax for effects, i.e. `import gsap from 'gsap'`
+ * without having to bundle the library into the effect's code
+ * or otherwise complicate the process of actually developing effects.
+ */
+export interface VSBloomSharedLibraries {
+    /**
+     * GSAP animation library
+     */
+    gsap: typeof import('gsap').default;
+    /**
+     * Motion animation library
+     */
+    motion: typeof import('motion');
+    /**
+     * BloomDOM - VSBloom's DOM observation & element interaction library
+     */
+    bloom: typeof import('../EffectLib/BloomDOM').default;
 }
 
 /**
