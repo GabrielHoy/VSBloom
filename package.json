@@ -64,28 +64,8 @@
 				}
 			},
 			{
-				"title": "Window Effects",
-				"order": 2,
-				"properties": {
-					"vsbloom.windowFocus.enabled": {
-						"order": 3,
-						"type": "boolean",
-						"default": true,
-						"markdownDescription": "Enable or disable effects surrounding the window becoming unfocused *(and later refocused)*",
-						"description": "Enable or disable window-focus based effects"
-					},
-					"vsbloom.windowFocus.longTermUnfocusThreshold": {
-						"order": 4,
-						"type": "number",
-						"default": 30,
-						"markdownDescription": "A threshold - in **seconds** - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect",
-						"description": "A threshold - in seconds - for how long the window must remain unfocused: After this time the 'short-term' unfocus effect transitions into a heavier 'long-term' effect"
-					}
-				}
-			},
-			{
 				"title": "Code Editor Effects",
-				"order": 3,
+				"order": 2,
 				"properties": {
 					"vsbloom.cursorTrail.enabled": {
 						"order": 5,
@@ -99,18 +79,6 @@
 						"default": 750,
 						"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
 						"markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
-					}
-				}
-			},
-			{
-				"title": "Test Zone",
-				"order": 4,
-				"properties": {
-					"vsbloom.testEffect.enabled": {
-						"order": 7,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable a test effect"
 					}
 				}
 			}

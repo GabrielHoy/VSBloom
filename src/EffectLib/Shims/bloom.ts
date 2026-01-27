@@ -3,7 +3,7 @@
  * 
  * Allows effects to use clean import syntax:
  *   import bloom from 'bloom';
- *   import { waitFor, watchContainer } from 'bloom';
+ *   import { waitFor, watch } from 'bloom';
  * 
  * The actual library is pre-loaded via SharedLibraries.ts and exposed
  * on window.__VSBLOOM__.libs.bloom
@@ -25,14 +25,13 @@ export default bloom;
 export const {
     waitFor,
     waitForOptional,
-    watchElements,
-    watchContainer
+    watch
 } = bloom;
 
 // Re-export types from the actual module
 export type {
+    CleanupFn,
     WaitForOptions,
     WatchHandle,
-    ElementWatcherConfig,
-    ContainerWatcherConfig,
+    WatchConfig,
 } from '../BloomDOM';

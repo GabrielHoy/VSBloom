@@ -213,7 +213,7 @@ export async function GetClientLauncherScriptElementString(port: number, authTok
         ${clientScript}
     `;
     
-    return `<script>${wrappedScript}</script>`;
+    return `<script id="vsbloom-client">${wrappedScript}</script>`;
 }
 
 /**
@@ -234,7 +234,7 @@ export async function GetSharedLibrariesScriptElementString(): Promise<string> {
     }
     
     const sharedLibsScript = await fs.promises.readFile(sharedLibsPath, "utf8");
-    return `<script>${sharedLibsScript}</script>`;
+    return `<script id="vsbloom-shared-effect-libraries">${sharedLibsScript}</script>`;
 }
 
 function PatchElectronWorkbenchCSPElement(wbHtmlSource: string) {
