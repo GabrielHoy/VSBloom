@@ -80,7 +80,7 @@ class VSBloomClient implements IVSBloomClient {
 
         this._windowId = value;
         if (!isInitialWindowIdAssignment) {
-            this.Log('info', `My window ID is being changed from "${lastWindowId}" -> "${this._windowId}"`);
+            this.Log('debug', `My window ID is being changed from "${lastWindowId}" -> "${this._windowId}"`);
             this.FireServer({
                 type: 'change-window-id',
                 newWindowId: this._windowId
@@ -323,6 +323,7 @@ class VSBloomClient implements IVSBloomClient {
             effectHandle.isEnabled = true;
             this.Log('debug', `Effect "${effectName}" started successfully`, { effectHandle, startResult });
         } catch (error) {
+            console.error(error);
             this.Log('error', `An error occurred while attempting to start effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { errorMessage: String(error) });
         }
     }
@@ -708,7 +709,7 @@ class VSBloomClient implements IVSBloomClient {
 
         //quick sanity check to see if libs weren't loaded for ~some~ reason
         if (!existingLibs) {
-            this.Log('error', 'SharedLibraries seem to not have loaded before the VSBloom Client - Many things are probably going to break very shortly');
+            this.Log('error', '\n====================================================\nSharedLibraries seem to not have loaded before the VSBloom Client.\nMany things are probably going to break very shortly.\n====================================================');
         }
     }
 

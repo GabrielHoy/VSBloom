@@ -1,10 +1,21 @@
-/* Ensure trails don't interfere with editor interaction */
-.vsbloom-cursor-trail-effect {
+/* need to ensure trails don't interfere with editor interaction */
+.vsbloom-disconnected-cursor-trail-effect {
     pointer-events: none !important;
 }
 
-/* Style the actual container in <body> that holds the trails */
-.vsbloom-cursor-trail-effect-container {
+/* this is the actual container in <body> that holds the trails */
+.vsbloom-disconnected-cursor-trail-effect-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+/* this will be an SVG with a path in it */
+.vsbloom-cursor-trail-solid {
     position: fixed;
     top: 0;
     left: 0;

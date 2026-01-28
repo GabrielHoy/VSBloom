@@ -18,7 +18,8 @@
 		"paths": {
 			"bloom": ["src/EffectLib/Bloom/Bloom"],
 			"gsap": ["node_modules/gsap"],
-			"motion": ["node_modules/motion"]
+			"motion": ["node_modules/motion"],
+			"pixi.js": ["node_modules/pixi.js"]
 		}
 	}
 }

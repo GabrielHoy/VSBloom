@@ -135,6 +135,10 @@ export interface VSBloomSharedLibraries {
      * Bloom - VSBloom's All-Purpose Utility Container
      */
     bloom: typeof import('../EffectLib/Bloom/Bloom').default;
+    /**
+     * Pixi.JS 2D graphics library
+     */
+    pixi: typeof import('pixi.js');
 }
 
 /**

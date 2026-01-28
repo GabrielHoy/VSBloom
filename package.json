@@ -59,7 +59,7 @@
 						"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
 					},
 					"vsbloom.patcher.suppressCorruptionWarning": {
-						"order": 2,
+						"order": 20,
 						"type": "boolean",
 						"default": true,
 						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
@@ -72,13 +72,24 @@
 				"order": 2,
 				"properties": {
 					"vsbloom.cursorTrail.enabled": {
-						"order": 5,
+						"order": 30,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the cursor trail effect"
 					},
+					"vsbloom.cursorTrail.type": {
+						"order": 40,
+						"type": "string",
+						"enum": [
+							"solid",
+							"disconnected"
+						],
+						"default": "solid",
+						"description": "The type of cursor trail to use. 'solid' will create a continuous connected trail that follows your editor cursor around, while 'disconnected' will create 'trail segments' that follow your cursor around in a disconnected manner, collapsing into themselves as they expire.",
+						"markdownDescription": "The type of cursor trail to use. **solid** will create a continuous connected trail that follows your editor cursor around, while **disconnected** will create *trail segments* that follow your cursor around in a disconnected manner, collapsing into themselves as they expire."
+					},
 					"vsbloom.cursorTrail.duration": {
-						"order": 6,
+						"order": 50,
 						"type": "number",
 						"default": 750,
 						"description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
@@ -111,6 +122,7 @@
 		"esbuild": "^0.27.2",
 		"eslint": "^9.39.2",
 		"motion": "^12.29.2",
+		"pixi.js": "^8.15.0",
 		"terser": "^5.46.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.52.0"

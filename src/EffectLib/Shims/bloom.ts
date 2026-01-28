@@ -16,4 +16,5 @@ export default bloom;
 export const {
     dom,
     configs,
+    janitors,
 } = bloom;

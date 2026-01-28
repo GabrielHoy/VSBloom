@@ -396,7 +396,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
                     windowId: newWindowId,
                     connectedAt: new Date(),
                 });
-                this.Log('info', `A client is changing their window ID from "${windowId}" to "${newWindowId}"`);
+                this.Log('debug', `A client is changing their window ID from "${windowId}" to "${newWindowId}"`);
                 break;
             }
         }

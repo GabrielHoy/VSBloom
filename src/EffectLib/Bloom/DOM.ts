@@ -205,8 +205,9 @@ export function watch(selector: string, config: WatchConfig = {}): WatchHandle {
     }
 
     // State
-    const processed = new WeakSet<Element>();
-    const cleanups = new WeakMap<Element, CleanupFn>();
+    // Using Set instead of WeakSet so we can iterate on stop() to run all cleanups
+    const processed = new Set<Element>();
+    const cleanups = new Map<Element, CleanupFn>();
     let active = true;
 
     /**
@@ -257,6 +258,10 @@ export function watch(selector: string, config: WatchConfig = {}): WatchHandle {
             }
             cleanups.delete(el);
         }
+
+        // Remove from processed set to allow re-processing if element is re-added
+        // and to prevent memory leaks from holding element references
+        processed.delete(el);
 
         // Call onRemoved callback
         if (onRemoved) {
@@ -325,6 +330,24 @@ export function watch(selector: string, config: WatchConfig = {}): WatchHandle {
             }
             active = false;
             unsubscribe();
+
+            // Run cleanup functions for all elements that are still being tracked
+            // This ensures resources (like MutationObservers) are properly released
+            // even if the elements haven't been removed from the DOM yet
+            for (const el of processed) {
+                const cleanup = cleanups.get(el);
+                if (cleanup) {
+                    try {
+                        cleanup();
+                    } catch (e) {
+                        console.error('[BloomDOM] cleanup error on stop:', e);
+                    }
+                }
+            }
+            
+            // Clear all tracking state
+            cleanups.clear();
+            processed.clear();
         },
         get active() {
             return active;
