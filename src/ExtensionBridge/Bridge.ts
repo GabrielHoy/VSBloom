@@ -152,6 +152,30 @@ export function GetExtensionConfigValue<T extends VSBloomConfigValue>(
     return current as T;
 }
 
+export function GetEffectConfigValueNoDefault<T extends VSBloomConfigValue>(
+    config: VSBloomClientConfig,
+    path: string
+): T | undefined {
+    const parts = path.split('.');
+    let current: VSBloomConfigValue | VSBloomConfigObject = config;
+
+    for (const part of parts) {
+        if (current === null || current === undefined) {
+            return undefined;
+        }
+        if (typeof current !== 'object') {
+            return undefined;
+        }
+        current = (current as VSBloomConfigObject)[part];
+    }
+
+    if (current === null || current === undefined) {
+        return undefined;
+    }
+
+    return current as T;
+}
+
 /**
  * Checks if a configuration value exists at the given path,
  * navigates a dot-separated path (e.g., "cursorTrail.enabled") and returns

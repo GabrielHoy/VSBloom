@@ -323,7 +323,7 @@ class VSBloomClient implements IVSBloomClient {
             effectHandle.isEnabled = true;
             this.Log('debug', `Effect "${effectName}" started successfully`, { effectHandle, startResult });
         } catch (error) {
-            this.Log('error', `An error occurred while attempting to start effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { error });
+            this.Log('error', `An error occurred while attempting to start effect "${effectName}": This may lead to undefined behavior or memory leaks!`, { errorMessage: String(error) });
         }
     }
 

@@ -260,15 +260,23 @@ export class EffectManager implements vscode.Disposable {
     /**
      * Reload any and all currently loaded effects.
      */
-    public ReloadAllEffects(): void {
-        this.Log('info', `Reloading all ${this.loadedEffects.size} effect${this.loadedEffects.size === 1 ? '' : 's'}`);
+    public async ReloadAllEffects(): Promise<void> {
+        this.Log('info', `Reloading all ${this.loadedEffects.size} effect(s)`);
 
-        for (const [effectName, effect] of this.loadedEffects.entries()) {
-            this.server.FireAllClients({
-                type: 'reload-effect',
-                effectName: effectName
-            });
+        const reloadingEffects: string[] = [];
+        for (const effectName of this.loadedEffects.keys()) {
+            reloadingEffects.push(effectName);
         }
+        this.UnloadAllEffects();
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                for (const effectName of reloadingEffects) {
+                    this.LoadEffect(effectName);
+                }
+                resolve();
+            }, 100); //100ms should be enough time for the effects to stop for now until i can do this a better way
+        });
     }
 
     /**

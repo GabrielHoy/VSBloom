@@ -1,17 +1,15 @@
-/* test css styling for effect */
-
-@keyframes test-effect-animation {
-    0% {
-        filter: hue-rotate(90deg) contrast(1.5);
-    }
-    50% {
-        filter: hue-rotate(0) contrast(1);
-    }
-    100% {
-        filter: hue-rotate(45deg) contrast(1.5);
-    }
+/* Ensure trails don't interfere with editor interaction */
+.vsbloom-cursor-trail-effect {
+    pointer-events: none !important;
 }
 
-body > div.windows {
-    animation: test-effect-animation 1s ease-out forwards;
+/* Style the actual container in <body> that holds the trails */
+.vsbloom-cursor-trail-effect-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10000;
 }

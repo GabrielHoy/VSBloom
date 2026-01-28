@@ -132,9 +132,9 @@ export interface VSBloomSharedLibraries {
      */
     motion: typeof import('motion');
     /**
-     * BloomDOM - VSBloom's DOM observation & element interaction library
+     * Bloom - VSBloom's All-Purpose Utility Container
      */
-    bloom: typeof import('../EffectLib/BloomDOM').default;
+    bloom: typeof import('../EffectLib/Bloom/Bloom').default;
 }
 
 /**
@@ -271,7 +271,7 @@ declare global {
  *     const duration = getEffectConfigValue(config, 'cursorTrail.duration', 750);
  * }
  */
-export function getEffectConfigValue<T extends VSBloomConfigValue>(
+export function GetEffectConfigValue<T extends VSBloomConfigValue>(
     config: VSBloomClientConfig,
     path: string,
     defaultValue: T

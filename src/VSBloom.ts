@@ -352,6 +352,20 @@ export function activate(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(retryPatchCmdDisp);
 
+    //hookup the reload effects command now that we have a reference to the effect manager
+    //TODO: look for a way to invoke this command from a different window if
+    //TODO: the user invokes the command from a different window than the
+    //TODO: one that hosts the effect manager
+    const reloadEffectsCmdDisp = vscode.commands.registerCommand("vsbloom.reloadEffects", async () => {
+      if (!effectManager) {
+        vscode.window.showErrorMessage("[VSBloom]: Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
+        return;
+      }
+      await effectManager.ReloadAllEffects();
+      vscode.window.showInformationMessage(`[VSBloom]: Reloaded ${effectManager.GetLoadedEffects().length} effect(s)!`);
+    });
+    context.subscriptions.push(reloadEffectsCmdDisp);
+
 
     //ensure that we're working with a patched client
     //before we continue with the rest of the extension

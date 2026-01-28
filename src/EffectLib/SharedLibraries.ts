@@ -13,14 +13,17 @@
 /// <reference lib="dom" />
 
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as motion from 'motion';
-import bloom from './BloomDOM';
+import bloom from './Bloom/Bloom';
 
 //Initialize __VSBLOOM__ if not present,
 //this should always be the case since SharedLibs loads before Client.
 if (!(window as any).__VSBLOOM__) {
     (window as any).__VSBLOOM__ = {};
 }
+
+gsap.registerPlugin(ScrollTrigger);
 
 //Expose libraries on the global
 (window as any).__VSBLOOM__.libs = {

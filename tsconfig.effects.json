@@ -16,7 +16,7 @@
 		"types": [],
 		"baseUrl": ".",
 		"paths": {
-			"bloom": ["src/EffectLib/BloomDOM"],
+			"bloom": ["src/EffectLib/Bloom/Bloom"],
 			"gsap": ["node_modules/gsap"],
 			"motion": ["node_modules/motion"]
 		}

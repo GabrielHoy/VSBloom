@@ -40,6 +40,10 @@
 			{
 				"command": "vsbloom.disable",
 				"title": "VSBloom: Disable and Un-Patch Electron Client"
+			},
+			{
+				"command": "vsbloom.reloadEffects",
+				"title": "VSBloom: Reload All Effects"
 			}
 		],
 		"configuration": [
