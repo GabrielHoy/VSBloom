@@ -90,6 +90,11 @@ const esbuildEffectPlugin = {
             //on what in the world vsbloom is doing
             continue;
           }
+          if (fs.statSync(path.join(effectDirectory, file)).isDirectory()) {
+            //'file' is a directory, dont copy it over since directories
+            //are currently only used for TS file organization in effects
+            continue;
+          }
 
           if (file.endsWith(".css")) {
             const csso = await import("csso");

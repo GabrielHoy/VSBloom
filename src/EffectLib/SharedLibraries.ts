@@ -41,7 +41,7 @@ import {
 } from 'gsap/all';
 
 import * as motion from 'motion';
-import * as pixi from 'pixi.js';
+import * as pixi from './PixiJS/index';
 import bloom from './Bloom/Bloom';
 
 //Initialize __VSBLOOM__ if not present,
