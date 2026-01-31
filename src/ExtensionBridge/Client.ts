@@ -17,19 +17,18 @@ import type {
     ExtensionToClientMessage,
     ClientToExtensionMessage,
 } from './Bridge';
-
+import { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
 import {
     MAX_RECONNECT_DELAY_MS,
     INITIAL_RECONNECT_DELAY_MS,
 } from './Bridge';
-
 import type {
     VSBloomClientConfig,
     VSBloomGlobals,
     TrustedTypePolicy,
     IVSBloomClient,
     LoadedVSBloomEffectHandle,
-    VSBloomEffectModule
+    VSBloomEffectModule,
 } from './ElectronGlobals';
 import './ElectronGlobals'; //side-effect import for global augmentation
 
@@ -42,7 +41,7 @@ declare const __VSBLOOM_AUTH__: string;
 //that do not have actual JS code associated
 //with them
 const stubEffectModule: VSBloomEffectModule = {
-    Start: () => {},
+    Start: (configResolver: EffectConfigResolver) => {},
     Stop: () => {},
 };
 
@@ -316,7 +315,7 @@ class VSBloomClient implements IVSBloomClient {
             if (css) {
                 effectHandle.cssElementId = this.CreateCSSElement(`effect-css-${effectName}`, css);
             }
-            const startResult = effectHandle.module.Start();
+            const startResult = effectHandle.module.Start(new EffectConfigResolver(effectName));
             if (startResult instanceof Promise) {
                 await startResult;
             }
@@ -447,7 +446,7 @@ class VSBloomClient implements IVSBloomClient {
                 await stopResult;
             }
             effectHandle.isEnabled = false;
-            const startResult = effectHandle.module.Start();
+            const startResult = effectHandle.module.Start(new EffectConfigResolver(effectName));
             if (startResult instanceof Promise) {
                 await startResult;
             }

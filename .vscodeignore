@@ -1,10 +1,11 @@
 .vscode
+.cursor
 .vscode-test.mjs
 node_modules
 src/
 tsconfig.json
 tsconfig.effects.json
-esbuild.js
 eslint.config.mjs
 .gitignore
 docs/
+bundler/

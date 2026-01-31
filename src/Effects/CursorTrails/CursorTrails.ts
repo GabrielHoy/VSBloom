@@ -7,6 +7,8 @@
 
 import bloom from 'bloom';
 import type { Janitor } from 'src/EffectLib/Bloom/Janitors';
+import type { EffectConfigResolver } from 'src/EffectLib/Bloom/Configs';
+
 import * as DisconnectedTrails from './TrailTypes/Disconnected';
 import * as SolidTrails from './TrailTypes/Solid';
 
@@ -20,12 +22,12 @@ const effectConfig = {
 
 let janitor: Janitor;
 
-export async function Start() {
+export async function Start(configResolver: EffectConfigResolver) {
     janitor = new bloom.janitors.Janitor();
 
     //register an effect config mutator for the trail duration
     const trailDurationMutator = await bloom.configs.RegisterEffectConfigMutator({
-        pathResolver: 'cursorTrail.duration',
+        pathResolver: configResolver.GetPropertyPath('duration'),
         internalValueMutator: (changedValue) => {
             effectConfig.trailDuration = (changedValue as number) / 1000;
         }
@@ -37,7 +39,7 @@ export async function Start() {
     //whenever the trail type is changed
     //(see TrailTypes folder for the actual trail implementations)
     const trailTypeMutator = await bloom.configs.RegisterEffectConfigMutator({
-        pathResolver: 'cursorTrail.type',
+        pathResolver: configResolver.GetPropertyPath('type'),
         internalValueMutator: (newTrailType) => {
             vsbloom.Log('debug', 'Trail Type Changed to: ' + (newTrailType as ValidTrailType));
             janitor.GetNamedCleanupTask('active-trail-type')?.CleanNow();

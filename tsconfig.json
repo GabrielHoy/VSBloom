@@ -3,6 +3,7 @@
 		"module": "Node16",
 		"target": "ES2022",
 		"outDir": "build",
+		"allowJs": true,
 		"lib": [
 			"ES2022"
 		],
@@ -15,8 +16,9 @@
 		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
 	},
 	"include": [
-		"src/**/*.ts"
-	],
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/Utils/PackageConfigurations.mjs"],
 	"exclude": [
 		"src/Effects/*/"
 	]

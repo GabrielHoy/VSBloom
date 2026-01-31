@@ -16,12 +16,14 @@ import type {
     VSBloomConfigValue,
     VSBloomConfigObject,
 } from './Bridge';
+import type { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
 
 //we'll re-export config types for convenience(laziness) here
 export type {
     VSBloomClientConfig,
     VSBloomConfigValue,
     VSBloomConfigObject,
+    EffectConfigResolver,
 };
 
 /**
@@ -154,7 +156,7 @@ export interface VSBloomEffectModule {
      * performed.
      * 
      */
-    Start: () => void | Promise<void>;
+    Start: (configResolver: EffectConfigResolver) => void | Promise<void>;
 
     /**
      * Called as the effect is unloaded and removed from the

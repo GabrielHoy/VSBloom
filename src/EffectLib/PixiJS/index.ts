@@ -15,12 +15,17 @@ import * as pixi from 'pixi.js';
 //Import the modified unsafe-eval polyfill (doesn't auto-call selfInstall)
 //this will add selfInstall and other polyfill functions to window.PIXI - an empty object at this point
 import './unsafe-eval.js';
+import * as MathExtrasJsLoader from './math-extras.js';
 
 //save the selfInstall function before we overwrite window.PIXI
 const unsafeEvalPolyfill = (window as any).PIXI;
 
 //now set window.PIXI to the real PixiJS module
 (window as any).PIXI = pixi;
+
+//add math-extras to window.PIXI
+Object.assign((window as any).PIXI, MathExtrasJsLoader.default({}));
+(window as any).PIXI.mathExtras = MathExtrasJsLoader;
 
 //call selfInstall() to apply the polyfill patches to the real PixiJS classes
 if (unsafeEvalPolyfill?.selfInstall) {

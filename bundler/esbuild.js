@@ -3,8 +3,10 @@ const chokidar = require("chokidar");
 const fs = require("fs");
 const path = require("path");
 
-const production = process.argv.includes("--production");
-const watch = process.argv.includes("--watch");
+const packageBuilder = require("./PackageBuilder");
+
+const isProductionBuild = process.argv.includes("--production");
+const shouldWatch = process.argv.includes("--watch");
 
 const effectsDir = "src/Effects";
 const effectsBuildDir = "build/Effects";
@@ -32,7 +34,7 @@ async function ProcessEffectCSSFileChangedDuringWatch(cssFilePath) {
     const csso = await import("csso");
     const fileContents = await fs.promises.readFile(cssFilePath, "utf8");
     const minified = await csso.minify(fileContents, { comments: false });
-    const fileBanner = production 
+    const fileBanner = isProductionBuild 
       ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, effectName) + "\n" 
       : "";
     
@@ -104,7 +106,7 @@ const esbuildEffectPlugin = {
               const minified = await csso.minify(fileContents, {
                 comments: false
               });
-              const fileBanner = production ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, path.basename(effectDirectory)) + "\n" : "";
+              const fileBanner = isProductionBuild ? buildBanners["__EFFECT_CSS__"].replace(effectNameSentinel, path.basename(effectDirectory)) + "\n" : "";
               fs.promises.writeFile(outputFilePath, fileBanner + minified.css, "utf8");
               console.log(`[build]     - minified CSS file "${file}" and copied to "${outputFilePath}"`);
             }));
@@ -118,7 +120,7 @@ const esbuildEffectPlugin = {
             const jsonFileContents = fs.readFileSync(path.join(effectDirectory, file), "utf8");
             try {
               const json = JSON.parse(jsonFileContents);
-              const whitespaceRemoved = JSON.stringify(json, null, production ? 0 : 4);
+              const whitespaceRemoved = JSON.stringify(json, null, isProductionBuild ? 0 : 4);
               fs.writeFileSync(outputFilePath, whitespaceRemoved, "utf8");
               console.log(`[build]     - copied JSON file "${file}" to "${outputFilePath}"`);
             } catch (err) {
@@ -212,7 +214,7 @@ const esbuildErrorReporterPlugin = {
 };
 
 async function main() {
-  if (production) {
+  if (isProductionBuild) {
     //if we're building for a production environment,
     //let's make sure no lingering dev files or build
     //artifacts are left over from previous dev builds
@@ -223,20 +225,26 @@ async function main() {
     }
   }
 
+  //First things first, the package.json file for VSBloom is
+  //dynamically generated based on effect configurations exposed
+  //so let's rebuild it now
+  packageBuilder.RebuildPackageFile();
+  console.log("[build] package.json file rebuilt");
+
   //main actual extension which runs within the vscode extension host
   const mainCtx = await esbuild.context({
     bundle: true,
     format: "cjs",
-    minify: production,
-    sourcemap: production ? false : "inline",
-    sourcesContent: !production,
+    minify: isProductionBuild,
+    sourcemap: isProductionBuild ? false : "inline",
+    sourcesContent: !isProductionBuild,
     platform: "node",
     logLevel: "silent",
-    plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined].filter(Boolean),
+    plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined].filter(Boolean),
     entryPoints: ["src/VSBloom.ts"],
     outfile: "build/VSBloom.js",
     external: ["vscode"],
-    banner: production ? {
+    banner: isProductionBuild ? {
       js: buildBanners["build/VSBloom.js"]
     } : undefined
   });
@@ -245,16 +253,16 @@ async function main() {
   const elevatedPatcherCtx = await esbuild.context({
     bundle: true,
     format: "cjs",
-    minify: production,
-    sourcemap: production ? false : "inline",
-    sourcesContent: !production,
+    minify: isProductionBuild,
+    sourcemap: isProductionBuild ? false : "inline",
+    sourcesContent: !isProductionBuild,
     platform: "node",
     logLevel: "silent",
-    plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined].filter(Boolean),
+    plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined].filter(Boolean),
     entryPoints: ["src/Patcher/ElevatedClientPatcher.ts"],
     outfile: "build/ElevatedClientPatcher.js",
     external: [],
-    banner: production ? {
+    banner: isProductionBuild ? {
       js: buildBanners["build/ElevatedClientPatcher.js"]
     } : undefined
   });
@@ -264,16 +272,16 @@ async function main() {
     bundle: true,
     format: "iife",
     globalName: "VSBloomClient",
-    minify: production,
-    sourcemap: production ? false : "inline",
-    sourcesContent: !production,
+    minify: isProductionBuild,
+    sourcemap: isProductionBuild ? false : "inline",
+    sourcesContent: !isProductionBuild,
     platform: "browser",
     target: ["chrome120"], //electron's Chromium version
     logLevel: "silent",
-    plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined].filter(Boolean),
+    plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined].filter(Boolean),
     entryPoints: ["src/ExtensionBridge/Client.ts"],
     outfile: "build/VSBloomClient.js",
-    banner: production ? {
+    banner: isProductionBuild ? {
       js: buildBanners["build/VSBloomClient.js"]
     } : undefined
   });
@@ -286,16 +294,16 @@ async function main() {
   const sharedLibsCtx = await esbuild.context({
     bundle: true,
     format: "iife",
-    minify: production,
-    sourcemap: production ? false : "inline",
-    sourcesContent: !production,
+    minify: isProductionBuild,
+    sourcemap: isProductionBuild ? false : "inline",
+    sourcesContent: !isProductionBuild,
     platform: "browser",
     target: ["chrome120"], //electron's Chromium version
     logLevel: "silent",
-    plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined].filter(Boolean),
+    plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined].filter(Boolean),
     entryPoints: ["src/EffectLib/SharedLibraries.ts"],
     outfile: "build/VSBloomSharedLibs.js",
-    banner: production ? {
+    banner: isProductionBuild ? {
       js: buildBanners["build/VSBloomSharedLibs.js"]
     } : undefined
   });
@@ -321,13 +329,13 @@ async function main() {
     effectContexts.push(await esbuild.context({
       bundle: true,
       format: "esm",
-      minify: production,
-      sourcemap: production ? false : "inline",
-      sourcesContent: !production,
+      minify: isProductionBuild,
+      sourcemap: isProductionBuild ? false : "inline",
+      sourcesContent: !isProductionBuild,
       platform: "browser",
       target: ["chrome120"], //electron's Chromium version
       logLevel: "silent",
-      plugins: [esbuildErrorReporterPlugin, production ? esbuildOneLinerPlugin : undefined, esbuildEffectPlugin, esbuildGSAPShimmerPlugin].filter(Boolean),
+      plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined, esbuildEffectPlugin, esbuildGSAPShimmerPlugin].filter(Boolean),
       entryPoints: [`src/Effects/${effectDir}/${effectDir}.ts`],
       outfile: `build/Effects/${effectDir}/${effectDir}.js`,
       //alias shared library imports to appropriate shim files, so effects can use
@@ -338,7 +346,7 @@ async function main() {
         'bloom': path.resolve('src/EffectLib/Shims/bloom.ts'),
         'pixi.js': path.resolve('src/EffectLib/Shims/pixi.js.ts'),
       },
-      banner: production ? {
+      banner: isProductionBuild ? {
         js: buildBanners["__EFFECT_JS__"].replace(effectNameSentinel, effectDir)
       } : undefined
     }));
@@ -346,7 +354,7 @@ async function main() {
 
   const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, sharedLibsCtx, ...effectContexts];
 
-  if (watch) {
+  if (shouldWatch) {
     console.log("[watch] build started");
     await Promise.all(allContexts.map(ctx => ctx.rebuild()));
     console.log("[watch] build finished");
@@ -364,7 +372,7 @@ async function main() {
         },
       }
     );
-  
+
     effectAssetWatcher
       .on("add", ProcessEffectCSSFileChangedDuringWatch)
       .on("change", ProcessEffectCSSFileChangedDuringWatch)

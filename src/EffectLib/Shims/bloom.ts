@@ -17,4 +17,6 @@ export const {
     dom,
     configs,
     janitors,
+    geometry,
+    vfx,
 } = bloom;

@@ -19,7 +19,7 @@
 /// <reference lib="dom" />
 
 import type { VSBloomClientConfig, VSBloomConfigValue } from "../../ExtensionBridge/Bridge";
-import { GetEffectConfigValueNoDefault } from "../../ExtensionBridge/Bridge";
+import { GetEffectConfigValueNoDefault, GetInternalPathForEffectProperty } from "../../ExtensionBridge/Bridge";
 import type { VSBloomConfigUpdateEvent } from "../../ExtensionBridge/ElectronGlobals";
 
 export type ExtensionConfigPathResolver = string | ((config: VSBloomClientConfig) => VSBloomConfigValue);
@@ -125,4 +125,16 @@ export function UnregisterEffectConfigMutator(mutator: EffectConfigMutator): voi
     //remove the mutator from the internalEffectConfigMutators map
     internalEffectConfigMutators.delete(mutator);
     OnInternalEffectConfigMutatorSetUpdate();
+}
+
+export class EffectConfigResolver {
+    private effectDisplayName: string;
+    
+    constructor(effectDisplayName: string) {
+        this.effectDisplayName = effectDisplayName;
+    }
+
+    public GetPropertyPath(propName: string): string {
+        return GetInternalPathForEffectProperty(this.effectDisplayName, propName);
+    }
 }

@@ -12,7 +12,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import type { EffectConfiguration } from '../ExtensionBridge/Bridge';
-import { DoesExtensionConfigValueExist, GetExtensionConfigValue } from '../ExtensionBridge/Bridge';
+import { DoesExtensionConfigValueExist, GetExtensionConfigValue, GetInternalPathForEffectProperty } from '../ExtensionBridge/Bridge';
 import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
 
 interface LoadedEffect {
@@ -68,41 +68,30 @@ export class EffectManager implements vscode.Disposable {
         //Handle loading/unloading of effects based on
         //current config values
         for (const [effectName, effectConfig] of this.staticEffectConfigs.entries()) {
-            if (effectConfig.enableBasedOn) {
-                //this effect is enabled based on a specific config value
-                if (!DoesExtensionConfigValueExist(currentCfg, effectConfig.enableBasedOn)) {
-                    this.Log('error', `HandleExtensionConfigsChanged - Effect "${effectName}" should be enabled based on a config value that is not present in the current extension configuration: "${effectConfig.enableBasedOn}"`);
-                    continue;
-                }
+            //see if there's an enabled property defined for the effect
+            //?maybe in the future facilitate a config entry in the JSON to specify a different name besides 'enabled' for pretty prop naming?
+            const effectEnabledPropPath = GetInternalPathForEffectProperty(effectConfig.effectDisplayName, "enabled");
+            const hasEnabledProperty = DoesExtensionConfigValueExist(currentCfg, effectEnabledPropPath);
+            if (!hasEnabledProperty) {
+                //no enabled property is defined for this effect,
+                //for now we'll handle this as an 'uh oh' situation
+                //but it by no means has to stay that way
+                this.Log('error', `HandleExtensionConfigsChanged - Effect "${effectName}" does not have an 'enabled' property defined in its configuration: ${JSON.stringify(effectConfig, null, 2)}`);
+                continue;
+            }
 
-                const shouldEffectBeEnabled: boolean = GetExtensionConfigValue(currentCfg, effectConfig.enableBasedOn, false);
-                //if the effect should be enabled, load it if it's not already loaded
-                if (shouldEffectBeEnabled) {
-                    if (!this.IsEffectLoaded(effectName)) {
-                        this.Log('info', `Effect "${effectName}" should be enabled based on config value "${effectConfig.enableBasedOn}", but is not currently loaded: loading it`);
-                        this.LoadEffect(effectName);
-                    }
-                } else {
-                    //effect should be disabled, unload it if it's currently loaded
-                    if (this.IsEffectLoaded(effectName)) {
-                        this.Log('info', `Effect "${effectName}" should be disabled based on config value "${effectConfig.enableBasedOn}", but is currently loaded: unloading it`);
-                        this.UnloadEffect(effectName);
-                    }
+            const shouldEffectBeEnabled: boolean = GetExtensionConfigValue(currentCfg, effectEnabledPropPath, false);
+            //if the effect should be enabled right now, load it if it's not already loaded
+            if (shouldEffectBeEnabled) {
+                if (!this.IsEffectLoaded(effectName)) {
+                    this.Log('info', `Effect "${effectName}" should be enabled based on config value "${effectEnabledPropPath}", but is not currently loaded: loading it`);
+                    this.LoadEffect(effectName);
                 }
             } else {
-                //this effect doesn't have a config value to enable/disable it,
-                //so we'll check if it should be enabled by default
-                if (effectConfig.enabledByDefault === true) {
-                    if (!this.IsEffectLoaded(effectName)) {
-                        this.Log('info', `Effect "${effectName}" should be enabled by default, but is not currently loaded: loading it`);
-                        this.LoadEffect(effectName);
-                    }
-                } else {
-                    //effect should be disabled, unload it if it's currently loaded
-                    if (this.IsEffectLoaded(effectName)) {
-                        this.Log('info', `Effect "${effectName}" should be disabled by default, but is currently loaded: unloading it`);
-                        this.UnloadEffect(effectName);
-                    }
+                //effect should be disabled, unload it if it's currently loaded
+                if (this.IsEffectLoaded(effectName)) {
+                    this.Log('info', `Effect "${effectName}" should be disabled based on config value "${effectEnabledPropPath}", but is currently loaded: unloading it`);
+                    this.UnloadEffect(effectName);
                 }
             }
         }

@@ -63,6 +63,14 @@ export type ClientToExtensionMessage =
 
 //Configuration Types
 
+export interface UserConfigurableEffectProperty {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | [number | string | boolean];
+    enum?: [number | string | boolean];
+    default: number | string | boolean;
+    description?: string;
+    markdownDescription?: string;
+}
 /**
  * Represents the configuration for a specific effect.
  * 
@@ -71,8 +79,9 @@ export type ClientToExtensionMessage =
  * during runtime.
  */
 export interface EffectConfiguration {
-    enableBasedOn?: string;
-    enabledByDefault?: boolean;
+    effectDisplayName: string;
+    disabled?: boolean;
+    configurableProperties: UserConfigurableEffectProperty[];
 }
 
 /**
@@ -216,6 +225,20 @@ export function DoesExtensionConfigValueExist(config: VSBloomClientConfig, path:
 export function DoesConfigObjectHaveSection(config: VSBloomClientConfig, section: string): boolean {
     const value = config[section];
     return value !== null && value !== undefined && typeof value === 'object';
+}
+
+/**
+ * Converts an effect display name (e.g., "Cursor Trails") into an 'internal' name that VSCode plays well with (e.g., "cursorTrails")
+ */
+export function GetInternalName(effectDisplayName: string): string {
+    return effectDisplayName.charAt(0).toLowerCase() + effectDisplayName.slice(1).replace(/ /g, '');
+}
+
+/**
+ * Converts an effect display name (e.g., "Cursor Trails") and a property name (e.g., "type") into an 'internal' path that VSCode plays well with (e.g., "cursorTrails.type")
+ */
+export function GetInternalPathForEffectProperty(effectDisplayName: string, propertyName: string): string {
+    return `${GetInternalName(effectDisplayName)}.${GetInternalName(propertyName)}`;
 }
 
 //Bridge Constants
