@@ -37,7 +37,9 @@ export const {
     ColorMatrixFilter,
     DisplacementFilter,
     NoiseFilter,
-    AbstractRenderer
+    AbstractRenderer,
+    FillGradient,
+    Color
 } = libs.pixi;
 
 //also export the pixi namespace directly

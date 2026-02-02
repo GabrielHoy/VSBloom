@@ -30,13 +30,21 @@ export class Trail {
      */
     public headSpeed: Point = new Point(20,20);
     /**
-     * The amount of rotation necessary to create a new trail segment as the trail moves towards `goal`
+     * The amount of angular change that can be applied to
+     * the trail as it angles itself to move towards `goal`
+     * every frame, in degrees
      */
-    public maxAngleBetweenSegmentsDeg: number = 1;
+    public maxAngleChangePerFrameDeg: number = 5;
     /**
      * Speed at which the tail of the rope should shorten, in pixels/frame
      */
     public tailShorteningSpeed: number = 7.5;
+    /**
+     * Max trail length, in pixels.
+     * 
+     * *-1 unbounds this value.*
+     */
+    public maxTrailLength: number = -1;
     
     
     public get headPosition(): Point {
@@ -115,12 +123,12 @@ export class Trail {
         const curHeadPosToGoal = goalPos.subtract(curHeadPos);
         const headMovementThisFrame = curHeadPosToGoal.normalize().multiply(this.headSpeed.multiplyScalar(this.app.ticker.deltaTime));
 
-        //if we're going to overshoot the goal on either axis,
-        //we'll need to clamp the movement we apply this frame
-        //to instead jump directly to the axis instead of oscillating
-        if (Math.abs(curHeadPosToGoal.x) < Math.abs(headMovementThisFrame.x) || Math.abs(curHeadPosToGoal.y) < Math.abs(headMovementThisFrame.y)) {
-            const xOvershootsGoal = Math.abs(curHeadPosToGoal.x) < Math.abs(headMovementThisFrame.x);
-            const yOvershootsGoal = Math.abs(curHeadPosToGoal.y) < Math.abs(headMovementThisFrame.y);
+        const xOvershootsGoal = Math.abs(curHeadPosToGoal.x) < Math.abs(headMovementThisFrame.x);
+        const yOvershootsGoal = Math.abs(curHeadPosToGoal.y) < Math.abs(headMovementThisFrame.y);
+        if (xOvershootsGoal || yOvershootsGoal) {
+            //if we're going to overshoot the goal on either axis,
+            //we'll need to clamp the movement we apply this frame
+            //to instead jump directly to the axis instead of oscillating
             headMovementThisFrame.set(
                 xOvershootsGoal ? curHeadPosToGoal.x : headMovementThisFrame.x,
                 yOvershootsGoal ? curHeadPosToGoal.y : headMovementThisFrame.y
@@ -132,8 +140,8 @@ export class Trail {
             return false;
         }
 
-        const headSegmentBeginning: Point | undefined = this.trailGeometry[this.trailGeometry.length - 2];
-        if (!headSegmentBeginning) {
+        const currentSegmentBeginning: Point | undefined = this.trailGeometry[this.trailGeometry.length - 2];
+        if (!currentSegmentBeginning) {
             //if there's no "second to last" point in the trailGeometry array,
             //we need to create a new point for the head since the array
             //only has one point in it so far
@@ -143,9 +151,9 @@ export class Trail {
 
         //at this point, we at least know that there's two points
         //in the trailGeometry array and thus a "segment" exists
-        const preUpdateHeadSegmentVec = curHeadPos.subtract(headSegmentBeginning);
+        const currentSegmentVec = curHeadPos.subtract(currentSegmentBeginning);
 
-        if (preUpdateHeadSegmentVec.magnitudeSquared() === 0) {
+        if (currentSegmentVec.magnitudeSquared() === 0) {
             //NaN prevention, somehow the head segment vector
             //is a zero vector, so the 'head segment' is
             //infinitely small...there's pros/cons to creating a new
@@ -159,56 +167,27 @@ export class Trail {
             return true;
         }
 
-        //let's see if there was a 'previous segment' before this 'head' segment
-        const previousSegmentBeginning: Point | undefined = this.trailGeometry[this.trailGeometry.length - 3];
-        if (!previousSegmentBeginning) {
-            //This is the first segment in the trail
-            //due to our geometry array having no orientation
-            //info paired with each point, we can't meaningfully
-            //know how "much" the head segment has moved without
-            //tracking its first ever vector upon creation of
-            //the second point in the array: that would be messy
-            //so for now we'll just create a new point for the head
-            
-            //This will establish a "two segment" trail geometry array
-            //which will allow us to properly calculate angles between
-            //segments going forward
-            this.trailGeometry.push(curHeadPos.add(headMovementThisFrame));
-            return true;
-        }
-        const previousSegmentVec = headSegmentBeginning.subtract(previousSegmentBeginning);
+        //We can now have a meaningful 'angle delta' from the last to new head segment
 
-        //one last check to make before angle geometries:
-        //is the previous segment vector a zero vector?
-        if (previousSegmentVec.magnitudeSquared() === 0) {
-            //Nan prevention, for some reason the previous segment
-            //to the head segment is a zero vector.
-            //Create a new point for the head segment.
-            this.trailGeometry.push(curHeadPos.add(headMovementThisFrame));
-            return true;
-        }
-
-        //We can now have a meaningful 'angle delta' from the last to current segment
-
-        let shouldCreateNewPointForHeadInsteadOfChangingExistingSegment = false;
         //Let's start on solving for constraints
 
-        //Let's make sure moving this head segment's end point won't cause the
+        //Make sure moving this head segment's end point won't cause the
         //angle between these two segments to exceed the `maxAngleBetweenSegments`
         //constraint
-        let postUpdateHeadPos = curHeadPos.add(headMovementThisFrame);
-        let postUpdateHeadSegmentVec = postUpdateHeadPos.subtract(headSegmentBeginning);
 
         //if we were to move the head segment to the post-update position
         //without any constraints here, what would the angle delta be
         //between the previous segment and the head segment?
-        const previousSegmentAngle = GetAngleOfVectorRad(previousSegmentVec);
-        const unconstrainedPostUpdateHeadSegmentAngle = GetAngleOfVectorRad(postUpdateHeadSegmentVec);
-        let unconstrainedSegmentAngleDelta = unconstrainedPostUpdateHeadSegmentAngle - previousSegmentAngle;
-        unconstrainedSegmentAngleDelta = Math.atan2(Math.sin(unconstrainedSegmentAngleDelta), Math.cos(unconstrainedSegmentAngleDelta)); //Wrap the angle delta to be between -PI and PI
+        const currentSegmentAngle = GetAngleOfVectorRad(currentSegmentVec);
+        const unconstrainedNewSegmentAngle = GetAngleOfVectorRad(headMovementThisFrame);
 
-        const maxSegmentAngleDeltaConstraint = Deg2Rad(this.maxAngleBetweenSegmentsDeg);
-        if (Math.abs(unconstrainedSegmentAngleDelta) > maxSegmentAngleDeltaConstraint) {
+        const maxSegmentAngleDeltaConstraint = Deg2Rad(this.maxAngleChangePerFrameDeg);
+        let segmentAngleDelta = unconstrainedNewSegmentAngle - currentSegmentAngle;
+        //need to normalize this delta to -pi/pi since either curSegAnge or unconNewSegAngle
+        //could be on the opposite "side" of the circle causing a large angle delta
+        segmentAngleDelta = Math.atan2(Math.sin(segmentAngleDelta), Math.cos(segmentAngleDelta));
+
+        if (Math.abs(segmentAngleDelta) > maxSegmentAngleDeltaConstraint) {
             //Moving the head the amount we want to would
             //cause the two segment angles to differ too much,
             //we'll clamp the movement that we apply this frame
@@ -218,63 +197,47 @@ export class Trail {
             //This will implicitly result in the head "re-adjusting" its
             //angle visually along an arc during significant changes in goal position
             //compared to the current head position and previous segment directions
-            const rotationFromPreviousSegmentAngleToGetNewSegmentConstrainedAngle = (maxSegmentAngleDeltaConstraint * Math.sign(unconstrainedSegmentAngleDelta));
-            const constrainedRotPercentOfUnconstrained = maxSegmentAngleDeltaConstraint / Math.abs(unconstrainedSegmentAngleDelta);
-            const constrainedHeadSegLength = preUpdateHeadSegmentVec.magnitude() * constrainedRotPercentOfUnconstrained;
+            const clampedAngleDelta = maxSegmentAngleDeltaConstraint * Math.sign(segmentAngleDelta);
+            const constrainedAngleForNewSegment = currentSegmentAngle + clampedAngleDelta;
+            const newSegmentLength = headMovementThisFrame.magnitude();
 
-            const prevSegmentRotatedToMatchConstrainedSegAngle = previousSegmentVec.rotate(rotationFromPreviousSegmentAngleToGetNewSegmentConstrainedAngle);
-            const constrainedPostUpdateHeadSegmentVec = 
-                prevSegmentRotatedToMatchConstrainedSegAngle.normalize()
-                .multiplyScalar(constrainedHeadSegLength);
+            let constrainedNewSegmentVec = new Point(
+                Math.cos(constrainedAngleForNewSegment) * newSegmentLength,
+                Math.sin(constrainedAngleForNewSegment) * newSegmentLength
+            );
+
+            //we now have the constrained new segment vector,
+            //BUT we have one issue: when the head gets very close
+            //to the goal while being constrained by the max angle change,
+            //it could end up not being able to angle itself fast enough
+            //to actually *reach* the goal.
+            //Sometimes this results in
+            //quite a pretty "loop around" as it goes in a circle and
+            //ultimately to the goal...Sometimes that loop-around
+            //never ends and the head just goes in a perfect,
+            //infinite circle around the goal until the goal moves again.
+            const toGoalDir = curHeadPosToGoal.normalize();
+            const progressTowardGoal = constrainedNewSegmentVec.dot(toGoalDir);
+            if (progressTowardGoal > 0) {
+                const movementMag = constrainedNewSegmentVec.magnitude();
+                if (movementMag > progressTowardGoal) {
+                    constrainedNewSegmentVec = constrainedNewSegmentVec.normalize().multiplyScalar(progressTowardGoal);
+                }
+            }
 
             //now that we've derived the constrained post-update head segment vector,
-            //we can update the "to apply" head pos and the head segment vector accordingly
-            headSegmentBeginning.add(constrainedPostUpdateHeadSegmentVec, postUpdateHeadPos);
-            constrainedPostUpdateHeadSegmentVec.copyTo(postUpdateHeadSegmentVec);
-
-            shouldCreateNewPointForHeadInsteadOfChangingExistingSegment = true;
+            //we can update the "movement this frame" vector accordingly
+            constrainedNewSegmentVec.copyTo(headMovementThisFrame);
         }
 
         //Done with constraints!
 
-        if (!shouldCreateNewPointForHeadInsteadOfChangingExistingSegment) {
-            //Nothing so far has actively indicated that we *need* to create
-            //a new point for the head segment here, but the deciding factor
-            //in that ultimately is whether the current segment matches
-            //the proposed new segment in their angles; if they have
-            //different angles then in order to not lose the trail's "curve"
-            //movement we'll have to create a new point for the head segment
-
-            const angleBetweenPreAndPostUpdateHeadSegment = GetAngleBetweenVectorsDeg(preUpdateHeadSegmentVec, postUpdateHeadSegmentVec);
-            if (angleBetweenPreAndPostUpdateHeadSegment > 1) {
-                //If we were to just move the head point and change the head segment,
-                //we'd be actively causing the entire segment to change its angle:
-                //This case requires the creation of a new point for the head segment
-                //instead of simply lengthening the existing segment
-                shouldCreateNewPointForHeadInsteadOfChangingExistingSegment = true;
-            } else {
-                //The angle matches between the pre and post-update head segment,
-                //but we need to make sure the segment length can only increase
-                //and can't decrease due to point count optimization like this;
-                //so if the post-update magnitude is less than the pre-update magnitude,
-                //we'll need to create a new point anyways
-                if (postUpdateHeadSegmentVec.magnitudeSquared() < preUpdateHeadSegmentVec.magnitudeSquared()) {
-                    shouldCreateNewPointForHeadInsteadOfChangingExistingSegment = true;
-                }
-            }
-        }
-
-        if (shouldCreateNewPointForHeadInsteadOfChangingExistingSegment) {
-            //We're creating a new point for the head segment; this just takes the form of
-            //making trailGeometry longer and will establish the beginning of a new segment
-            this.trailGeometry.push(postUpdateHeadPos);
-        } else {
-            //We're modifying the existing segment, which in theory should only happen
-            //when there are no changes angularly to the segment and we're just
-            //lengthening it -- let's just update the last point in the trailGeometry array
-            //so that the "head" segment's end point is the post-update head pos
-            postUpdateHeadPos.copyTo(this.trailGeometry[this.trailGeometry.length - 1]);
-        }
+        //We're creating a new point for the head segment; this just takes the form of
+        //making trailGeometry longer and will establish the beginning of a new segment
+        //TODO: Come back and optimize this so that if the movement this frame lies
+        //TODO: along the same direction as the current segment we lengthen that
+        //TODO: segment instead of creating a new point for the head
+        this.trailGeometry.push(curHeadPos.add(headMovementThisFrame));
 
         //at this point we would have modified the trail geometry array,
         //so we'll return true accordingly to indicate that
@@ -297,6 +260,20 @@ export class Trail {
             //if the current trail length is zero, there's nothing to really shorten
             return false;
         }
+
+        //if the trail length exceeds the max trail length,
+        //we'll need to shorten the trail to match the max trail length
+        //(that is, if this shortening wouldn't do that already!)
+        if (this.maxTrailLength > 0 && (currentTrailLength - distToShorten) > this.maxTrailLength) {
+            //even after our shortening, the trail length would
+            //exceed its maximum - we'll set how much we want
+            //to shorten the trail to the difference between
+            //the current trail length and the max trail length
+            //so that we "eat" the excess trail length instantly
+            //instead of just shortening the trail by the 'shortening speed'
+            distToShorten = currentTrailLength - this.maxTrailLength;
+        }
+
         if (currentTrailLength <= distToShorten) {
             //we're shortening the tail more than the actual trail length,
             //so we can just reduce the trail to 1 point; the head
@@ -353,8 +330,6 @@ export class Trail {
         if (updatedTrailGeometryThisFrame) {
             this.TrailGeometryUpdated();
         }
-
-        console.debug(this.trailGeometry.length);
     }
 
     constructor(app: Application, startingPosition: Point, ropeOptions: Omit<MeshRopeOptions, 'points'>) {

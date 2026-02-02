@@ -15,7 +15,7 @@
 }
 
 /* this will be an SVG with a path in it */
-.vsbloom-cursor-trail-solid {
+.vsbloom-cursor-trail-canvas {
     position: fixed;
     top: 0;
     left: 0;

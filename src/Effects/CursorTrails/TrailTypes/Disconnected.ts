@@ -1,6 +1,7 @@
 import bloom from 'bloom';
 import gsap from 'gsap';
 import type Janitor from 'src/EffectLib/Bloom/Janitors';
+import { effectConfig } from '../TrailConfigTypes';
 
 type Position = { x: number; y: number };
 
@@ -9,9 +10,7 @@ const LINE_THICKNESS_MIN = 2;
 const LINE_THICKNESS_MAX = 4;
 const INITIAL_OPACITY = 0.618;
 
-let configs: {
-    trailDuration: number;
-};
+let configs: typeof effectConfig;
 let janitor: Janitor;
 
 function GetRandom(min: number, max: number): number {
@@ -50,6 +49,7 @@ function CreateCursorTrail(from: Position, to: Position): void {
     const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 180;
     const thickness = GetRandom(LINE_THICKNESS_MIN, LINE_THICKNESS_MAX);
     const brightness = GetRandom(100, 255);
+    const color = configs.color;
 
     const trail = document.createElement('div');
     trail.className = 'vsbloom-disconnected-cursor-trail-effect';

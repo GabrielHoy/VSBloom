@@ -26,6 +26,13 @@
             "default": 750,
             "description": "The lifetime - in milliseconds - of the trail that follows behind the cursor as it moves.",
             "markdownDescription": "The lifetime - in **milliseconds** - of the trail that follows behind the cursor as it moves."
+        },
+        {
+            "name": "color",
+            "type": "string",
+            "default": "#FFFFFF",
+            "description": "The color of the trail that follows behind the cursor as it moves.",
+            "markdownDescription": "The color of the trail that follows behind the cursor as it moves."
         }
     ]
 }

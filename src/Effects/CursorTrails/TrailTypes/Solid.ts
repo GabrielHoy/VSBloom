@@ -1,13 +1,12 @@
 import bloom from 'bloom';
 import type { Trail } from 'src/EffectLib/Bloom/VFX/Trail';
-import { Application, MeshRope, Point, Texture, Graphics } from 'pixi.js';
+import { Application, MeshRope, Point, Texture, Graphics, Color } from 'pixi.js';
 import type Janitor from 'src/EffectLib/Bloom/Janitors';
+import { effectConfig } from '../TrailConfigTypes';
 
 const vsbloom = window.__VSBLOOM__;
 
-let configs: {
-    trailDuration: number;
-};
+let configs: typeof effectConfig;
 let janitor: Janitor;
 
 function GetAbsolutePosition(element: Element): Point {
@@ -44,7 +43,7 @@ function OnCursorUpdated(cursor: Element): void {
 
     const distFromTrailToCursor = newCursorPos.subtract(cursorTrail.headPosition).magnitude();
 
-    // cursorTrail.tailShorteningSpeed = Math.max(2.5, cursorTrail.trailLength / 10);
+    cursorTrail.tailShorteningSpeed = Math.max(2.5, cursorTrail.trailLength / 10);
     // cursorTrail.headSpeed.set(Math.max(10, distFromTrailToCursor / 5), Math.max(10, distFromTrailToCursor / 5));
 
     cursorTrail.goal = newCursorPos;
@@ -65,6 +64,9 @@ function WatchNewCursorElement(cursor: Element): () => void {
         texture: curTexture,
         textureScale: 1
     });
+    newCursorTrail.maxAngleChangePerFrameDeg = 7.5;
+    newCursorTrail.headSpeed.set(15, 15);
+    newCursorTrail.maxTrailLength = 100;
 
     currentCursorTrails.set(cursor, newCursorTrail);
 
@@ -80,7 +82,9 @@ function WatchNewCursorElement(cursor: Element): () => void {
     };
 }
 
+
 export async function InitTrail(effectCfgRef: typeof configs) {
+    vsbloom.Log('debug', 'Initializing Solid Trail');
     configs = effectCfgRef;
     janitor = new bloom.janitors.Janitor();
 
@@ -91,28 +95,16 @@ export async function InitTrail(effectCfgRef: typeof configs) {
         antialias: true
     });
 
-    // app.canvas.style.position = 'fixed';
-    // app.canvas.style.top = '0';
-    // app.canvas.style.left = '0';
-    // app.canvas.style.pointerEvents = 'none';
-    // app.canvas.style.zIndex = '9999';
-    app.canvas.classList.add('vsbloom-cursor-trail-solid');
+    app.canvas.classList.add('vsbloom-cursor-trail-canvas');
     document.body.appendChild(app.canvas);
     janitor.Add(() => {
-        app.destroy(true, { children: true, texture: true });
+        app.destroy(true, { children: true, texture: true, context: true, textureSource: true });
     });
 
+    const trailColor = Color.isColorLike(effectCfgRef.color as string) ? effectCfgRef.color : 0xFFFFFF;
+
     const graphicsForTexture = new Graphics();
-    graphicsForTexture.rect(0,0,16,16);
-    graphicsForTexture.roundShape([
-            { x: 0, y: 0, radius: 20 },
-            { x: 16, y: 0, radius: 10 },
-            { x: 16, y: 16, radius: 15 },
-            { x: 0, y: 16, radius: 5 }
-        ],
-        4,
-        false
-    ).fill({ color: 0xFFFFFF, alpha: 1 });
+    graphicsForTexture.rect(0,0,1,4).fill({ color: trailColor, alpha: 0.618 });
 
     curTexture = app.renderer.generateTexture(graphicsForTexture);
     janitor.Add(() => curTexture.destroy());

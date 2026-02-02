@@ -5,7 +5,7 @@
  * ```ts
  *  const mutator = await RegisterEffectConfigMutator({
  *      pathResolver: 'cursorTrail.enabled',
- *      internalValueMutator: (changedValue: boolean) => {
+ *      internalValueMutator: (changedValue: boolean, isInitialRegistration: boolean) => {
  *          MUTATE_SOME_INTERNAL_MAGIC_NUMBER = changedValue;
  *      }
  *  });
@@ -37,7 +37,7 @@ export type ExtensionConfigPathResolver = string | ((config: VSBloomClientConfig
  */
 export type EffectConfigMutator = {
     pathResolver: ExtensionConfigPathResolver,
-    internalValueMutator: (changedValue: VSBloomConfigValue) => void
+    internalValueMutator: (changedValue: VSBloomConfigValue, initial?: boolean) => void
 }
 
 const internalEffectConfigMutators: Map<EffectConfigMutator, VSBloomConfigValue> = new Map();
@@ -104,7 +104,7 @@ export async function RegisterEffectConfigMutator(mutator: EffectConfigMutator):
     //mutate the internal value of the effect config accordingly
     //so that it's in sync with the current extension config value
     //at the time of value mutator registration
-    mutator.internalValueMutator(curExtVal);
+    mutator.internalValueMutator(curExtVal, true);
 
     //add the mutator to the internalEffectConfigMutators map
     //so that we can track its state and mutate the internal
