@@ -40,21 +40,21 @@ export async function Start(configResolver: EffectConfigResolver) {
     //(see TrailTypes folder for the actual trail implementations)
     const trailTypeMutator = await bloom.configs.RegisterEffectConfigMutator({
         pathResolver: configResolver.GetPropertyPath('type'),
-        internalValueMutator: (newTrailType) => {
+        internalValueMutator: async (newTrailType) => {
             vsbloom.Log('debug', 'Trail Type Changed to: ' + (newTrailType as ValidTrailType));
             janitor.GetNamedCleanupTask('active-trail-type')?.CleanNow();
 
-            let cleanerCallback: () => void;
+            let cleanerCallback: () => Promise<void>;
             switch (newTrailType as ValidTrailType) {
                 case 'solid':
                     vsbloom.Log('debug', 'Solid Trail Type Selected');
-                    cleanerCallback = () => SolidTrails.CleanupTrail();
-                    SolidTrails.InitTrail(effectConfig);
+                    cleanerCallback = async () => await SolidTrails.CleanupTrail();
+                    await SolidTrails.InitTrail(effectConfig);
                     break;
                 case 'disconnected':
                     vsbloom.Log('debug', 'Disconnected Trail Type Selected');
-                    cleanerCallback = () => DisconnectedTrails.CleanupTrail();
-                    DisconnectedTrails.InitTrail(effectConfig);
+                    cleanerCallback = async () => await DisconnectedTrails.CleanupTrail();
+                    await DisconnectedTrails.InitTrail(effectConfig);
                     break;
             }
 

@@ -15,7 +15,7 @@ const bloom = {
     configs,
     janitors,
     geometry,
-    vfx
+    vfx: vfx.default,
 };
 
 export default bloom;

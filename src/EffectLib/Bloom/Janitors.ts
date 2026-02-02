@@ -16,7 +16,7 @@ function Log(type: 'info' | 'warn' | 'error' | 'debug', message: string): void {
 
 export interface CleanupTask {
     readonly name?: string;
-    CleanNow: () => void;
+    CleanNow: () => Promise<void>;
 }
 
 export class Janitor {
@@ -33,21 +33,24 @@ export class Janitor {
     private namedCleanupTasks: Map<string, CleanupTask> = new Map();
     private alive = true;
 
-    private _CreateCleanupTask(cleanupFn: () => void, name?: string): CleanupTask {
+    private _CreateCleanupTask(cleanupFn: () => void | Promise<void>, name?: string): CleanupTask {
         if (!this.alive) {
             throw new Error('Attempt to add a cleanup task to a Janitor that is no longer alive');
         }
 
         const newCleanupTask: CleanupTask = {
             name,
-            CleanNow: () => {
+            CleanNow: async () => {
                 if (!this.cleanupTasks.has(newCleanupTask)) {
                     Log('warn', 'CleanNow was called on a CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake');
                     return;
                 }
 
                 this.cleanupTasks.delete(newCleanupTask);
-                cleanupFn();
+                const res = cleanupFn();
+                if (res instanceof Promise) {
+                    await res;
+                }
             }
         };
 
@@ -55,11 +58,11 @@ export class Janitor {
         return newCleanupTask;
     }
 
-    public Add(cleanupFn: () => void): CleanupTask {
+    public Add(cleanupFn: () => void | Promise<void>): CleanupTask {
         return this._CreateCleanupTask(cleanupFn);
     }
 
-    public AddNamed(name: string, cleanupFn: () => void): CleanupTask {
+    public AddNamed(name: string, cleanupFn: () => void | Promise<void>): CleanupTask {
         if (!this.alive) {
             throw new Error('Attempt to add a named cleanup task to a Janitor that is no longer alive');
         }
@@ -68,14 +71,17 @@ export class Janitor {
             throw new Error(`Attempt to add a named cleanup task to a Janitor with a name that is already registered to said Janitor: ${name}`);
         }
 
-        const unnamedCleanupTask: CleanupTask = this._CreateCleanupTask(() => {
+        const unnamedCleanupTask: CleanupTask = this._CreateCleanupTask(async () => {
             if (this.namedCleanupTasks.get(name) !== unnamedCleanupTask) {
                 Log('warn', 'CleanNow was called on a (name-registered) CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake');
                 return;
             }
 
             this.namedCleanupTasks.delete(name);
-            cleanupFn();
+            const res = cleanupFn();
+            if (res instanceof Promise) {
+                await res;
+            }
         }, name);
 
         this.namedCleanupTasks.set(name, unnamedCleanupTask);
@@ -86,12 +92,12 @@ export class Janitor {
         return this.namedCleanupTasks.get(name);
     }
     
-    public CleanItem(cleanupTask: CleanupTask): void {
+    public async CleanItem(cleanupTask: CleanupTask): Promise<void> {
         if (!this.cleanupTasks.has(cleanupTask)) {
             throw new Error('Attempt to call CleanItem on a Janitor with a CleanupTask that is not registered to said Janitor');
         }
 
-        cleanupTask.CleanNow();
+        await cleanupTask.CleanNow();
     }
 
     public RemoveItemWithoutCleanup(cleanupTask: CleanupTask): void {
@@ -106,26 +112,28 @@ export class Janitor {
         this.cleanupTasks.delete(cleanupTask);
     }
 
-    public CleanAll(): void {
+    public async CleanAll(): Promise<void> {
         if (!this.alive) {
             throw new Error('Attempt to call CleanAll on a Janitor that is no longer alive');
         }
 
-        for (const cleanupTask of this.cleanupTasks) {
+        // LIFO order: reverse the tasks so last-added is cleaned first
+        const tasksInReverse = [...this.cleanupTasks].reverse();
+        for (const cleanupTask of tasksInReverse) {
             try {
-                cleanupTask.CleanNow();
+                await cleanupTask.CleanNow();
             } catch (error) {
                 Log('error', `An error occurred while invoking a CleanupTask inside of a Janitor's CleanAll method: ${String(error)}`);
             }
         }
     }
 
-    public Destroy(): void {
+    public async Destroy(): Promise<void> {
         if (!this.alive) {
             throw new Error('Attempt to call Destroy on a Janitor that is already destroyed');
         }
 
-        this.CleanAll();
+        await this.CleanAll();
         this.alive = false;
     }
 }

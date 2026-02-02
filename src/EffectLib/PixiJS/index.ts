@@ -2,7 +2,7 @@
  * PixiJS Initialization Module
  * 
  * This module properly initializes PixiJS for use in VS Code's CSP-restricted
- * environment by applying the unsafe-eval polyfill.
+ * environment by applying the unsafe-eval polyfill and math-extras.
  * 
  * The unsafe-eval polyfill is necessary because VS Code's Content Security Policy
  * blocks eval(), which PixiJS normally uses for shader compilation.
@@ -12,26 +12,25 @@
 
 import * as pixi from 'pixi.js';
 
-//Import the modified unsafe-eval polyfill (doesn't auto-call selfInstall)
-//this will add selfInstall and other polyfill functions to window.PIXI - an empty object at this point
+// Import the modified polyfills (they don't auto-install anymore)
+// These add their install functions to window.PIXI (an empty object at this point)
 import './unsafe-eval.js';
-import * as MathExtrasJsLoader from './math-extras.js';
+import './math-extras.js';
 
-//save the selfInstall function before we overwrite window.PIXI
-const unsafeEvalPolyfill = (window as any).PIXI;
+// Save the polyfill install functions before we overwrite window.PIXI
+const polyfills = (window as any).PIXI;
 
-//now set window.PIXI to the real PixiJS module
+// Now set window.PIXI to the real PixiJS module
 (window as any).PIXI = pixi;
 
-//add math-extras to window.PIXI
-Object.assign((window as any).PIXI, MathExtrasJsLoader.default({}));
-(window as any).PIXI.mathExtras = MathExtrasJsLoader;
-
-//call selfInstall() to apply the polyfill patches to the real PixiJS classes
-if (unsafeEvalPolyfill?.selfInstall) {
-    unsafeEvalPolyfill.selfInstall();
+// Call the install functions to apply the polyfill patches to the real PixiJS classes
+if (polyfills?.selfInstall) {
+    polyfills.selfInstall();
+}
+if (polyfills?.installMathExtras) {
+    polyfills.installMathExtras();
 }
 
-//re-export everything
+// Re-export everything
 export default pixi;
 export * from 'pixi.js';

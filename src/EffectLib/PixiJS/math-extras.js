@@ -4,9 +4,10 @@
  *
  * PixiJS is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
+ *
  */
 window.PIXI = window.PIXI || {};
-export default math_extras_js_loader = (function (exports) {
+var math_extras_js = (function (exports) {
     'use strict';
 
     "use strict";
@@ -147,9 +148,11 @@ export default math_extras_js_loader = (function (exports) {
     };
 
     "use strict";
-    Object.assign(PIXI.Point.prototype, pointExtraMixins);
-    Object.assign(PIXI.ObservablePoint.prototype, pointExtraMixins);
-    Object.assign(PIXI.Rectangle.prototype, rectangleExtraMixins);
+    function installMathExtras() {
+        Object.assign(PIXI.Point.prototype, pointExtraMixins);
+        Object.assign(PIXI.ObservablePoint.prototype, pointExtraMixins);
+        Object.assign(PIXI.Rectangle.prototype, rectangleExtraMixins);
+    }
 
     "use strict";
     function floatEqual(a, b, epsilon = Number.EPSILON) {
@@ -195,6 +198,7 @@ export default math_extras_js_loader = (function (exports) {
 
     "use strict";
 
+    exports.installMathExtras = installMathExtras;
     exports.floatEqual = floatEqual;
     exports.lineIntersection = lineIntersection;
     exports.pointExtraMixins = pointExtraMixins;
@@ -203,5 +207,6 @@ export default math_extras_js_loader = (function (exports) {
 
     return exports;
 
-});
+})({});
+Object.assign(window.PIXI, math_extras_js);
 //# sourceMappingURL=math-extras.js.map

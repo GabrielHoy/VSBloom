@@ -6,6 +6,8 @@
 
 import * as Trails from "./Trail";
 
-export const BloomVFX = {
+const BloomVFX = {
     trails: Trails,
 };
+
+export default BloomVFX;
