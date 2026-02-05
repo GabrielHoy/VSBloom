@@ -154,7 +154,6 @@ const esbuildOneLinerPlugin = {
         let code = fs.readFileSync(outFile, "utf8");
         
         const terserResult = await minify(code, {
-          compress: { booleans_as_integers: true },
           mangle: false,
           format: {
             comments: /^!|@license|@preserve/i, // Keep license/preserve comments
