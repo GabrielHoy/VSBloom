@@ -41,8 +41,8 @@ declare const __VSBLOOM_AUTH__: string;
 //that do not have actual JS code associated
 //with them
 const stubEffectModule: VSBloomEffectModule = {
-    Start: (configResolver: EffectConfigResolver) => {},
-    Stop: () => {},
+    Start: (configResolver: EffectConfigResolver) => { },
+    Stop: () => { },
 };
 
 //actual client class implementation
@@ -117,12 +117,12 @@ class VSBloomClient implements IVSBloomClient {
 
         //once that's done, get our global API setup on the window object
         this.SetupGlobalAPI();
-        
+
         //we're good to go pretty much, let's go ahead and try to connect
         //to the websocket server hosted by the extension
         this.ConnectToWebsocketServer();
 
-        this.Log('info', 'VSBloom Client Bootstrap Complete:', { 
+        this.Log('info', 'VSBloom Client Bootstrap Complete:', {
             windowId: this._windowId,
             trustedTypesEnabled: this.trustedPolicy !== null
         });
@@ -178,7 +178,7 @@ class VSBloomClient implements IVSBloomClient {
                 this._isConnected = true;
                 this.reconnectAttempts = 0;
                 this.Log('info', 'Established a connection to the VSBloom Extension!');
-                
+
                 //send the client-ready message over to the server
                 //so we can be registered on it and get sent over
                 //our initial configuration etc
@@ -274,7 +274,7 @@ class VSBloomClient implements IVSBloomClient {
     private HandleMessageFromExtension(message: ExtensionToClientMessage): void {
         switch (message.type) {
             case 'enable-effect':
-                this.EnableClientEffect(message.effectName, message.js, message.css);
+                this.EnableClientEffect(message.effectName, message.effectDisplayName, message.js, message.css);
                 break;
             case 'reload-effect':
                 this.ReloadClientEffect(message.effectName);
@@ -302,7 +302,7 @@ class VSBloomClient implements IVSBloomClient {
      * Enables an effect module by name, loading it if necessary
      * and calling the module's Start method.
      */
-    private async EnableClientEffect(effectName: string, js?: string, css?: string): Promise<void> {
+    private async EnableClientEffect(effectName: string, effectDisplayName: string, js?: string, css?: string): Promise<void> {
         const effectHandle: LoadedVSBloomEffectHandle = await this.GetLoadedEffectHandle(effectName, js, css);
 
         if (effectHandle.isEnabled) {
@@ -315,7 +315,7 @@ class VSBloomClient implements IVSBloomClient {
             if (css) {
                 effectHandle.cssElementId = this.CreateCSSElement(`effect-css-${effectName}`, css);
             }
-            const startResult = effectHandle.module.Start(new EffectConfigResolver(effectName));
+            const startResult = effectHandle.module.Start(new EffectConfigResolver(effectDisplayName));
             if (startResult instanceof Promise) {
                 await startResult;
             }
@@ -514,7 +514,7 @@ class VSBloomClient implements IVSBloomClient {
         //of the <head> tag in an attempt to
         //ensure highest specificity
         document.head.appendChild(newStyleElement);
-        
+
         this.Log('debug', `Created a new CSS Stylesheet with ID "${internalDOMId}"`, { length: css.length });
 
         return id;
@@ -738,4 +738,4 @@ class VSBloomClient implements IVSBloomClient {
     new VSBloomClient(port, auth);
 })();
 
-export {};
+export { };

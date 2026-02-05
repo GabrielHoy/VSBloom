@@ -2,6 +2,7 @@ import bloom from 'bloom';
 import gsap from 'gsap';
 import type Janitor from 'src/EffectLib/Bloom/Janitors';
 import { effectConfig } from '../TrailConfigTypes';
+import { Color } from 'pixi.js';
 
 type Position = { x: number; y: number };
 
@@ -48,8 +49,7 @@ function CreateCursorTrail(from: Position, to: Position): void {
 
     const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 180;
     const thickness = GetRandom(LINE_THICKNESS_MIN, LINE_THICKNESS_MAX);
-    const brightness = GetRandom(100, 255);
-    const color = configs.color;
+    const color = (new Color(Color.isColorLike(configs.color) ? configs.color : 0xFFFFFF)).toRgbaString();
 
     const trail = document.createElement('div');
     trail.className = 'vsbloom-disconnected-cursor-trail-effect';
@@ -60,7 +60,7 @@ function CreateCursorTrail(from: Position, to: Position): void {
         width: `${distance}px`,
         height: `${thickness}px`,
         borderRadius: `${thickness / 2}px`,
-        backgroundColor: `rgb(${brightness}, ${brightness}, ${brightness})`,
+        backgroundColor: color,
         left: `${to.x}px`,
         top: `${to.y}px`,
         transform: `rotate(${angle}deg)`,
@@ -77,7 +77,7 @@ function CreateCursorTrail(from: Position, to: Position): void {
     gsap.to(trail, {
         opacity: 0,
         scaleX: 0,
-        duration: configs.trailDuration,
+        duration: configs.disconnectedTrailSegmentLifetime,
         ease: 'none',//'power2.out',
         onComplete: () => {
             trailRemovalTask.CleanNow();

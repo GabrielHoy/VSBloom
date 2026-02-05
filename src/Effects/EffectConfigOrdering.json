@@ -5,6 +5,12 @@
             "effects": [
                 "CursorTrails"
             ]
+        },
+        {
+            "categoryName": "Window Effects",
+            "effects": [
+                "WindowFocus"
+            ]
         }
     ]
 }

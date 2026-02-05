@@ -1,0 +1,77 @@
+:root {
+    --vsbloom-window-short-term-unfocus-filter: blur(0.35px) grayscale(25%);
+    --vsbloom-window-short-term-unfocus-anim-duration: 1s;
+
+    --vsbloom-window-long-term-unfocus-filter: blur(1.5px) grayscale(75%) brightness(95%);
+    --vsbloom-window-long-term-unfocus-anim-duration: 1s;
+
+    --vsbloom-window-refocus-anim-duration: 1s;
+}
+
+/* transition from in-focus to short term unfocus */
+@keyframes windowShortTermUnfocusAnim {
+    0% {
+        filter: blur(0px) grayscale(0%) brightness(100%);
+    }
+
+    100% {
+        filter: var(--vsbloom-window-short-term-unfocus-filter);
+    }
+}
+
+/* transition from short term unfocus to in-focus */
+@keyframes windowShortTermUnfocusedRefocusAnim {
+    0% {
+        filter: var(--vsbloom-window-short-term-unfocus-filter);
+    }
+
+    100% {
+        filter: blur(0px) grayscale(0%) brightness(100%);
+    }
+}
+
+/* transition from short term to long term unfocus */
+@keyframes windowLongTermUnfocusedAnim {
+    0% {
+        filter: var(--vsbloom-window-short-term-unfocus-filter);
+    }
+
+    100% {
+        filter: var(--vsbloom-window-long-term-unfocus-filter);
+    }
+}
+
+/* transition from long term unfocus to in-focus */
+@keyframes windowLongTermUnfocusedRefocusAnim {
+    0% {
+        filter: var(--vsbloom-window-long-term-unfocus-filter);
+    }
+
+    100% {
+        filter: blur(0px) grayscale(0%) brightness(100%);
+    }
+}
+
+/* class transition animation vomit */
+/* ?find a way to do this better */
+body {
+    &>div.windows {
+        filter: blur(0px) grayscale(0%) brightness(100%);
+    }
+
+    &.vsbloom-short-term-unfocused>div.windows {
+        animation: windowShortTermUnfocusAnim var(--vsbloom-window-short-term-unfocus-anim-duration) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    &.vsbloom-long-term-unfocused>div.windows {
+        animation: windowLongTermUnfocusedAnim var(--vsbloom-window-long-term-unfocus-anim-duration) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    &.vsbloom-short-term-refocus>div.windows {
+        animation: windowShortTermUnfocusedRefocusAnim var(--vsbloom-window-refocus-anim-duration) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    &.vsbloom-long-term-refocus>div.windows {
+        animation: windowLongTermUnfocusedRefocusAnim var(--vsbloom-window-refocus-anim-duration) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+}

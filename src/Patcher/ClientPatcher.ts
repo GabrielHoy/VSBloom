@@ -334,7 +334,12 @@ export async function PatchElectronHTMLFile(
 
     //find the <head> tag and patch appropriate scripts *directly* after it is defined
     //order matters here: sharedLibsPayload first, then clientPayload
-    patchedFileContents = patchedFileContents.replace(/<head([^>]*)>/i, `<head$1>${sharedLibsPayload}${clientPayload}`);
+    const headTagMatch = patchedFileContents.match(/<head([^>]*)>/i);
+    if (!headTagMatch || !headTagMatch.index) {
+        throw new Error(Common.RaiseError(`Unable to find the <head> tag in the Electron init file at '${initFilePath}'. This is likely a bug in the VSBloom extension.`));
+    }
+    const headTagEndIdx = headTagMatch.index + headTagMatch[0].length;
+    patchedFileContents = patchedFileContents.slice(0, headTagEndIdx) + `${sharedLibsPayload}\n${clientPayload}\n` + patchedFileContents.slice(headTagEndIdx);
 
     //TODO: Maybe patch a small CSS payload too in order to facilitate a nice
     //TODO: animation or loading sequence etc while the VSBloom client & server

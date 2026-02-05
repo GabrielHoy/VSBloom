@@ -17,6 +17,7 @@ import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
 
 interface LoadedEffect {
     effectName: string;
+    effectDisplayName: string;
     js?: string;
     css?: string;
     loadedAt: Date;
@@ -187,6 +188,7 @@ export class EffectManager implements vscode.Disposable {
         //and we can go ahead and load it accordingly
         this.loadedEffects.set(effectName, {
             effectName: effectName,
+            effectDisplayName: this.staticEffectConfigs.get(effectName)?.effectDisplayName ?? `NO_EFFECT_DISPLAY_NAME_FOUND_FOR_${effectName}`,
             js: js,
             css: css,
             loadedAt: new Date(),
@@ -196,6 +198,7 @@ export class EffectManager implements vscode.Disposable {
         this.server.FireAllClients({
             type: 'enable-effect',
             effectName: effectName,
+            effectDisplayName: this.staticEffectConfigs.get(effectName)?.effectDisplayName ?? `NO_EFFECT_DISPLAY_NAME_FOUND_FOR_${effectName}`,
             js: js,
             css: css
         });
@@ -290,6 +293,7 @@ export class EffectManager implements vscode.Disposable {
             this.server.FireClient(windowId, {
                 type: 'enable-effect',
                 effectName: effectName,
+                effectDisplayName: effect.effectDisplayName,
                 js: effect.js,
                 css: effect.css
             });

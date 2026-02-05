@@ -18,5 +18,18 @@
                 "markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. **Changes to this setting will take effect upon the next client patch!**"
             }
         }
+    },
+    {
+        "title": "Effect Rendering",
+        "order": 2,
+        "properties": {
+            "vsbloom.effectRendering.enableAntiAliasing": {
+                "order": 3,
+                "type": "boolean",
+                "default": true,
+                "description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",
+                "markdownDescription": "Whether or not to enable anti-aliasing for canvas-based effect rendering. *May slightly affect performance*"
+            }
+        }
     }
 ]

@@ -1,0 +1,20 @@
+{
+    "effectDisplayName": "Window Focus Effects",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable the effects that occur when the window becomes unfocused.",
+            "markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
+        },
+        {
+            "name": "longTermUnfocusTransitionThreshold",
+            "type": "number",
+            "default": 60,
+            "description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
+            "markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
+        }
+    ]
+}

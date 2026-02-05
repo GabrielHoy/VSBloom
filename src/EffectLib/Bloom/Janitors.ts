@@ -6,11 +6,11 @@
  * lifecycle of VSBloom Client Effects.
  */
 
-function Log(type: 'info' | 'warn' | 'error' | 'debug', message: string): void {
+function Log(type: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
     if (window.__VSBLOOM__) {
-        window.__VSBLOOM__.Log(type, message);
+        window.__VSBLOOM__.Log(type, message, data);
     } else {
-        console[type](`[VSBloom]: ${message}`);
+        console[type](`[VSBloom]: ${message}`, data ?? '');
     }
 }
 
@@ -123,7 +123,7 @@ export class Janitor {
             try {
                 await cleanupTask.CleanNow();
             } catch (error) {
-                Log('error', `An error occurred while invoking a CleanupTask inside of a Janitor's CleanAll method: ${String(error)}`);
+                Log('error', `An error occurred while invoking a CleanupTask inside of a Janitor's CleanAll method: ${String(error)}`, { cleanupTask, error });
             }
         }
     }

@@ -12,6 +12,7 @@
 export interface EffectEnableRequestMessage {
     type: 'enable-effect';
     effectName: string;
+    effectDisplayName: string;
     js?: string;
     css?: string;
 }

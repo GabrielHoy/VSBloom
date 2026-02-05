@@ -41,11 +41,6 @@ function OnCursorUpdated(cursor: Element): void {
         return;
     }
 
-    const distFromTrailToCursor = newCursorPos.subtract(cursorTrail.headPosition).magnitude();
-
-    cursorTrail.tailShorteningSpeed = Math.max(2.5, cursorTrail.trailLength / 10);
-    // cursorTrail.headSpeed.set(Math.max(10, distFromTrailToCursor / 5), Math.max(10, distFromTrailToCursor / 5));
-
     cursorTrail.goal = newCursorPos;
 }
 
@@ -64,9 +59,11 @@ function WatchNewCursorElement(cursor: Element): () => void {
         texture: curTexture,
         textureScale: 1
     });
-    newCursorTrail.maxAngleChangePerFrameDeg = 7.5;
-    newCursorTrail.headSpeed.set(15, 15);
-    newCursorTrail.maxTrailLength = 100;
+    newCursorTrail.maxAngleChangePerFrameDeg = configs.solidTrailSpeed / 2;
+    newCursorTrail.tailShorteningSpeed = configs.solidTrailSpeed / 2;
+    newCursorTrail.headSpeed.set(configs.solidTrailSpeed, configs.solidTrailSpeed);
+    newCursorTrail.proximityToGoalWhenAngularlyConstrainedForSlowdown = 25;
+    newCursorTrail.maxTrailLength = configs.maxSolidTrailLength;
 
     currentCursorTrails.set(cursor, newCursorTrail);
 
@@ -74,6 +71,7 @@ function WatchNewCursorElement(cursor: Element): () => void {
     const observer = new MutationObserver(() => OnCursorUpdated(cursor));
     observer.observe(cursor, { attributeFilter: ['style'] });
 
+    const rand = Math.round(Math.random()*10000);
     return () => {
         currentKnownCursorElements.delete(cursor);
         observer.disconnect();
@@ -84,7 +82,6 @@ function WatchNewCursorElement(cursor: Element): () => void {
 
 
 export async function InitTrail(effectCfgRef: typeof configs) {
-    vsbloom.Log('debug', 'Initializing Solid Trail');
     configs = effectCfgRef;
     janitor = new bloom.janitors.Janitor();
 
@@ -92,7 +89,7 @@ export async function InitTrail(effectCfgRef: typeof configs) {
     await app.init({
         backgroundAlpha: 0,
         resizeTo: window,
-        antialias: true
+        antialias: effectCfgRef.enableAA
     });
 
     app.canvas.classList.add('vsbloom-cursor-trail-canvas');
@@ -104,7 +101,7 @@ export async function InitTrail(effectCfgRef: typeof configs) {
     const trailColor = Color.isColorLike(effectCfgRef.color as string) ? effectCfgRef.color : 0xFFFFFF;
 
     const graphicsForTexture = new Graphics();
-    graphicsForTexture.rect(0,0,1,4).fill({ color: trailColor, alpha: 0.618 });
+    graphicsForTexture.rect(0,0,1,effectCfgRef.solidTrailWidth).fill({ color: trailColor });
 
     curTexture = app.renderer.generateTexture(graphicsForTexture);
     janitor.Add(() => curTexture.destroy());

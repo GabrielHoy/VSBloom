@@ -8,7 +8,7 @@
  */
 
 import { Application, MeshRope, Point, MeshRopeOptions, DestroyOptions, RopeGeometry } from 'pixi.js';
-import { Deg2Rad, GetAngleBetweenVectorsDeg, GetAngleOfVectorRad, LerpVector, Rad2Deg, SlerpVector } from '../Geometry';
+import { Deg2Rad, GetAngleBetweenVectorsDeg, GetAngleOfVectorRad, LerpVector, Rad2Deg, SlerpVector } from '../Geometry/Geometry';
 
 export class Trail {
     public readonly rope: MeshRope;
@@ -36,6 +36,19 @@ export class Trail {
      */
     public maxAngleChangePerFrameDeg: number = 5;
     /**
+     * The distance from the goal that the trail head should
+     * begin to slow down at while approaching the actual goal
+     * while it is being constrained by the `maxAngleChangePerFrameDeg` constraint,
+     * in pixels.
+     * 
+     * This helps prevent the trail from overshooting the goal
+     * due to angular movement constraints such as
+     * the `maxAngleChangePerFrameDeg` constraint.
+     * 
+     * *0 disables this feature.*
+     */
+    public proximityToGoalWhenAngularlyConstrainedForSlowdown: number = 100;
+    /**
      * Speed at which the tail of the rope should shorten, in pixels/frame
      */
     public tailShorteningSpeed: number = 7.5;
@@ -45,8 +58,7 @@ export class Trail {
      * *-1 unbounds this value.*
      */
     public maxTrailLength: number = -1;
-    
-    
+
     public get headPosition(): Point {
         return this.trailGeometry[this.trailGeometry.length - 1];
     }
@@ -96,7 +108,7 @@ export class Trail {
         } else {
             this.trailGeometry.splice(0, this.trailGeometry.length - 1);
         }
-
+        
         this.TrailGeometryUpdated();
     }
 
@@ -108,7 +120,7 @@ export class Trail {
             (this.rope.geometry as RopeGeometry).update();
         }
     }
-    
+
     /**
      * moves `headPosition` towards `goal` by `speed`, adding a new point to `trailGeometry` if necessary
      * 
@@ -216,6 +228,11 @@ export class Trail {
             //ultimately to the goal...Sometimes that loop-around
             //never ends and the head just goes in a perfect,
             //infinite circle around the goal until the goal moves again.
+            if (this.proximityToGoalWhenAngularlyConstrainedForSlowdown > 0) {
+                const proximityMultiplier = Math.min(1, curHeadPosToGoal.magnitude() / this.proximityToGoalWhenAngularlyConstrainedForSlowdown);
+                constrainedNewSegmentVec.multiplyScalar(proximityMultiplier, constrainedNewSegmentVec);
+            }
+
             const toGoalDir = curHeadPosToGoal.normalize();
             const progressTowardGoal = constrainedNewSegmentVec.dot(toGoalDir);
             if (progressTowardGoal > 0) {
@@ -261,6 +278,7 @@ export class Trail {
             return false;
         }
 
+        
         //if the trail length exceeds the max trail length,
         //we'll need to shorten the trail to match the max trail length
         //(that is, if this shortening wouldn't do that already!)
