@@ -127,7 +127,7 @@ VSBloom is provided under the terms of the [MIT License](LICENSE).
 
 <p align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
   <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
-  <i>Tampered Reality 2026</i>
+  <i>TamperedReality 2026</i>
   <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </p>
 
