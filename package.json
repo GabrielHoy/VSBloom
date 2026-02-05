@@ -2,23 +2,37 @@
 	"preview": true,
 	"name": "vsbloom",
 	"displayName": "VS: Bloom",
-	"description": "Overhauls VSCode's look and feel, adding a variety of animations and 'eye candy' to the UI.",
+	"description": "Overhauls VSCode's look, theme, and feel by adding a variety of customizable animations and 'eye candy' to the UI.",
 	"author": {
-		"name": "Tampered Reality"
+		"name": "Tampered Reality",
+		"email": "tampered@tamperedreality.net",
+		"url": "https://tamperedreality.net"
 	},
 	"version": "1.0.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",
+	"pricing": "Free",
+	"homepage": "https://github.com/GabrielHoy/VSBloom",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/GabrielHoy/VSBloom.git"
+	},
+	"bugs": {
+		"url": "https://github.com/GabrielHoy/VSBloom/issues",
+		"email": "vsbloom@tamperedreality.net"
 	},
 	"icon": "logo.png",
 	"engines": {
 		"vscode": "^1.105.1"
 	},
+	"galleryBanner": {
+		"color": "#66FF00",
+		"theme": "dark"
+	},
 	"categories": [
-		"Themes"
+		"Themes",
+		"Other",
+		"Visualization"
 	],
 	"extensionKind": [
 		"ui"
