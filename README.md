@@ -1,17 +1,17 @@
 <div style="min-height: 100vh; margin: 0; display: grid; grid-template-rows: auto 1fr auto;">
 <h1 style="display: flex; align-items: center; justify-content: center; margin-bottom: 0px; padding-bottom: 0px; padding-top: 0px; margin-top: 0px;">
-    <img src="logo.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
+    <img src="images/logo64.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
     <p style="text-align: center; margin-top: auto; margin-bottom: auto; padding-bottom: 10px;"><strong>VS: Bloom</strong></p>
-    <img src="logo.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
+    <img src="images/logo64.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
 </h1>
 
-<h2>What is VS: Bloom?</h2>
+## What is VS: Bloom?
 
 VSBloom is an extension which visually overhauls the Visual Studio Code experience with dynamic animated effects and fresh approaches to the application's UI, far beyond what traditional VS Code themes can offer.
 
 Unlike standard color themes that only change things like syntax highlighting and window backgrounds, VSBloom's focus is not to present yet another color palette to choose from; instead it renders actual *animations* — trails that follow your cursor as it types, blur effects that respond to window focus, etc.
 
-<h2>How It Works</h2>
+## How It Works
 
 VSBloom works differently from typical VS Code extensions and its effects are made *possible* by a small multi-layer "modding framework" of sorts for the VS Code client:
 
@@ -21,7 +21,7 @@ VSBloom works differently from typical VS Code extensions and its effects are ma
 
 3. **Modular Effect System** — All of the effects that VSBloom provides are are loaded and unloaded dynamically based on your settings, allowing for you to see changes in real-time as you update effect settings without needing to reload the window or restart VS Code; we attempt to ensure that **all effects** in VSBloom are individually toggleable and configurable to the largest extent possible!
 
-<h2>Current Features</h2>
+## Current Features
 
 - **Cursor Trails**: Watch as animated trails follow your cursor while you navigate through your code!
 - **Window Focus Effects**: See the window react to losing focus and slowly dim itself into an idle-state as you leave the editor for extended periods of time!
@@ -126,9 +126,9 @@ VSBloom is provided under the terms of the [MIT License](LICENSE).
 ---
 
 <p align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="logo.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i>Tampered Reality 2026</i>
-  <img src="logo.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </p>
 
 ---
