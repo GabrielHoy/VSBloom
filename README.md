@@ -1,8 +1,8 @@
 <div style="min-height: 100vh; margin: 0; display: grid; grid-template-rows: auto 1fr auto;">
-<h1 style="display: flex; align-items: center; justify-content: center; margin-bottom: 0px; padding-bottom: 0px; padding-top: 0px; margin-top: 0px;">
-    <img src="images/logo64.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
-    <p style="text-align: center; margin-top: auto; margin-bottom: auto; padding-bottom: 10px;"><strong>VS: Bloom</strong></p>
-    <img src="images/logo64.png" alt="VSBloom Logo" width="64" height="64" style="padding-bottom: 0px; margin-bottom: 0px; padding-top: 0px; margin-top: 0px;">
+<h1 align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
+  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px; filter: blur(5px);">
+  <i><strong>VS: Bloom</strong></i>
+  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px; filter: blur(5px);">
 </h1>
 
 ## What is VS: Bloom?
