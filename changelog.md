@@ -3,9 +3,14 @@
 All notable changes to the VS: Bloom project will be documented in this file.
 
 
-## [Unreleased] - 1337/04/19
+## [1.0.1] - 2026-02-06
+
+### Fixed
+- The Window Focus Effects will now properly keep the window in focus when clicking into iframes, such as other extensions' web views.
 
 ### Added
+- A plethora more configs for the Window Focus effects are now exposed to the user.
+- Revamped the Window Focus Effect filters and tweaked initial values for them to look prettier.
 
 
 
