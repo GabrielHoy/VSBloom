@@ -1,8 +1,8 @@
 :root {
     --vsbloom-window-short-term-unfocus-filter: blur(0.35px) grayscale(25%);
-    --vsbloom-window-short-term-unfocus-anim-duration: 1s;
+    --vsbloom-window-short-term-unfocus-anim-duration: 0.618s;
 
-    --vsbloom-window-long-term-unfocus-filter: blur(1.5px) grayscale(75%) brightness(95%);
+    --vsbloom-window-long-term-unfocus-filter: blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%);
     --vsbloom-window-long-term-unfocus-anim-duration: 1s;
 
     --vsbloom-window-refocus-anim-duration: 1s;
@@ -11,7 +11,7 @@
 /* transition from in-focus to short term unfocus */
 @keyframes windowShortTermUnfocusAnim {
     0% {
-        filter: blur(0px) grayscale(0%) brightness(100%);
+        filter: blur(0px) grayscale(0%) sepia(0%) contrast(100%) brightness(100%) saturate(100%) invert(0%);
     }
 
     100% {
@@ -26,7 +26,7 @@
     }
 
     100% {
-        filter: blur(0px) grayscale(0%) brightness(100%);
+        filter: blur(0px) grayscale(0%) sepia(0%) contrast(100%) brightness(100%) saturate(100%) invert(0%);
     }
 }
 
@@ -48,15 +48,14 @@
     }
 
     100% {
-        filter: blur(0px) grayscale(0%) brightness(100%);
+        filter: blur(0px) grayscale(0%) sepia(0%) contrast(100%) brightness(100%) saturate(100%) invert(0%);
     }
 }
-
 /* class transition animation vomit */
 /* ?find a way to do this better */
 body {
     &>div.windows {
-        filter: blur(0px) grayscale(0%) brightness(100%);
+        filter: blur(0px) grayscale(0%) sepia(0%) contrast(100%) brightness(100%) saturate(100%) invert(0%);
     }
 
     &.vsbloom-short-term-unfocused>div.windows {

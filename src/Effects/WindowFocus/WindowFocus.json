@@ -10,9 +10,44 @@
             "markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
         },
         {
+            "name": "shortTermUnfocusEffectFilter",
+            "type": "string",
+            "default": "blur(0.75px) grayscale(25%)",
+            "description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
+            "markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
+        },
+        {
+            "name": "shortTermUnfocusEffectTransitionDuration",
+            "type": "number",
+            "default": 0.5,
+            "description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
+            "markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
+        },
+        {
+            "name": "longTermUnfocusEffectFilter",
+            "type": "string",
+            "default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
+            "description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
+            "markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
+        },
+        {
+            "name": "longTermUnfocusEffectTransitionDuration",
+            "type": "number",
+            "default": 30,
+            "description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
+            "markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
+        },
+        {
+            "name": "windowRefocusEffectTransitionDuration",
+            "type": "number",
+            "default": 0.618,
+            "description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
+            "markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
+        },
+        {
             "name": "longTermUnfocusTransitionThreshold",
             "type": "number",
-            "default": 60,
+            "default": 120,
             "description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
             "markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
         }
