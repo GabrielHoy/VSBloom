@@ -1,8 +1,19 @@
 <div style="min-height: 100vh; margin: 0; display: grid; grid-template-rows: auto 1fr auto;">
+
+<!--
+"Early Development Build" Header
+-->
+
+<i style="text-align: center; font-size: 14px; font-weight: bold; border-bottom: 1px solid #FF00005F; border-top: 1px solid #FF00005F; margin-top: 10px; margin-bottom: 10px; background-color: #FF0F0F0F; border-left: 1px solid #FF00005F; border-right: 1px solid #FF00005F; border-radius: 5px;">
+<span style="padding-bottom: 3px; border-bottom: 1px dashed #FFFFFF5F;">Early Development Build</span><br/>Do Not Redistribute
+</i>
+<span style="border-bottom: 1px solid #505050FF; margin-bottom: 4px;"></span>
+
+
 <h1 align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px; filter: blur(5px);">
+  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i><strong>VS: Bloom</strong></i>
-  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px; filter: blur(5px);">
+  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </h1>
 
 ## What is VS: Bloom?
