@@ -3,11 +3,18 @@
 <!--
 "Early Development Build" Header
 -->
-
+<!--
 <i style="text-align: center; font-size: 14px; font-weight: bold; border-bottom: 1px solid #FF00005F; border-top: 1px solid #FF00005F; margin-top: 10px; margin-bottom: 10px; background-color: #FF0F0F0F; border-left: 1px solid #FF00005F; border-right: 1px solid #FF00005F; border-radius: 5px;">
 <span style="padding-bottom: 3px; border-bottom: 1px dashed #FFFFFF5F;">Early Development Build</span><br/>Do Not Redistribute
 </i>
+-->
+
+<img src="images/EarlyDevBuildBanner.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: auto; width: 100%; max-height: 128px; max-width: 100%; margin-top: auto; margin-bottom: 25px; padding-top: 0px; padding-bottom: 0px;">
 <span style="border-bottom: 1px solid #505050FF; margin-bottom: 4px;"></span>
+
+
+
+
 
 
 <h1 align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
