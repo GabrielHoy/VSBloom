@@ -20,7 +20,15 @@ let currentUnfocusClass: string | null = null;
 let currentRefocusClass: string | null = null;
 let isLongTermUnfocused = false;
 
-function OnWindowBlurred() {
+function OnWindowBlurred(event: Event) {
+    if (document.hasFocus()) {
+        //If the window got blurred but we
+        //still have focus on the document,
+        //we likely clicked into an iframe
+        //or similar - regardless this isn't
+        //an 'actual' unfocus event!
+        return;
+    }
     const myUnfocusEvent = crypto.randomUUID();
     currentUnfocusUUID = myUnfocusEvent;
 
@@ -43,7 +51,15 @@ function OnWindowBlurred() {
     }
 }
 
-function OnWindowFocused() {
+function OnWindowFocused(event: Event) {
+    if (!document.hasFocus()) {
+        //If the window got 'focused' but we
+        //don't have focus on the document...
+        //im not sure what exactly this is,
+        //but it's probably not an 'actual' focus event!
+        console.debug('OnWindowFocused but hasFocus=false...?', event);
+        return;
+    }
     if (currentUnfocusUUID) {
         currentUnfocusUUID = null;
         if (isLongTermUnfocused) {
@@ -103,7 +119,7 @@ export async function Start(configResolver: EffectConfigResolver) {
             vsbloom.Log('debug', 'long term unfocus transition threshold changed to ' + changedValue);
             effectConfig.longTermUnfocusTransitionThreshold = (changedValue as number) * 1000;
             if (currentUnfocusUUID) {
-                OnWindowFocused();
+                OnWindowFocused(new Event('focus'));
             }
         }
     });
