@@ -12,7 +12,7 @@
 <img src="images/EarlyDevBuildBanner.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: auto; width: 100%; max-height: 128px; max-width: 100%; margin-top: auto; margin-bottom: 25px; padding-top: 0px; padding-bottom: 0px;">
 <span style="border-bottom: 1px solid #505050FF; margin-bottom: 4px;"></span>
 
-
+---
 
 
 
