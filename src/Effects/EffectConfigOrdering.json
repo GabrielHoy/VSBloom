@@ -4,7 +4,8 @@
             "categoryName": "Editor Effects",
             "effects": [
                 "CursorTrails",
-                "LineNumbers"
+                "LineNumbers",
+                "Tabs"
             ]
         },
         {

@@ -2,6 +2,11 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
+## [1.3.0] - 2026-02-09
+
+### Added
+- Overhauled Editor Tabs and added many animations to both tabs and their icons/interactions
+
 ## [1.2.0] - 2026-02-09
 
 ### Added

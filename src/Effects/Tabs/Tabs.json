@@ -1,0 +1,13 @@
+{
+    "effectDisplayName": "Tab Overhaul",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable visual revamps applied to code editor tabs.",
+            "markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
+        }
+    ]
+}

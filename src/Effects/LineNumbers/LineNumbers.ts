@@ -42,18 +42,6 @@ export async function Start(configResolver: EffectConfigResolver) {
         });
         janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(mutator));
     }
-    /* Short-Term -> Long-Term Unfocus Transition Threshold Mutator */
-    // const lngTmUnfcsThrsMutator = await bloom.configs.RegisterEffectConfigMutator({
-    //     pathResolver: configResolver.GetPropertyPath('longTermUnfocusTransitionThreshold'),
-    //     internalValueMutator: (changedValue) => {
-    //         vsbloom.Log('debug', 'long term unfocus transition threshold changed to ' + changedValue);
-    //         effectConfig.longTermUnfocusTransitionThreshold = (changedValue as number) * 1000;
-    //         if (currentUnfocusUUID) {
-    //             OnWindowFocused(new Event('focus'));
-    //         }
-    //     }
-    // });
-    // janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(lngTmUnfcsThrsMutator));
 }
 
 export function Stop() {

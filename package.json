@@ -185,6 +185,13 @@
 						"default": -7.5,
 						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
 						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
+					},
+					"vsbloom.tabEffects.enabled": {
+						"order": 16,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable modifications pertaining to code editor tabs.",
+						"markdownDescription": "Enable or disable modifications pertaining to code editor tabs."
 					}
 				}
 			},
@@ -193,49 +200,49 @@
 				"order": 4,
 				"properties": {
 					"vsbloom.windowFocusEffects.enabled": {
-						"order": 16,
+						"order": 17,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the effects that occur when the window becomes unfocused.",
 						"markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
-						"order": 17,
+						"order": 18,
 						"type": "string",
 						"default": "blur(0.75px) grayscale(25%)",
 						"description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
-						"order": 18,
+						"order": 19,
 						"type": "number",
 						"default": 0.5,
 						"description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
-						"order": 19,
+						"order": 20,
 						"type": "string",
 						"default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
 						"description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
-						"order": 20,
+						"order": 21,
 						"type": "number",
 						"default": 30,
 						"description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
-						"order": 21,
+						"order": 22,
 						"type": "number",
 						"default": 0.618,
 						"description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
 						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
-						"order": 22,
+						"order": 23,
 						"type": "number",
 						"default": 120,
 						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",

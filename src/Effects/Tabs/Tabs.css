@@ -1,0 +1,137 @@
+:root {
+    --vsbloom-tab-border-color: var(--vscode-foreground);
+    --vsbloom-tab-close-button-hover-color: red;
+    --vsbloom-tab-border-style: dashed;
+}
+
+@keyframes tabGlowPulseAnim {
+    0% {
+        text-shadow: 0 0 0px;
+    }
+    100% {
+        text-shadow: 0 0 1px;
+    }
+}
+
+@keyframes tabCloseButtonHoverAnim {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px);
+    }
+    100% {
+        transform: scale(1.25);
+        filter: drop-shadow(0 0 1px black);
+    }
+}
+
+@keyframes tabIntroAnim {
+    0% {
+        transform: translateY(100%) scaleY(0);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0%) scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes tabInactiveHoveringFileIconAnim {
+    0% {
+        transform: scale(0.85);
+    }
+    100% {
+        transform: scale(0.925);
+    }
+}
+@keyframes tabActiveHoveringFileIconAnim {
+    0% {
+        filter: drop-shadow(0 0 0px);
+    }
+    100% {
+        filter: drop-shadow(0 0 0.5px);
+    }
+}
+
+div.tabs-container > div.tab {
+    transition: border-bottom-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    border-bottom: 0px solid var(--vsbloom-tab-border-color);
+    animation: tabIntroAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+
+    /* hover animations for the entire tab */
+    &:hover {
+        /* file icon bobs up when hovering on the tab */
+        &:not(.active) .monaco-icon-label.file-icon::before {
+            /* hovering during inactive state */
+            animation: tabInactiveHoveringFileIconAnim 0.5s ease-in-out infinite alternate;
+        }
+    }
+
+    /* this targets the file icon in the tab */
+    & .monaco-icon-label.file-icon {
+        &::before {
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: grayscale(25%);
+            transform: scale(0.85);
+        }
+        &:hover::before {
+            filter: grayscale(0%);
+        }
+    }
+
+    /* this targets the actual tab's text */
+    & .label-name > span.monaco-highlighted-label {
+        transition: font-size 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        font-size: 90%;
+    }
+
+    /* this targets the close button in the tab */
+    & .action-label.codicon-close {
+        /* default button state */
+        &::before {
+            transition: color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), rotate 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: inherit;
+            transform: scale(1);
+            rotate: 0deg;
+        }
+
+        /* hover animation */
+        &:hover::before {
+            color: var(--vsbloom-tab-close-button-hover-color);
+            rotate: 90deg;
+            animation-delay: 0.5s;
+            animation: tabCloseButtonHoverAnim 0.5s ease-in-out infinite alternate;
+        }
+
+        /* spin backwards and scale down when clicking */
+        &:active::before {
+            rotate: -90deg;
+            scale: 0.75;
+        }
+    }
+
+    /* active/selected tab */
+    &.active {
+        border-bottom: 1px solid var(--vsbloom-tab-border-color);
+
+        /* tab text */
+        & .label-name > span.monaco-highlighted-label {
+            font-size: 100%;
+            animation: tabGlowPulseAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite alternate;
+        }
+
+        /* file icon active state */
+        & .monaco-icon-label.file-icon::before {
+            filter: grayscale(0%);
+            transform: scale(1);
+        }
+    }
+
+    &:not(:last-child) {
+        border-right-style: var(--vsbloom-tab-border-style) !important;
+    }
+
+    &.dirty {
+
+    }
+}
