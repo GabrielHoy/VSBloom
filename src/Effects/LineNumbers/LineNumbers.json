@@ -1,0 +1,41 @@
+{
+    "effectDisplayName": "Line Number Effects",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable line number indicator effects.",
+            "markdownDescription": "Enable or disable line number indicator effects."
+        },
+        {
+            "name": "activeLineAnimationDuration",
+            "type": "number",
+            "default": 0.35,
+            "description": "The duration of the animation that occurs when the active line number changes, in seconds.",
+            "markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
+        },
+        {
+            "name": "activeLineOffset",
+            "type": "number",
+            "default": 3,
+            "description": "The offset of the active line number to the right, in pixels.",
+            "markdownDescription": "The offset of the active line number to the right, in **pixels**."
+        },
+        {
+            "name": "activeLineGlowSize",
+            "type": "number",
+            "default": 2.5,
+            "description": "The size of the glow effect around the active line number, in pixels.",
+            "markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
+        },
+        {
+            "name": "activeLineSkewAngle",
+            "type": "number",
+            "default": -7.5,
+            "description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
+            "markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
+        }
+    ]
+}

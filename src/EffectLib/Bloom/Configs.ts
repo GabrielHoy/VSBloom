@@ -42,9 +42,9 @@ export type EffectConfigMutator = {
 
 const internalEffectConfigMutators: Map<EffectConfigMutator, VSBloomConfigValue> = new Map();
 function OnExtensionConfigUpdate(event: VSBloomConfigUpdateEvent): void {
-    const { current: currentVSCConfig, previous } = event.detail;
+    const { current, previous } = event.detail;
     for (const [mutator, currentCfgVal] of internalEffectConfigMutators) {
-        const newValue = typeof mutator.pathResolver === 'string' ? GetEffectConfigValueNoDefault(currentVSCConfig, mutator.pathResolver) : mutator.pathResolver(currentVSCConfig);
+        const newValue = typeof mutator.pathResolver === 'string' ? GetEffectConfigValueNoDefault(current, mutator.pathResolver) : mutator.pathResolver(current);
         if (newValue !== currentCfgVal) {
             mutator.internalValueMutator(newValue);
             internalEffectConfigMutators.set(mutator, newValue);

@@ -2,6 +2,11 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
+## [1.2.0] - 2026-02-09
+
+### Added
+- New effect for the Active Line Number within code editor windows changing
+
 
 ## [1.1.0] - 2026-02-06
 

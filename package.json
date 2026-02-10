@@ -95,7 +95,7 @@
 				}
 			},
 			{
-				"title": "Typing Effects",
+				"title": "Editor Effects",
 				"order": 3,
 				"properties": {
 					"vsbloom.cursorTrails.enabled": {
@@ -150,6 +150,41 @@
 						"default": 20,
 						"description": "The speed at which the trail should pursue the cursor, in pixels/second",
 						"markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
+					},
+					"vsbloom.lineNumberEffects.enabled": {
+						"order": 11,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable line number indicator effects.",
+						"markdownDescription": "Enable or disable line number indicator effects."
+					},
+					"vsbloom.lineNumberEffects.activeLineAnimationDuration": {
+						"order": 12,
+						"type": "number",
+						"default": 0.35,
+						"description": "The duration of the animation that occurs when the active line number changes, in seconds.",
+						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
+					},
+					"vsbloom.lineNumberEffects.activeLineOffset": {
+						"order": 13,
+						"type": "number",
+						"default": 3,
+						"description": "The offset of the active line number to the right, in pixels.",
+						"markdownDescription": "The offset of the active line number to the right, in **pixels**."
+					},
+					"vsbloom.lineNumberEffects.activeLineGlowSize": {
+						"order": 14,
+						"type": "number",
+						"default": 2.5,
+						"description": "The size of the glow effect around the active line number, in pixels.",
+						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
+					},
+					"vsbloom.lineNumberEffects.activeLineSkewAngle": {
+						"order": 15,
+						"type": "number",
+						"default": -7.5,
+						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
+						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
 					}
 				}
 			},
@@ -158,49 +193,49 @@
 				"order": 4,
 				"properties": {
 					"vsbloom.windowFocusEffects.enabled": {
-						"order": 11,
+						"order": 16,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the effects that occur when the window becomes unfocused.",
 						"markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
-						"order": 12,
+						"order": 17,
 						"type": "string",
 						"default": "blur(0.75px) grayscale(25%)",
 						"description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
-						"order": 13,
+						"order": 18,
 						"type": "number",
 						"default": 0.5,
 						"description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
-						"order": 14,
+						"order": 19,
 						"type": "string",
 						"default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
 						"description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
-						"order": 15,
+						"order": 20,
 						"type": "number",
 						"default": 30,
 						"description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
-						"order": 16,
+						"order": 21,
 						"type": "number",
 						"default": 0.618,
 						"description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
 						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
-						"order": 17,
+						"order": 22,
 						"type": "number",
 						"default": 120,
 						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",

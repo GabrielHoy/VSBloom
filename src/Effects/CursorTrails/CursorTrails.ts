@@ -21,7 +21,6 @@ let janitor: Janitor;
 
 async function SwapToTrailType(newTrailType: ValidTrailType) {
     vsbloom.Log('debug', 'Trail Type Changed to ' + (newTrailType as ValidTrailType));
-    vsbloom.Log('debug', 'janitor named cleanup task: ', janitor.GetNamedCleanupTask('active-trail-type'));
     const cleanerTaskPromise = janitor.GetNamedCleanupTask('active-trail-type')?.CleanNow();
     if (cleanerTaskPromise) {
         await cleanerTaskPromise;
@@ -44,6 +43,8 @@ async function SwapToTrailType(newTrailType: ValidTrailType) {
 
 export async function Start(configResolver: EffectConfigResolver) {
     janitor = new bloom.janitors.Janitor();
+
+
 
     //This mutator is where the magic happens for trails
     //it spins off a new trail type initializer/cleaner

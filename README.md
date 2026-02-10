@@ -28,6 +28,7 @@ VSBloom works differently from typical VS Code extensions and its effects are ma
 
 - **Cursor Trails**: Watch as animated trails follow your cursor while you navigate through your code!
 - **Window Focus Effects**: See the window react to losing focus and slowly dim itself into an idle-state as you leave the editor for extended periods of time!
+- **Line Numbers**: Pretty & snappy animations that play when you change the active line number!
 
 - **Completely Configurable**: Tweak and tinker with effects to your hearts content! Everything is individually toggleable, so you can tune down or entirely disable any effects you find too distracting.
 

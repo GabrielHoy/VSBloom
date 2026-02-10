@@ -1,9 +1,10 @@
 {
     "categories": [
         {
-            "categoryName": "Typing Effects",
+            "categoryName": "Editor Effects",
             "effects": [
-                "CursorTrails"
+                "CursorTrails",
+                "LineNumbers"
             ]
         },
         {

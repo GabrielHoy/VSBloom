@@ -1,0 +1,30 @@
+:root {
+    --vsbloom-active-line-ease-anim: cubic-bezier(0.175, 0.5, 0.5, 1.275);
+    --vsbloom-active-line-number-offset: 3px;
+    --vsbloom-active-line-number-glow-size: 2.5px;
+    --vsbloom-active-line-number-skew-angle: -7.5deg;
+    --vsbloom-active-line-animation-duration: 0.35s;
+}
+
+@keyframes activeLineNumberOffsetAnim {
+    0% {
+        margin-left: 0px;
+        text-shadow: 0 0 0 var(--vscode-editorLineNumber-activeForeground);
+        transform: skewX(0deg);
+    }
+    75% {
+        margin-left: calc(var(--vsbloom-active-line-number-offset) * 1.25);
+        text-shadow: 0 0 calc(var(--vsbloom-active-line-number-glow-size) * 1.5) var(--vscode-editorLineNumber-activeForeground);
+        transform: skewX(calc(var(--vsbloom-active-line-number-skew-angle) * 1.25));
+    }
+    100% {
+        margin-left: var(--vsbloom-active-line-number-offset);
+        text-shadow: 0 0 var(--vsbloom-active-line-number-glow-size) var(--vscode-editorLineNumber-activeForeground);
+        transform: skewX(var(--vsbloom-active-line-number-skew-angle));
+    }
+}
+
+.margin-view-overlays > div > .line-numbers.active-line-number {
+    will-change: margin-left, text-shadow, transform;
+    animation: activeLineNumberOffsetAnim var(--vsbloom-active-line-animation-duration) var(--vsbloom-active-line-ease-anim) forwards;
+}
