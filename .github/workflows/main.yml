@@ -1,7 +1,5 @@
 on:
-  push:
-    tags:
-      - "Stable"
+  workflow_dispatch:
 
 name: Deploy Extension to Marketplaces
 jobs:
