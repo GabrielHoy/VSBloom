@@ -1,0 +1,13 @@
+{
+    "effectDisplayName": "Quick-Input Overhaul",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
+            "markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
+        }
+    ]
+}

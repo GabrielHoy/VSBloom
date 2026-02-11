@@ -8,7 +8,7 @@
 		"email": "tampered@tamperedreality.net",
 		"url": "https://tamperedreality.net"
 	},
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",
 	"pricing": "Free",
@@ -186,12 +186,12 @@
 						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
 						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
 					},
-					"vsbloom.tabEffects.enabled": {
+					"vsbloom.tabOverhaul.enabled": {
 						"order": 16,
 						"type": "boolean",
 						"default": true,
-						"description": "Enable or disable modifications pertaining to code editor tabs.",
-						"markdownDescription": "Enable or disable modifications pertaining to code editor tabs."
+						"description": "Enable or disable visual revamps applied to code editor tabs.",
+						"markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
 					}
 				}
 			},
@@ -247,6 +247,13 @@
 						"default": 120,
 						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
 						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
+					},
+					"vsbloom.quick-InputOverhaul.enabled": {
+						"order": 24,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
+						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
 					}
 				}
 			}

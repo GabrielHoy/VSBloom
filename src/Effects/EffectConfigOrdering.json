@@ -11,7 +11,8 @@
         {
             "categoryName": "Window Effects",
             "effects": [
-                "WindowFocus"
+                "WindowFocus",
+                "QuickInputOverhaul"
             ]
         }
     ]

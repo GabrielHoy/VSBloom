@@ -1,6 +1,7 @@
 .vscode
 .cursor
 .claude
+.github
 .vscode-test.mjs
 node_modules
 src/
