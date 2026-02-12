@@ -33,6 +33,41 @@
     animation: quickInputRowShowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+@keyframes quickInputShowListItemsAnim {
+    0% {
+        opacity: 0;
+        transform: skewY(3.14deg);
+    }
+    100% {
+        opacity: 1;
+        transform: skewY(0deg);
+    }
+}
+.quick-input-list>.monaco-list>.monaco-scrollable-element {
+    animation: quickInputShowListItemsAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+.quick-input-list .monaco-list-row {
+    transition: border-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    & .quick-input-list-label .label-name>.monaco-highlighted-label {
+        position: relative;
+        left: 0px;
+        transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    &.focused {
+        border: 1px solid color-mix(in srgb, var(--vscode-list-focusOutline) 50%, transparent);
+
+        & .quick-input-list-label .label-name>.monaco-highlighted-label {
+            position: relative;
+            margin-top: -2px;
+            left: 2.5px;
+            text-shadow: 0 0 2px var(--vscode-list-focusOutline);
+        }
+    }
+}
+
 @keyframes quickInputWidgetShowAnim {
     0% {
         opacity: 0;
