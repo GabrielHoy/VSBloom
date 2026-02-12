@@ -1,3 +1,4 @@
+/* wrapper around the 'header' that contains the input box */
 .quick-input-widget .ibwrapper {
     border: 1px solid color-mix(in srgb, var(--vscode-widget-border) 50%, transparent);
     box-shadow: 0 0 2px 0 color-mix(in srgb, var(--vscode-widget-border) 50%, black);
@@ -5,6 +6,12 @@
     background-image: linear-gradient(to right, color-mix(in srgb, var(--vscode-quickInput-background) 85%, black), color-mix(in srgb, var(--vscode-quickInput-background) 85%, black));
 }
 
+/* another header that contains the input box - similar but not exactly the same as above */
+.quick-input-widget>.quick-input-header {
+    border-bottom: 2px solid var(--vscode-widget-border);
+}
+
+/* scrollbar on right */
 .quick-input-widget .scrollbar.vertical {
     width: 4px !important;
     &>div.slider {
@@ -12,6 +19,7 @@
     }
 }
 
+/* applied to each row as it gets lazy-instantiated */
 @keyframes quickInputRowShowAnim {
     0% {
         left: -5px;
@@ -28,11 +36,12 @@
         opacity: 1;
     }
 }
-
+/* applies above animation to each row as it gets lazy-instantiated */
 .quick-input-widget .monaco-list-rows>div.monaco-list-row {
     animation: quickInputRowShowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* applied to the *container* of the item list as it gets shown */
 @keyframes quickInputShowListItemsAnim {
     0% {
         opacity: 0;
@@ -43,22 +52,28 @@
         transform: skewY(0deg);
     }
 }
+
+/* applied to the *container* of the item list as it gets shown */
 .quick-input-list>.monaco-list>.monaco-scrollable-element {
     animation: quickInputShowListItemsAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 }
 
+/* applied to each row as it gets shown */
 .quick-input-list .monaco-list-row {
     transition: border-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
+    /* actual label text for this row */
     & .quick-input-list-label .label-name>.monaco-highlighted-label {
         position: relative;
         left: 0px;
         transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
+    /* when this row is currently focused */
     &.focused {
         border: 1px solid color-mix(in srgb, var(--vscode-list-focusOutline) 50%, transparent);
 
+        /* label text for row while focused */
         & .quick-input-list-label .label-name>.monaco-highlighted-label {
             position: relative;
             margin-top: -2px;
@@ -68,6 +83,7 @@
     }
 }
 
+/* applied to the *container* of the widget as it gets shown */
 @keyframes quickInputWidgetShowAnim {
     0% {
         opacity: 0;
@@ -84,13 +100,10 @@
     }
 }
 
+/* actual widget as a whole */
 .quick-input-widget {
     animation: quickInputWidgetShowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     border-width: 5px !important;
     border-style: double !important;
     border-radius: 6px !important;
-}
-
-.quick-input-widget>.quick-input-header {
-    border-bottom: 2px solid var(--vscode-widget-border);
 }
