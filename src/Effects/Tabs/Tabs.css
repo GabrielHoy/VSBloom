@@ -1,6 +1,5 @@
 :root {
     --vsbloom-tab-border-color: var(--vscode-foreground);
-    --vsbloom-tab-close-button-hover-color: red;
     --vsbloom-tab-border-style: dashed;
 }
 
@@ -10,17 +9,6 @@
     }
     100% {
         text-shadow: 0 0 1px;
-    }
-}
-
-@keyframes tabCloseButtonHoverAnim {
-    0% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0px);
-    }
-    100% {
-        transform: scale(1.25);
-        filter: drop-shadow(0 0 1px black);
     }
 }
 
@@ -83,31 +71,6 @@ div.tabs-container > div.tab {
     & .label-name > span.monaco-highlighted-label {
         transition: font-size 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         font-size: 90%;
-    }
-
-    /* this targets the close button in the tab */
-    & .action-label.codicon-close {
-        /* default button state */
-        &::before {
-            transition: color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), rotate 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            color: inherit;
-            transform: scale(1);
-            rotate: 0deg;
-        }
-
-        /* hover animation */
-        &:hover::before {
-            color: var(--vsbloom-tab-close-button-hover-color);
-            rotate: 90deg;
-            animation-delay: 0.5s;
-            animation: tabCloseButtonHoverAnim 0.5s ease-in-out infinite alternate;
-        }
-
-        /* spin backwards and scale down when clicking */
-        &:active::before {
-            rotate: -90deg;
-            scale: 0.75;
-        }
     }
 
     /* active/selected tab */

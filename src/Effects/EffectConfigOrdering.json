@@ -12,7 +12,8 @@
             "categoryName": "Window Effects",
             "effects": [
                 "WindowFocus",
-                "QuickInputOverhaul"
+                "QuickInputOverhaul",
+                "DynamicInteractables"
             ]
         }
     ]

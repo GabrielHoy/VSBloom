@@ -1,7 +1,5 @@
 /**
- * Handles managing the CSS classes that are applied to the body
- * element when the window is blurred, left blurred for a long time,
- * and then succinctly refocused.
+ * Unused for this effect.
  */
 
 import bloom from 'bloom';

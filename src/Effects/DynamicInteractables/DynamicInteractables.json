@@ -1,0 +1,13 @@
+{
+    "effectDisplayName": "Dynamic Interactables",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable more dynamic and responsive interactable elements around the app.",
+            "markdownDescription": "Enable or disable more dynamic and responsive interactable elements around the app."
+        }
+    ]
+}

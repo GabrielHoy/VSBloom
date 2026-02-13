@@ -1,0 +1,243 @@
+:root {
+    --vsbloom-dynamic-codicons-bouncy-ease: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes closeButtonHoverAnim {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px);
+    }
+    100% {
+        transform: scale(1.25);
+        filter: drop-shadow(0 0 1px black);
+    }
+}
+@keyframes plusButtonHoverAnim {
+    0% {
+        transform: scale(1.25);
+        filter: drop-shadow(0 0 0px);
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0.25px);
+    }
+}
+@keyframes settingsGearButtonHoverAnim {
+    0% {
+        rotate: 0deg;
+    }
+    100% {
+        rotate: 360deg;
+    }
+}
+@keyframes leftArrowButtonHoverAnim {
+    0% {
+        transform: scaleX(1) translateX(0px);
+        filter: drop-shadow(0 0 0px);
+    }
+    70% {
+        transform: scaleX(1.1) translateX(-2.5px);
+        filter: drop-shadow(0 0 0.5px);
+    }
+    100% {
+        transform: scaleX(1) translateX(1px);
+        filter: drop-shadow(0 0 0px);
+    }
+}
+@keyframes rightArrowButtonHoverAnim {
+    0% {
+        transform: scaleX(1) translateX(0px);
+        filter: drop-shadow(0 0 0px);
+    }
+    70% {
+        transform: scaleX(1.1) translateX(2.5px);
+        filter: drop-shadow(0 0 0.5px);
+    }
+    100% {
+        transform: scaleX(1) translateX(-1px);
+        filter: drop-shadow(0 0 0px);
+    }
+}
+
+@keyframes refreshButtonClickLoop {
+    0% {
+        rotate: 0deg;
+    }
+    100% {
+        rotate: 360deg;
+    }
+}
+
+/*
+    vscode organizes iconified buttons with the 'codicon' class
+    and interactable buttons with codicons have 'action-label' as well
+*/
+.codicon.action-label,.codicon.twisty-container {
+    /* general state for all codicons */
+    &::before {
+        transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+    }
+    /* general hover scaling for any codicon */
+    &:hover::before {
+        transform: scale(1.175);
+    }
+    /* general click scaling for any codicon */
+    &:active::before {
+        transform: scale(0.825);
+    }
+
+    /* close buttons */
+    &.codicon-close,&.codicon-panel-close {
+        /* default close state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), rotate 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+            color: inherit;
+            transform: scale(1);
+            rotate: 0deg;
+        }
+        /* hover animation spinning and taking on a red pulse effect */
+        &:hover::before {
+            color: red;
+            rotate: 90deg;
+            animation-delay: 0.5s;
+            animation: closeButtonHoverAnim 0.5s ease-in-out infinite alternate;
+        }
+        /* spin backwards and scale down when clicking */
+        &:active::before {
+            rotate: -90deg;
+            scale: 0.75;
+        }
+    }
+
+    /* refresh buttons */
+    &.codicon-refresh,&.codicon-extensions-refresh {
+        /* default state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), rotate 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+        }
+        /* hovering animation */
+        &:hover::before {
+            rotate: -25deg;
+        }
+        /* clicking animation */
+        &:active::before {
+            animation: refreshButtonClickLoop 1s var(--vsbloom-dynamic-codicons-bouncy-ease) infinite;
+        }
+    }
+
+    /* plus buttons */
+    &.codicon-add-two {
+        /* default state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), rotate 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+        }
+
+        /* hovering animation */
+        &:hover::before {
+            rotate: 90deg;
+            animation: plusButtonHoverAnim 1s ease-in-out infinite alternate;
+        }
+
+        /* clicking animation */
+        &:active::before {
+            scale: 0.75;
+        }
+    }
+
+    /* 'trash can' buttons, particularly seen used for "terminal kill" interactions */
+    &.codicon-trash {
+        /* hovering animation */
+        &:hover::before {
+            color: red;
+        }
+    }
+
+    /* settings gear buttons, particularly used for...settings */
+    &.codicon-settings-gear {
+        /* default state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), rotate 0.618s var(--vsbloom-dynamic-codicons-bouncy-ease);
+        }
+        /* hovering animation */
+        &:hover::before {
+            rotate: 90deg;
+        }
+
+        /* clicking animation */
+        &:active::before {
+            animation: settingsGearButtonHoverAnim 1s linear infinite;
+        }
+    }
+
+    /* left-arrow buttons */
+    &.codicon-arrow-left {
+        /* default state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+        }
+        /* hovering animation */
+        &:hover::before {
+            animation: leftArrowButtonHoverAnim 1s ease-in-out infinite alternate;
+        }
+        /* clicking animation */
+        &:active::before {
+            transform: scaleX(1) translateX(0px);
+            scale: 0.75;
+        }
+    }
+    /* right-arrow buttons */
+    &.codicon-arrow-right {
+        /* default state */
+        &::before {
+            transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+        }
+        /* hovering animation */
+        &:hover::before {
+            animation: rightArrowButtonHoverAnim 1s ease-in-out infinite alternate;
+        }
+        /* clicking animation */
+        &:active::before {
+            transform: scaleX(1) translateX(0px);
+            scale: 0.75;
+        }
+    }
+
+    /*
+        some codicons' ::before pseudo-elements inherit
+        an inline display from their parent elements, which
+        doesn't work very well with our animations and effects,
+        so we'll override that here to make them explicitly flow
+        via inline-block displays instead
+
+        ?worth investigating further for side effects when free time permits
+        ?but for now I haven't seen issues with this inline-block override
+    */
+    &[class*=codicon-]::before {
+        display: inline-block;
+    }
+}
+
+/*
+    meant primarily to target the expandable/collapsible
+    section headers within the Explorer view
+*/
+.pane-header {
+    /* title element within a pane header containing actual text content */
+    &>.title {
+
+    }
+
+    /*
+        "twisty container" with a codicon arrow, usually on the left side
+        of a pane header (though it's probably a bad idea to assume that will
+        always hold true)
+    */
+    &>.codicon.twisty-container {
+        /* (this is going to look a lot like the above .codicon.action-label selector) */
+
+        /* see above codicon selector block for explanation on this */
+        /* &[class*=codicon-]::before {
+            display: inline-block;
+        } */
+    }
+}

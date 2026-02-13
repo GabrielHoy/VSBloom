@@ -1,0 +1,7 @@
+{
+	"extends": "../../../tsconfig.effects.json",
+	"include": [
+		"./**/*.ts",
+		"../../ExtensionBridge/ElectronGlobals.ts"
+	]
+}
