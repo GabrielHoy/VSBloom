@@ -126,7 +126,7 @@
     }
 
     /* plus buttons */
-    &.codicon-add-two {
+    &.codicon-add-two,&.codicon-plus {
         /* default state */
         &::before {
             transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), rotate 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
@@ -145,7 +145,7 @@
     }
 
     /* 'trash can' buttons, particularly seen used for "terminal kill" interactions */
-    &.codicon-trash {
+    &.codicon-trash,&.codicon-trashcan {
         /* hovering animation */
         &:hover::before {
             color: red;
