@@ -255,15 +255,8 @@
 						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
 						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
 					},
-					"vsbloom.explorerOverhaul.enabled": {
-						"order": 25,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable a visual overhaul of the Explorer view.",
-						"markdownDescription": "Enable or disable a visual overhaul of the Explorer view."
-					},
 					"vsbloom.dynamicInteractables.enabled": {
-						"order": 26,
+						"order": 25,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",

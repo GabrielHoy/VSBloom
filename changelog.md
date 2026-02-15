@@ -2,14 +2,12 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
-## [UNRELEASED] - 2026-XX-XX
+## [1.3.0] - 2026-02-14
 
 ### Added
-- **New Effect** to make **interactables** more dynamic around the app
+- **New Effect** to make various **interactables** much more dynamic and responsive around the app
 - **New Effect** to overhaul **Editor Tabs**, adding many animations&state transitions to tabs
 - **New Effect** to overhaul the **Quick-Input Menu**, providing a more cinematic and "front&center" design
-
-
 
 ## [1.2.0] - 2026-02-09
 
