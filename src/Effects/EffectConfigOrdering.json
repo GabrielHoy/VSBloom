@@ -13,7 +13,6 @@
             "effects": [
                 "WindowFocus",
                 "QuickInputOverhaul",
-                "ExplorerOverhaul",
                 "DynamicInteractables"
             ]
         }

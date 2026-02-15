@@ -71,8 +71,14 @@
 /*
     vscode organizes iconified buttons with the 'codicon' class
     and interactable buttons with codicons have 'action-label' as well
+
+    selector 1: most general codicon buttons around the app
+    selector 2: "twisty container" codicons for things like pane header expansion/collapse
+    selector 3: zoom button at bottom of app for changing app zoom levels
+    selector 4: notification bell icon in bottom-right of app for notifications
+    selector 5: same as selector 4 but for 'dot' notification symbol state
 */
-.codicon.action-label:not(.disabled),.codicon.twisty-container {
+.codicon.action-label:not(.disabled),.codicon.twisty-container,span.codicon.codicon-zoom-out,span.codicon.codicon-bell,span.codicon.codicon-bell-dot {
     /* general state for all codicons */
     &::before {
         transition: color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
@@ -166,7 +172,8 @@
 
         /* clicking animation */
         &:active::before {
-            animation: settingsGearButtonHoverAnim 1s linear infinite;
+            rotate: 360deg;
+            /* animation: settingsGearButtonHoverAnim 1s linear infinite; */
         }
     }
 
@@ -245,6 +252,27 @@ a.action-label.uri-icon {
     /* general click scaling */
     &:active {
         transform: scale(0.825);
+    }
+}
+
+/*
+    targets mostly the buttons in the bottom composite bar containing
+    things like 'problems' 'output' 'terminal' etc.
+*/
+.actions-container>.composite-bar-action-tab:not(.icon):has(.composite-bar-action-tab-label>[aria-id="chat-horizontal-tab"]) {
+    transition: scale 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), transform 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease), background-color 0.5s var(--vsbloom-dynamic-codicons-bouncy-ease);
+    
+    &:not(.checked) {
+        &:hover {
+            transform: scale(1.1);
+        }
+        &:active {
+            transform: scale(0.9);
+        }
+    }
+    
+    &:active {
+        transform: scale(0.9);
     }
 }
 
