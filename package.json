@@ -21,7 +21,7 @@
 		"url": "https://github.com/GabrielHoy/VSBloom/issues",
 		"email": "vsbloom@tamperedreality.net"
 	},
-	"icon": "logo.png",
+	"icon": "images/logo.png",
 	"engines": {
 		"vscode": "^1.105.1"
 	},
@@ -58,6 +58,10 @@
 			{
 				"command": "vsbloom.reloadEffects",
 				"title": "VSBloom: Reload All Effects"
+			},
+			{
+				"command": "vsbloom.openMenu",
+				"title": "VSBloom: Open Menu"
 			}
 		],
 		"configuration": [
@@ -255,8 +259,15 @@
 						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
 						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
 					},
-					"vsbloom.dynamicInteractables.enabled": {
+					"vsbloom.explorerOverhaul.enabled": {
 						"order": 25,
+						"type": "boolean",
+						"default": true,
+						"description": "Enable or disable a visual overhaul of the Explorer view.",
+						"markdownDescription": "Enable or disable a visual overhaul of the Explorer view."
+					},
+					"vsbloom.dynamicInteractables.enabled": {
+						"order": 26,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",
@@ -277,9 +288,11 @@
 		"test": "vscode-test"
 	},
 	"devDependencies": {
+		"@tsconfig/svelte": "^5.0.7",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "22.x",
 		"@types/vscode": "^1.105.1",
+		"@types/vscode-webview": "^1.57.5",
 		"@types/ws": "^8.18.1",
 		"@vscode/sudo-prompt": "^9.3.2",
 		"@vscode/test-cli": "^0.0.11",
@@ -287,9 +300,12 @@
 		"chokidar": "^5.0.0",
 		"csso": "^5.0.5",
 		"esbuild": "^0.27.2",
+		"esbuild-svelte": "^0.9.4",
 		"eslint": "^9.39.2",
 		"motion": "^12.29.2",
 		"pixi.js": "^8.15.0",
+		"svelte": "^5.51.2",
+		"svelte-preprocess": "^6.0.3",
 		"terser": "^5.46.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.52.0"

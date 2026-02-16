@@ -7,6 +7,7 @@ import * as sudo from "@vscode/sudo-prompt";
 import { VSBloomBridgeServer } from "./ExtensionBridge/Server";
 import { EffectManager } from "./Effects/EffectManager";
 import { ConstructVSBloomLogPrefix } from "./Debug/Colorful";
+import { MenuPanel } from "./Webview/Menu";
 
 enum ClientPatchingStatus {
   PATCHED = 0,
@@ -225,6 +226,15 @@ async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): P
   return false;
 }
 
+async function AttemptOpenMenu(context: vscode.ExtensionContext) {
+  if (!effectManager) {
+    vscode.window.showErrorMessage("[VSBloom]: Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
+    return;
+  }
+
+  MenuPanel.ShowPanel("vsbloom", "VS: Bloom Menu", context.extensionUri);
+}
+
 /**
  * Called after the extension is activated and the current client is
  * verified to have been correctly patched and ready to go
@@ -366,6 +376,11 @@ export function activate(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(reloadEffectsCmdDisp);
 
+    //hookup the command to open the webview for vsbloom
+    const openWebViewCmdDisp = vscode.commands.registerCommand("vsbloom.openMenu", async () => {
+      await AttemptOpenMenu(context);
+    });
+    context.subscriptions.push(openWebViewCmdDisp);
 
     //ensure that we're working with a patched client
     //before we continue with the rest of the extension

@@ -17,6 +17,7 @@ const buildBanners = {
   "build/ElevatedClientPatcher.js": `/* VS: Bloom Elevated Client Patcher */\n//\n//Hi!\n//\n//This is a NodeJS script designed to be run within an environment\n//that has elevated privileges, it is exclusively used in the event\n//of VSBloom running into permission errors when patching the Electron Client,\n//this normally doesn't require any elevation, but if VSCode is\n//installed system-wide instead of being local to the user, its files will\n//be located within a system directory(varying based on OS and 'flavor' of VSCode) which unfortunately\n//requires process elevation to be able to perform file read/write operations inside of.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the elevated patcher does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "__EFFECT_JS__": `/* VS: Bloom Effect JS */\n/* Effect Name: "${effectNameSentinel}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
   "build/VSBloomSharedLibs.js": `/* VS: Bloom Shared Library Provider */\n//\n//Hi!\n//\n//This rather monolithic file serves to bundle shared libraries that are used across\n//multiple effects in VSBloom; it's meant to be loaded before the VSBloom Client to ensure that\n//libraries are available immediately when effects load.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what libraries we preload, how these shared imports are loaded, or how to add your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+  "build/Webview/view.js": `/* VS: Bloom Webview Page */\n//\n//Hi!\n//\n//This is the main entry point for the VS: Bloom Webview, it's responsible for mounting a compiled Svelte application\n//into the webview's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the webview does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
 };
 
 async function ProcessEffectCSSFileChangedDuringWatch(cssFilePath) {
@@ -202,6 +203,11 @@ const esbuildErrorReporterPlugin = {
 };
 
 async function main() {
+  //ESM-only packages used for the webview Svelte build which
+  //happens a little later down the line in this function
+  const esbuildSvelte = (await import("esbuild-svelte")).default;
+  const { sveltePreprocess } = await import("svelte-preprocess");
+
   if (isProductionBuild) {
     //if we're building for a production environment,
     //let's make sure no lingering dev files or build
@@ -296,7 +302,37 @@ async function main() {
     } : undefined
   });
 
-  
+  //webview Svelte app - compiles all of the Svelte components into a 'browser-ready'
+  //IIFE bundle that gets loaded into the VSBloom menu webview panel
+  const webviewCtx = await esbuild.context({
+    bundle: true,
+    format: "iife",
+    globalName: "app",
+    minify: isProductionBuild,
+    sourcemap: isProductionBuild ? false : "inline",
+    sourcesContent: !isProductionBuild,
+    platform: "browser",
+    target: ["chrome120"],
+    logLevel: "silent",
+    conditions: ["svelte", "browser"],
+    plugins: [
+      esbuildSvelte({
+        preprocess: sveltePreprocess({ sourceMap: !isProductionBuild }),
+        compilerOptions: {
+          dev: !isProductionBuild,
+          css: "external"
+        }
+      }),
+      esbuildErrorReporterPlugin,
+    ],
+    entryPoints: ["src/Webview/SvelteBase.ts"],
+    outdir: "build/Webview",
+    entryNames: "view",
+    banner: isProductionBuild ? {
+      js: buildBanners["build/Webview/view.js"]
+    } : undefined
+  });
+
   //the src/Effects directory contains a variety of effects that can be loaded into the client
   //each effect is a separate directory with .ts files inside of it,
   //and each of these effects needs to be individually built and bundled
@@ -340,7 +376,7 @@ async function main() {
     }));
   }
 
-  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, sharedLibsCtx, ...effectContexts];
+  const allContexts = [mainCtx, elevatedPatcherCtx, clientCtx, sharedLibsCtx, webviewCtx, ...effectContexts];
 
   if (shouldWatch) {
     console.log("[watch] build started");

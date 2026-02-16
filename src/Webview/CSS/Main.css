@@ -1,0 +1,15 @@
+@keyframes glowPulse {
+    0% {
+        filter: drop-shadow(0 0 0px #FFFFAF);
+    }
+    100% {
+        filter: drop-shadow(0 0 5px #FFFFAF);
+    }
+}
+
+.test-class {
+    font-size: 72px;
+    width: fit-content;
+    color: #FFDFDF;
+    animation: glowPulse 1s ease-in-out infinite alternate;
+}

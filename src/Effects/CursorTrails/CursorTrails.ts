@@ -73,7 +73,7 @@ export async function Start(configResolver: EffectConfigResolver) {
         }
     });
     janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(trailColorMutator));
-    
+
     const maxSolidTrailLengthMutator = await bloom.configs.RegisterEffectConfigMutator({
         pathResolver: configResolver.GetPropertyPath('maxSolidTrailLength'),
         internalValueMutator: (changedValue, initial) => {

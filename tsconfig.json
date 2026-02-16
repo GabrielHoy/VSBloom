@@ -20,6 +20,9 @@
 		"src/**/*.js",
 		"src/Utils/PackageConfigurations.mjs"],
 	"exclude": [
-		"src/Effects/*/"
+		"src/Effects/*/",
+		"src/Webview/SvelteBase.ts",
+		"src/Webview/**/*.svelte",
+		"src/Webview/svelte-shim.d.ts"
 	]
 }

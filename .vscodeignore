@@ -5,7 +5,7 @@
 .vscode-test.mjs
 node_modules
 src/
-logoHQ.png
+images/logoHQ.png
 tsconfig.json
 tsconfig.effects.json
 eslint.config.mjs

@@ -1,3 +1,7 @@
+/**
+ * This file contains various geometry-related functions that
+ * are used throughout the VSBloom Extension.
+ */
 import type { Point } from "pixi.js";
 
 export function Rad2Deg(radians: number): number {
