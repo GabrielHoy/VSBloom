@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
+import * as ClientPatcher from "../Patcher/ClientPatcher";
 import { Uri, Disposable, ViewColumn } from "vscode";
 import type { WebviewPanel, Webview } from "vscode";
 import type { BloomToSveltePayload, SvelteToBloomPayload } from "./WebviewNetworking";
+import * as ExtensionReflection from "../Extension/ExtensionReflection";
+import * as VersionTracking from "../Extension/VersionTracking";
 
 function GetWebviewURI(webview: Webview, extensionUri: Uri, pathList: string[]) {
 	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
@@ -21,16 +24,18 @@ export class MenuPanel {
 	private readonly panel: WebviewPanel;
 	private disposables: Disposable[] = [];
 	public static currentPanel: MenuPanel | undefined;
+	private readonly context: vscode.ExtensionContext;
 
-	private constructor(panel: WebviewPanel, uri: Uri) {
+	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext) {
 		this.panel = panel;
+		this.context = context;
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 		this.panel.webview.html = this.getWebviewContent(this.panel.webview, uri);
 		this.panel.iconPath = Uri.joinPath(uri, "images", "logo.png");
 		this.setWebviewMessageListener(this.panel.webview);
 	}
 
-	public static ShowPanel(view: string, name: string, webviewURI: Uri) {
+	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext) {
 		if (MenuPanel.currentPanel) {
 			MenuPanel.currentPanel.panel.reveal(ViewColumn.One);
 		} else {
@@ -44,7 +49,7 @@ export class MenuPanel {
 				}
 			);
 
-			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI);
+			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context);
 		}
 	}
 
@@ -114,11 +119,25 @@ export class MenuPanel {
 						}
 						return;
 					case "request-meta-update":
-						vscode.window.showInformationMessage("Got meta update request");
+						this.SendMetadataUpdateToSvelte();
+						break;
 				}
 			},
 			undefined,
 			this.disposables
 		);
+	}
+
+	private async SendMetadataUpdateToSvelte() {
+		const appProductFilePath = await ClientPatcher.GetMainApplicationProductFile(vscode);
+		this.PostToSvelte({
+			type: 'meta-update',
+			data: {
+				extensionVersion: VersionTracking.GetCurrentExtensionVersion(),
+				isClientPatched: await ClientPatcher.IsClientPatched(appProductFilePath),
+				clientPatchVersion: this.context.globalState.get<string>("vsbloom.patcher.lastKnownClientPatchVersion") ?? "unknown",
+				isDevEnvironment: ExtensionReflection.IsDevelopmentEnvironment()
+			}
+		});
 	}
 }

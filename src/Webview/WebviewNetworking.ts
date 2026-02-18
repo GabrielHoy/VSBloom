@@ -9,6 +9,9 @@ export interface UpdateMetadataMessage {
     type: 'meta-update',
     data: {
         extensionVersion: string;
+        isDevEnvironment: boolean;
+        isClientPatched: boolean;
+        clientPatchVersion: string;
     }
 }
 export type BloomToSveltePayload = SyncSettingsListMessage | UpdateMetadataMessage;
@@ -22,6 +25,7 @@ export interface SendWindowNotificationMessage {
         message: string
     };
 }
+//TODO implement this on the extension side
 export interface SendLogMessage {
     type: 'send-log',
     data: {

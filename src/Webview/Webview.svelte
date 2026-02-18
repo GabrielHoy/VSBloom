@@ -7,7 +7,7 @@
 	import Unknown from "./Components/Pages/Unknown.svelte";
 	import { directories } from "./Global/Directories.svelte";
 	import ScaleReflectionSingleton from "./Components/UX/ScaleReflectionSingleton.svelte";
-	import MetadataDisplay from "./Components/MetadataDisplay.svelte";
+	import PersistentMetadataDisplay from "./Components/PersistentMetadataDisplay.svelte";
 	import { onDestroy } from "svelte";
 
 	function InvertHexColor(hex: string): string {
@@ -58,7 +58,11 @@
 		"--vscode-disabledForeground",
 		"--vscode-errorForeground",
 		"--vscode-descriptionForeground",
-		"--vscode-scrollbar-shadow"
+		"--vscode-scrollbar-shadow",
+		
+		"--vsbloom-text-border-color",
+		"--vsbloom-shadowing-color",
+		"--vsbloom-extremum-theme-color"
 	]
 
 	function updateInvertedColorVars() {
@@ -136,7 +140,7 @@
 	current extension version, whether it's
 	out of date, etc.
 -->
-<MetadataDisplay />
+<PersistentMetadataDisplay />
 
 <style>
 	.page-content-container {
@@ -153,6 +157,8 @@
 		width: 100%;
 		height: 100%;
 		z-index: -20;
+		pointer-events: none;
+		user-select: none;
 
 		background-image: radial-gradient(circle, var(--vscode-editor-background) 0%, var(--vsbloom-shadowing-color) 100%);
 	}
@@ -166,6 +172,8 @@
 		height: 100%;
 		z-index: -10;
 		opacity: 0.075;
+		pointer-events: none;
+		user-select: none;
 		background-size: var(--bg-size-scaled) var(--bg-size-scaled);
 		background-repeat: repeat;
 		background-blend-mode: color;

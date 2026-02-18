@@ -19,4 +19,13 @@ vscode.PostToExtension({
     }
 });
 
+//Once we've mounted the webview Svelte page,
+//let's spin off the metadata handshake with
+//the extension so we can retrieve useful
+//metadata for general use & display.
+vscode.PostToExtension({
+    type: 'request-meta-update',
+    data: undefined
+});
+
 export default webviewPage;

@@ -3,28 +3,20 @@
 }
 
 body.vscode-light {
-    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, white 50%);
+    --vsbloom-extremum-theme-color: white;
 }
 
 body.vscode-dark {
-    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, black 50%);
-    --vsbloom-shadowing-color: color-mix(in srgb, var(--vscode-editorWidget-background) 50%, black 50%);
+    --vsbloom-extremum-theme-color: black;
 }
 
 body.vscode-high-contrast {
-    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, black 50%);
+    --vsbloom-extremum-theme-color: black;
 }
 
 body {
-    /*
-        these "inverted" colors are dynamically set inside of
-        Webview.svelte since it's not normally possible to
-        derive the inversion of a color in CSS!
-
-        These are just placeholder default properties while
-        that process takes place.
-    */
-    --vsbloom-editor-foreground-color-inverted: magenta;
+    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vsbloom-extremum-theme-color) 50%);
+    --vsbloom-shadowing-color: color-mix(in srgb, var(--vscode-editorWidget-background) 50%, var(--vsbloom-extremum-theme-color) 50%);
     
     margin: 0;
     padding: 0;

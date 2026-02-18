@@ -4,7 +4,7 @@ import * as ClientPatcher from "../Patcher/ClientPatcher";
 import * as Common from "../Patcher/Common";
 import * as Elevation from "../Patcher/Elevation";
 import * as sudo from "@vscode/sudo-prompt";
-import * as ExtensionReflection from "./ExtensionReflection";
+import * as VersionTracking from "./VersionTracking";
 import { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import { EffectManager } from "../Effects/EffectManager";
 import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
@@ -233,7 +233,7 @@ async function AttemptOpenMenu(context: vscode.ExtensionContext) {
     return;
   }
 
-  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri);
+  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri, context);
 }
 
 /**
@@ -286,6 +286,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage("[VSBloom]: Something went wrong patching the Electron Client while attempting to enable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.");
         return false;
       } else if (clientPatchingStatus === ClientPatchingStatus.NEEDS_RESTART) {
+        //update last known client patch version in extension state
+        context.globalState.update("vsbloom.patcher.lastKnownClientPatchVersion", VersionTracking.GetCurrentExtensionVersion());
+
         vscode.window.showInformationMessage("[VSBloom]: Successfully patched the Electron Client!");
         if (showReloadPromptOnSuccess) {
           const reloadChoice = await vscode.window.showInformationMessage("[VSBloom]: The application window needs to be reloaded for the extension to begin working, would you like to do so now?", "Reload Window");

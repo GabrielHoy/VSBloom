@@ -11,7 +11,10 @@
 			"outFiles": [
 				"${workspaceFolder}/build/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"VSBLOOM_DEVELOPMENT_MODE": "true"
+			}
 		},
 		{
 			"name": "Run VSBloom (Isolated)",
@@ -24,7 +27,10 @@
 			"outFiles": [
 				"${workspaceFolder}/build/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"VSBLOOM_DEVELOPMENT_MODE": "true"
+			}
 		}
 	]
 }
