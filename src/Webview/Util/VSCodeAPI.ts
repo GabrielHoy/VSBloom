@@ -1,5 +1,6 @@
 import type { WebviewApi } from "vscode-webview";
 import type { BloomToSveltePayload, SvelteToBloomPayload } from "../WebviewNetworking";
+import { directories } from "../Global/Directories.svelte";
 
 export type BloomToSvelteMessageObserver<MessageType extends BloomToSveltePayload['type']> = (data: Extract<BloomToSveltePayload, { type: MessageType }>['data']) => void;
 
@@ -9,8 +10,37 @@ class VSCodeAPI {
 
     constructor() {
         this.InitializeWindowMessageListener();
+        this.InitializeWebviewImageDirectory();
     }
 
+    private InitializeWebviewImageDirectory() {
+        const pageElement = document.getElementById('page');
+        if (!pageElement) {
+            this.PostToExtension({
+                type: 'send-notification',
+                data: {
+                    type: 'error',
+                    message: '[VSBloom]: Unable to resolve page element within menu webview.'
+                }
+            });
+            return;
+        }
+
+        const webviewImagesURI = pageElement.getAttribute('webview-images-uri');
+        if (!webviewImagesURI) {
+            this.PostToExtension({
+                type: 'send-notification',
+                data: {
+                    type: 'error',
+                    message: '[VSBloom]: Unable to resolve image directory within menu webview - attribute was empty during initial read.'
+                }
+            });
+            return;
+        }
+
+        directories.images = webviewImagesURI;
+    }
+    
     private InitializeWindowMessageListener() {
         window.addEventListener('message', event => {
             const message = event.data as BloomToSveltePayload;
@@ -50,13 +80,13 @@ class VSCodeAPI {
             observerList = new Set();
             this.bloomToSvelteMessageObservers.set(messageType, observerList);
         }
-        observerList.add(observer);
+        observerList.add(observer as any);
     }
 
     public RemoveBloomToSvelteMessageObserver<MessageType extends BloomToSveltePayload['type']>(messageType: MessageType, observer: BloomToSvelteMessageObserver<MessageType>) {
         const observerList = this.bloomToSvelteMessageObservers.get(messageType);
         if (observerList) {
-            observerList.delete(observer);
+            observerList.delete(observer as any);
             if (observerList.size === 0) {
                 this.bloomToSvelteMessageObservers.delete(messageType);
             }
@@ -65,6 +95,16 @@ class VSCodeAPI {
 
     public PostToExtension(payload: SvelteToBloomPayload) {
         this.vscode.postMessage(payload);
+    }
+
+    public NotifyUser(type: 'info' | 'warning' | 'error', message: string) {
+        this.PostToExtension({
+            type: 'send-notification',
+            data: {
+                type,
+                message
+            }
+        });
     }
 
     public GetState() {

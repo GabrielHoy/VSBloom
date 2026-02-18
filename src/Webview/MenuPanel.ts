@@ -88,7 +88,7 @@ export class MenuPanel {
 					<link href="${styleUri}" rel="stylesheet" />
                 </head>
 
-                <body id="page">
+                <body id="page" webview-images-uri="${GetWebviewURI(webview, uri, ["images"])}">
                 	<script nonce="${nonce}" src="${scriptUri}"></script>
                 </body>
             </html>
@@ -98,23 +98,23 @@ export class MenuPanel {
 	private setWebviewMessageListener(webview: Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
-				const command = message.type;
-				const data = message.data;
 
-				switch (command) {
+				switch (message.type) {
 					case "send-notification":
-						switch (data.type) {
+						switch (message.data.type) {
 							case "info":
-								vscode.window.showInformationMessage(data.message);
+								vscode.window.showInformationMessage(message.data.message);
 								break;
 							case "warning":
-								vscode.window.showWarningMessage(data.message);
+								vscode.window.showWarningMessage(message.data.message);
 								break;
 							case "error":
-								vscode.window.showErrorMessage(data.message);
+								vscode.window.showErrorMessage(message.data.message);
 								break;
 						}
 						return;
+					case "request-meta-update":
+						vscode.window.showInformationMessage("Got meta update request");
 				}
 			},
 			undefined,

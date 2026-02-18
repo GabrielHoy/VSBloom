@@ -1,15 +1,36 @@
-@keyframes glowPulse {
-    0% {
-        filter: drop-shadow(0 0 0px #FFFFAF);
-    }
-    100% {
-        filter: drop-shadow(0 0 5px #FFFFAF);
-    }
+:root {
+    --vsbloom-bouncy-ease: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.test-class {
-    font-size: 72px;
-    width: fit-content;
-    color: #FFDFDF;
-    animation: glowPulse 1s ease-in-out infinite alternate;
+body.vscode-light {
+    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, white 50%);
+}
+
+body.vscode-dark {
+    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, black 50%);
+    --vsbloom-shadowing-color: color-mix(in srgb, var(--vscode-editorWidget-background) 50%, black 50%);
+}
+
+body.vscode-high-contrast {
+    --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, black 50%);
+}
+
+body {
+    /*
+        these "inverted" colors are dynamically set inside of
+        Webview.svelte since it's not normally possible to
+        derive the inversion of a color in CSS!
+
+        These are just placeholder default properties while
+        that process takes place.
+    */
+    --vsbloom-editor-foreground-color-inverted: magenta;
+    
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+}
+
+p,h1,h2,h3,h4,h5,h6 {
+    text-shadow: 0px 1px 1px var(--vsbloom-text-border-color);
 }

@@ -61,7 +61,7 @@
 			},
 			{
 				"command": "vsbloom.openMenu",
-				"title": "VSBloom: Open Menu"
+				"title": "VSBloom: Open Menu (BETA)"
 			}
 		],
 		"configuration": [

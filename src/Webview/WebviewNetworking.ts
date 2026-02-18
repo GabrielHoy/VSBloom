@@ -1,9 +1,17 @@
+import type { VSBloomClientConfig } from "../ExtensionBridge/Bridge";
+
 //Bloom Extension -> Svelte
 export interface SyncSettingsListMessage {
     type: 'sync-settings-list',
-    data: unknown;
+    data: VSBloomClientConfig;
 }
-export type BloomToSveltePayload = SyncSettingsListMessage;
+export interface UpdateMetadataMessage {
+    type: 'meta-update',
+    data: {
+        extensionVersion: string;
+    }
+}
+export type BloomToSveltePayload = SyncSettingsListMessage | UpdateMetadataMessage;
 
 
 //Svelte -> Bloom Extension
@@ -14,4 +22,16 @@ export interface SendWindowNotificationMessage {
         message: string
     };
 }
-export type SvelteToBloomPayload = SendWindowNotificationMessage;
+export interface SendLogMessage {
+    type: 'send-log',
+    data: {
+        level: 'debug' | 'info' | 'warning' | 'error',
+        message: string,
+        data?: unknown
+    };
+}
+export interface RequestMetadataUpdateMessage {
+    type: 'request-meta-update',
+    data: undefined;
+}
+export type SvelteToBloomPayload = SendWindowNotificationMessage | SendLogMessage | RequestMetadataUpdateMessage;

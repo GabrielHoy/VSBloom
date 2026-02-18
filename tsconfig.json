@@ -21,7 +21,7 @@
 		"src/Utils/PackageConfigurations.mjs"],
 	"exclude": [
 		"src/Effects/*/",
-		"src/Webview/SvelteBase.ts",
+		"src/Webview/SvelteMounter.ts",
 		"src/Webview/**/*.svelte",
 		"src/Webview/svelte-shim.d.ts"
 	]

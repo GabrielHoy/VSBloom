@@ -1,13 +1,14 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import * as ClientPatcher from "./Patcher/ClientPatcher";
-import * as Common from "./Patcher/Common";
-import * as Elevation from "./Patcher/Elevation";
+import * as ClientPatcher from "../Patcher/ClientPatcher";
+import * as Common from "../Patcher/Common";
+import * as Elevation from "../Patcher/Elevation";
 import * as sudo from "@vscode/sudo-prompt";
-import { VSBloomBridgeServer } from "./ExtensionBridge/Server";
-import { EffectManager } from "./Effects/EffectManager";
-import { ConstructVSBloomLogPrefix } from "./Debug/Colorful";
-import { MenuPanel } from "./Webview/Menu";
+import * as ExtensionReflection from "./ExtensionReflection";
+import { VSBloomBridgeServer } from "../ExtensionBridge/Server";
+import { EffectManager } from "../Effects/EffectManager";
+import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
+import { MenuPanel } from "../Webview/MenuPanel";
 
 enum ClientPatchingStatus {
   PATCHED = 0,
@@ -232,7 +233,7 @@ async function AttemptOpenMenu(context: vscode.ExtensionContext) {
     return;
   }
 
-  MenuPanel.ShowPanel("vsbloom", "VS: Bloom Menu", context.extensionUri);
+  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri);
 }
 
 /**

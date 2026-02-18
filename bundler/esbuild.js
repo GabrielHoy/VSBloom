@@ -235,7 +235,7 @@ async function main() {
     platform: "node",
     logLevel: "silent",
     plugins: [esbuildErrorReporterPlugin, isProductionBuild ? esbuildOneLinerPlugin : undefined].filter(Boolean),
-    entryPoints: ["src/VSBloom.ts"],
+    entryPoints: ["src/Extension/VSBloom.ts"],
     outfile: "build/VSBloom.js",
     external: ["vscode"],
     banner: isProductionBuild ? {
@@ -325,7 +325,7 @@ async function main() {
       }),
       esbuildErrorReporterPlugin,
     ],
-    entryPoints: ["src/Webview/SvelteBase.ts"],
+    entryPoints: ["src/Webview/SvelteMounter.ts"],
     outdir: "build/Webview",
     entryNames: "view",
     banner: isProductionBuild ? {

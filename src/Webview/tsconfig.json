@@ -21,6 +21,6 @@
 		"noEmit": true
 	},
   
-	"include": ["**/*", "SvelteBase.ts"],
+	"include": ["**/*", "SvelteMounter.ts.ts"],
 	"exclude": ["node_modules/*", "__sapper__/*", "public/*"]
 }
