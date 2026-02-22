@@ -162,6 +162,7 @@
 
 		background-image: radial-gradient(circle, var(--vscode-editor-background) 0%, var(--vsbloom-shadowing-color) 100%);
 	}
+
 	.noise-layer {
 		--bg-size-scaled: calc((128px / var(--scale-factor)) * 2.8);
 

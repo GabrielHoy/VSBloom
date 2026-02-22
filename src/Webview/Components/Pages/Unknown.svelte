@@ -2,6 +2,7 @@
     import { directories } from "../../Global/Directories.svelte";
     import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
     import PageContainer from "../PageContainer.svelte";
+    import Button from "../Primitives/Button.svelte";
 
     function ReturnToMainPage() {
         pageData.currentPage = "Main Menu";
@@ -23,8 +24,14 @@
         {/each}
     </div>
 
-    <div class="return-interaction-container center-text">
-        <button class="return-to-main-page-button center-text" on:click={ReturnToMainPage}>Return to Main Page</button>
+    <div class="return-interaction center-text">
+        <Button
+            onclick={ReturnToMainPage}
+            tooltip="There's no place like home."
+        >
+            Return to Main Page
+        </Button>
+        <!-- <button class="return-to-main-page-button center-text" on:click={ReturnToMainPage}>Return to Main Page</button> -->
     </div>
 </div>
 
@@ -84,34 +91,13 @@
         font-size: 0.5rem;
         margin: 0 auto;
     }
-    .return-interaction-container {
-        width: 100%;
-        height: auto;
+    .return-interaction {
+        width: 17.5vw;
+        height: min-content;
+
+        font-size: 1.5vmax;
+
         margin: 0 auto;
         margin-top: 3rem;
-    }
-    .return-to-main-page-button {
-        margin: 0 auto;
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        text-align: center;
-        color: var(--vscode-button-secondaryForeground);
-        background-color: var(--vscode-button-secondaryBackground);
-        border: 1px solid var(--vscode-button-separator);
-        transition: background-color 0.618s var(--vsbloom-bouncy-ease), filter 0.618s var(--vsbloom-bouncy-ease), border-color 0.618s var(--vsbloom-bouncy-ease), border-radius 0.618s var(--vsbloom-bouncy-ease), transform 0.618s var(--vsbloom-bouncy-ease), padding 0.618s var(--vsbloom-bouncy-ease);
-        cursor: pointer;
-
-        &:hover {
-            background-color: var(--vscode-button-background);
-            border-color: var(--vscode-foreground);
-            padding: 0.5rem 1rem;
-            transform: scale(1.075);
-        }
-        &:active {
-            filter: brightness(125%);
-            transform: scale(0.9);
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.25rem;
-        }
     }
 </style>

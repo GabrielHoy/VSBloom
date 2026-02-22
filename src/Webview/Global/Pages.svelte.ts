@@ -3,6 +3,7 @@ import { SvelteMap } from "svelte/reactivity";
 import Main from "../Components/Pages/Main.svelte";
 import Unknown from "../Components/Pages/Unknown.svelte";
 import Settings from "../Components/Pages/Settings.svelte";
+import GettingStarted from "../Components/Pages/GettingStarted.svelte";
 
 export interface PageDescriptor {
     name: string;
@@ -17,6 +18,13 @@ export interface PageDescriptor {
 //list of all available pages in the webview menu,
 //excluding 'open in browser' https pages of course
 const pageList: SvelteMap<PageDescriptor["name"], PageDescriptor> = $state(new SvelteMap([
+    ["Getting Started", {
+        name: "Getting Started",
+        icon: "logo.png",
+        description: "Provides an overview and introduction to the VS: Bloom extension and what it has to offer.",
+        component: GettingStarted,
+        notFinished: true
+    }],
     ["Main Menu", {
         name: "Main Menu",
         icon: "logo.png",
@@ -27,7 +35,7 @@ const pageList: SvelteMap<PageDescriptor["name"], PageDescriptor> = $state(new S
         name: "Extension Settings",
         icon: "webview/settings.png",
         description: "Configure various aspects of the VS: Bloom extension and its behavior.",
-        notFinished: false,
+        notFinished: true,
         component: Settings
     }],
     ["Unknown", {
@@ -43,3 +51,7 @@ export const pageData = $state({
     pages: pageList,
     currentPage: "Main Menu",
 });
+
+export function SetCurrentPage(pageName: PageDescriptor["name"]) {
+    pageData.currentPage = pageName;
+}

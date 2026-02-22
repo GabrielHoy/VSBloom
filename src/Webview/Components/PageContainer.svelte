@@ -4,7 +4,9 @@
     } = $props();
 </script>
 
-<div class="main-page-container">
+<div
+    class="main-page-container"
+>
     {@render children()}
 </div>
 

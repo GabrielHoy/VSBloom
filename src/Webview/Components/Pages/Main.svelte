@@ -1,15 +1,27 @@
 <script lang="ts">
-    import { directories } from "../../Global/Directories.svelte";
     import type { PageDescriptor } from "../../Global/Pages.svelte";
     import { pageData } from "../../Global/Pages.svelte";
     import Splash from "../Splash.svelte";
     import PageButton from "../UX/PageButton.svelte";
     import PageContainer from "../PageContainer.svelte";
+    import Button from "../Primitives/Button.svelte";
+    import { vscode } from "../../Util/VSCodeAPI";
 </script>
 
 {#snippet PageSwapButton(descriptor: PageDescriptor)}
     <div class={["page-swap-button-container", descriptor.notFinished && "unfinished"]}>
-        <PageButton pageName={descriptor.name} unfinished={descriptor.notFinished}>{descriptor.name}</PageButton>
+        <Button
+            tooltip={descriptor.description}
+            disabled={descriptor.notFinished}
+            onclick={() => {
+                pageData.currentPage = descriptor.name;
+            }}
+            ondisabledclick={() => {
+                vscode.NotifyUser("warning", `The "${descriptor.name}" page isn't finished yet, check back later!`);
+            }}
+        >
+            {descriptor.name}
+        </Button>
     </div>
 {/snippet}
 
@@ -57,6 +69,7 @@
 
         --button-height: max(1.25rem, 3.25vmax);
         height: var(--button-height);
+        font-size: calc(var(--button-height) / 2);
 
         &:not(.unfinished) {
             &:hover {

@@ -8,7 +8,7 @@
 <script module>
     import { vscode } from "../../Util/VSCodeAPI";
 
-    const DEBUG = true;
+    const DEBUG = false;
 
     let scalingFactor = $state(window.devicePixelRatio ?? 1);
 
