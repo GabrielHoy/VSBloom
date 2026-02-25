@@ -15,10 +15,16 @@
 		*/
 		"sourceMap": true,
 
+		"resolveJsonModule": true,
+
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"noEmit": true
+		"noEmit": true,
+		"paths": {
+			"$webview-svelte-lib": ["./Libraries"],
+			"$webview-svelte-lib/*": ["./Libraries/*"]
+		}
 	},
   
 	"include": ["**/*", "SvelteMounter.ts.ts"],

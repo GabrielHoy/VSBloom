@@ -207,6 +207,20 @@ async function main() {
   //happens a little later down the line in this function
   const esbuildSvelte = (await import("esbuild-svelte")).default;
   const { sveltePreprocess } = await import("svelte-preprocess");
+  const postcss = (await import("postcss")).default;
+  const tailwindcss = (await import("@tailwindcss/postcss")).default;
+
+  const postcssProcessor = postcss([tailwindcss()]);
+  const esbuildTailwindPlugin = {
+    name: "esbuild-tailwind",
+    setup(build) {
+      build.onLoad({ filter: /\.css$/, namespace: "file" }, async (args) => {
+        const raw = await fs.promises.readFile(args.path, "utf8");
+        const result = await postcssProcessor.process(raw, { from: args.path });
+        return { contents: result.css, loader: "css" };
+      });
+    }
+  };
 
   if (isProductionBuild) {
     //if we're building for a production environment,
@@ -316,8 +330,14 @@ async function main() {
     logLevel: "silent",
     conditions: ["svelte", "browser"],
     plugins: [
+      esbuildTailwindPlugin,
       esbuildSvelte({
-        preprocess: sveltePreprocess({ sourceMap: !isProductionBuild }),
+        preprocess: sveltePreprocess({
+          sourceMap: !isProductionBuild,
+          typescript: {
+            tsconfigFile: "src/Webview/tsconfig.json",
+          },
+        }),
         compilerOptions: {
           dev: !isProductionBuild,
           css: "external"
@@ -328,6 +348,9 @@ async function main() {
     entryPoints: ["src/Webview/SvelteMounter.ts"],
     outdir: "build/Webview",
     entryNames: "view",
+    alias: {
+      "$webview-svelte-lib": path.resolve("src/Webview/Libraries")
+    },
     banner: isProductionBuild ? {
       js: buildBanners["build/Webview/view.js"]
     } : undefined

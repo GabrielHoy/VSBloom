@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	--radius: 0.625rem;
+	--svelte-orange: oklch(0.6385 0.1991 34.99);
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.205 0 0);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--chart-1: var(--color-blue-300);
+	--chart-2: var(--color-blue-500);
+	--chart-3: var(--color-blue-600);
+	--chart-4: var(--color-blue-700);
+	--chart-5: var(--color-blue-800);
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.205 0 0);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+	--surface: oklch(0.98 0 0);
+	--surface-foreground: var(--foreground);
+	--code: var(--surface);
+	--code-foreground: var(--surface-foreground);
+	--code-highlight: oklch(0.96 0 0);
+	--code-number: oklch(0.56 0 0);
+	--selection: oklch(0.145 0 0);
+	--selection-foreground: oklch(1 0 0);
+}
+
+.dark {
+	--background: oklch(0.145 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.205 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.269 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.922 0 0);
+	--primary-foreground: oklch(0.205 0 0);
+	--secondary: oklch(0.269 0 0);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.371 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.556 0 0);
+	--chart-1: var(--color-blue-300);
+	--chart-2: var(--color-blue-500);
+	--chart-3: var(--color-blue-600);
+	--chart-4: var(--color-blue-700);
+	--chart-5: var(--color-blue-800);
+	--sidebar: oklch(0.205 0 0);
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.439 0 0);
+	--surface: oklch(0.2 0 0);
+	--surface-foreground: oklch(0.708 0 0);
+	--code: var(--surface);
+	--code-foreground: var(--surface-foreground);
+	--code-highlight: oklch(0.27 0 0);
+	--code-number: oklch(0.72 0 0);
+	--selection: oklch(0.922 0 0);
+	--selection-foreground: oklch(0.205 0 0);
+}
+
+/* shadcdn overrides for VSCode theme color origins */
+:root {
+	--tailwind-scaling: calc(var(--scale-factor) / 2);
+}
+:root,.dark {
+	--foreground: var(--vscode-foreground);
+	--input: var(--vscode-button-secondaryBackground);
+	--border: var(--vscode-editor-foreground);
+
+	/* account for scaling factor of vscode */
+
+	--spacing: calc(0.25rem / var(--tailwind-scaling)); /* 0.25rem */
+	--text-xs: calc(0.75rem / var(--tailwind-scaling));
+    --text-xs--line-height: calc(calc(1 / 0.75) / var(--tailwind-scaling));
+	--text-sm: calc(0.875rem / var(--tailwind-scaling)); /* 0.875rem */
+    --text-sm--line-height: calc((1.25 / 0.875) / var(--tailwind-scaling)); /* 1.25 / 0.875 */
+    --text-lg: calc(1.125rem / var(--tailwind-scaling));
+    --text-lg--line-height: calc(calc(1.75 / 1.125) / var(--tailwind-scaling));
+    --text-xl: calc(1.25rem / var(--tailwind-scaling));
+    --text-xl--line-height: calc(calc(1.75 / 1.25) / var(--tailwind-scaling));
+    --text-2xl: calc(1.5rem / var(--tailwind-scaling));
+    --text-2xl--line-height: calc(calc(2 / 1.5) / var(--tailwind-scaling));
+	.text-sm {
+        font-size: calc(0.875rem / var(--tailwind-scaling));
+        line-height: 1; /*calc((1.25 / 0.875) / var(--tailwind-scaling));*/
+    }
+    .text-xl {
+        font-size: calc(1.25rem / var(--tailwind-scaling));
+        line-height: 1; /*calc(calc(1.75 / 1.25) / var(--tailwind-scaling));*/
+    }
+    .text-xs {
+        font-size: calc(0.75rem / var(--tailwind-scaling));
+        line-height: 1; /*calc(calc(1 / 0.75) / var(--tailwind-scaling));*/
+    }
+
+	--radius: calc(0.65rem / var(--tailwind-scaling)); /* 0.625rem */
+
+	--default-transition-duration: 350ms;
+	--default-transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	--tw-ease: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --default-font-family: var(--vscode-font-family);
+    --default-mono-font-family: var(--font-mono);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@property --tw-ease { syntax: "*"; inherits: false; }

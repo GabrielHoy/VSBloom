@@ -1,3 +1,8 @@
+@keyframes scrollNoise {
+    0% { background-position: 0 0; }
+    100% { background-position: var(--bg-size-scaled) var(--bg-size-scaled); }
+}
+
 :root {
     --vsbloom-bouncy-ease: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -13,10 +18,10 @@ body.vscode-dark {
 body.vscode-high-contrast {
     --vsbloom-extremum-theme-color: black;
 }
-
 body {
     --vsbloom-text-border-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vsbloom-extremum-theme-color) 50%);
     --vsbloom-shadowing-color: color-mix(in srgb, var(--vscode-editorWidget-background) 50%, var(--vsbloom-extremum-theme-color) 50%);
+    --vsbloom-text-drop-shadow: 0px 1px 1px var(--vsbloom-text-border-color);
     
     margin: 0;
     padding: 0;
@@ -24,5 +29,13 @@ body {
 }
 
 p,h1,h2,h3,h4,h5,h6 {
-    text-shadow: 0px 1px 1px var(--vsbloom-text-border-color);
+    text-shadow: var(--vsbloom-text-drop-shadow);
+}
+
+/* Some of the components from shadcn need to be selected globally to apply custom styles like this */
+/* 1) accordion content & triggers in the settings page */
+.settings-accordion {
+    [data-slot="accordion-content"][data-state=open],[data-slot="accordion-trigger"][data-state=open] {
+        background-color: color-mix(in srgb, var(--vsbloom-extremum-theme-color) 15%, transparent);
+    }
 }

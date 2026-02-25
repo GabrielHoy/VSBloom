@@ -30,9 +30,9 @@ export class MenuPanel {
 		this.panel = panel;
 		this.context = context;
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
-		this.panel.webview.html = this.getWebviewContent(this.panel.webview, uri);
+		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri);
 		this.panel.iconPath = Uri.joinPath(uri, "images", "logo.png");
-		this.setWebviewMessageListener(this.panel.webview);
+		this.SetWebviewMessageListener(this.panel.webview);
 	}
 
 	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext) {
@@ -45,7 +45,7 @@ export class MenuPanel {
 				ViewColumn.One,
 				{
 					enableScripts: true,
-					localResourceRoots: [Uri.joinPath(webviewURI, "build"), Uri.joinPath(webviewURI, "images")],
+					localResourceRoots: [Uri.joinPath(webviewURI, "build"), Uri.joinPath(webviewURI, "images")]
 				}
 			);
 
@@ -69,7 +69,7 @@ export class MenuPanel {
 		}
 	}
 
-	public getWebviewContent(webview: Webview, uri: Uri) {
+	public GetWebviewContent(webview: Webview, uri: Uri) {
 		const scriptUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.js"]);
 		const styleUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.css"]);
 		const iconUri = GetWebviewURI(webview, uri, ["images", "logo.png"]);
@@ -100,7 +100,7 @@ export class MenuPanel {
         `;
 	}
 
-	private setWebviewMessageListener(webview: Webview) {
+	private SetWebviewMessageListener(webview: Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
 
@@ -118,7 +118,10 @@ export class MenuPanel {
 								break;
 						}
 						return;
-					case "request-meta-update":
+					case "change-title":
+						this.panel.title = message.data.newTitle ?? "VS: Bloom";
+						break;
+					case "webview-ready":
 						this.SendMetadataUpdateToSvelte();
 						break;
 				}

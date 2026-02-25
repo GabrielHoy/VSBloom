@@ -1,17 +1,33 @@
 [
     {
-        "title": "Electron Patcher",
+        "title": "VS: Bloom",
         "order": 1,
+        "categoryDescription": "General configuration settings.",
+        "properties": {
+            "vsbloom.extensionConfigurationsNote.README": {
+                "order": 1,
+                "type": "boolean",
+                "default": false,
+                "hideFromCustomEditor": true,
+                "description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
+                "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the **dedicated settings page** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\nChecking this box will take you directly to the VS: Bloom Menu's settings page!"
+            }
+        }
+    },
+    {
+        "title": "Electron Patcher",
+        "order": 2,
+        "categoryDescription": "Configurations regarding VS: Bloom's Electron Patcher and its associated functionality.",
         "properties": {
             "vsbloom.patcher.appProductFile": {
-                "order": 1,
+                "order": 2,
                 "type": "string",
                 "default": "auto",
                 "description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
                 "markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
             },
             "vsbloom.patcher.suppressCorruptionWarning": {
-                "order": 2,
+                "order": 3,
                 "type": "boolean",
                 "default": true,
                 "description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
@@ -21,10 +37,11 @@
     },
     {
         "title": "Effect Rendering",
-        "order": 2,
+        "order": 3,
+        "categoryDescription": "Configurations affecting the rendering of effects along with general controls applying to canvas-based rendering.",
         "properties": {
             "vsbloom.effectRendering.enableAntiAliasing": {
-                "order": 3,
+                "order": 4,
                 "type": "boolean",
                 "default": true,
                 "description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",

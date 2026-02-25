@@ -3,12 +3,11 @@
     import { directories } from "../../Global/Directories.svelte";
     import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
     import PageContainer from "../PageContainer.svelte";
-    import Button from "../Primitives/Button.svelte";
 
 </script>
 
 <PageContainer>
-    Page not done yet, check back later!
+    Page not done yet...how did you get here?
 </PageContainer>
 
 <style>

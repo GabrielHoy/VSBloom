@@ -2,14 +2,15 @@
     import { directories } from "../../Global/Directories.svelte";
     import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
     import PageContainer from "../PageContainer.svelte";
-    import Button from "../Primitives/Button.svelte";
+    import { Button } from "$webview-svelte-lib/components/ui/button";
+    import { SetCurrentPage } from "../../Global/Pages.svelte";
 
     function ReturnToMainPage() {
         pageData.currentPage = "Main Menu";
     }
 </script>
 
-<div class="main-page-container">
+<PageContainer>
 	<h1 class="title-text center-text">Unknown Page</h1>
     <h5 class="subtitle-remark center-text">Oops. This is definitely an error.</h5>
 
@@ -24,16 +25,15 @@
         {/each}
     </div>
 
-    <div class="return-interaction center-text">
+    <div class="return-interaction center-text self-center mx-auto">
         <Button
-            onclick={ReturnToMainPage}
-            tooltip="There's no place like home."
+            onclick={() => SetCurrentPage("Main Menu")}
+            title="There's no place like home."
         >
             Return to Main Page
         </Button>
-        <!-- <button class="return-to-main-page-button center-text" on:click={ReturnToMainPage}>Return to Main Page</button> -->
     </div>
-</div>
+</PageContainer>
 
 <style>
     @keyframes titleTextShadowPulse {
@@ -44,16 +44,11 @@
             text-shadow: 0px 0px 2.125px color-mix(in srgb, var(--vscode-errorForeground) 50%, var(--vscode-disabledForeground) 50%);
         }
     }
-
-    .main-page-container {
-        width: auto;
-        height: auto;
-        padding-top: 1rem;
-    }
     .center-text {
         text-align: center;
     }
     .title-text {
+        padding-top: 0.5rem;
         color: var(--vscode-errorForeground);
         font-weight: bold;
         margin: 0 auto;
@@ -92,10 +87,11 @@
         margin: 0 auto;
     }
     .return-interaction {
-        width: 17.5vw;
+        width: fit-content;
         height: min-content;
 
         font-size: 1.5vmax;
+
 
         margin: 0 auto;
         margin-top: 3rem;

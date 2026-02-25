@@ -1,11 +1,13 @@
 <script lang="ts">
     let {
-        children
+        children,
+        ...restProps
     } = $props();
 </script>
 
 <div
     class="main-page-container"
+    {...restProps}
 >
     {@render children()}
 </div>
@@ -16,5 +18,7 @@
         height: 100%;
         padding: 0;
         margin: 0;
+
+        font-size: calc((13px / var(--scale-factor)) * 2.15);
     }
 </style>

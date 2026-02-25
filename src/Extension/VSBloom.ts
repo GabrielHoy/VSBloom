@@ -212,7 +212,7 @@ async function EnsureClientIsUnpatched(appProductFilePath: string): Promise<Clie
  */
 async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): Promise<boolean> {
   const userChoice = await vscode.window.showInformationMessage(
-    "[VSBloom]: In order for VSBloom to function properly, we need to apply a patch to the Electron Client to make many of the extension's features possible. Are you OK with this?",
+    "In order for VSBloom to function properly, we need to apply a patch to the Electron Client to make many of the extension's features possible. Are you OK with this?",
     "Yes",
     "No",
     "Don't Show Again"
@@ -229,7 +229,7 @@ async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): P
 
 async function AttemptOpenMenu(context: vscode.ExtensionContext) {
   if (!effectManager) {
-    vscode.window.showErrorMessage("[VSBloom]: Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
+    vscode.window.showErrorMessage("Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
     return;
   }
 
@@ -261,7 +261,7 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
   } catch (error) {
     console.error(`${ConstructVSBloomLogPrefix("Extension", "error")}Failed to start bridge server:`, error);
     vscode.window.showWarningMessage(
-      "[VSBloom]: Failed to start the bridge server. Some features may not work correctly. " +
+      "Failed to start the bridge server. Some features may not work correctly. " +
       "Another VSCode window may already be hosting the bridge."
     );
   }
@@ -280,18 +280,18 @@ export function activate(context: vscode.ExtensionContext) {
     const enableCmdDisp = vscode.commands.registerCommand("vsbloom.enable", async (showReloadPromptOnSuccess: boolean = true) => {
       const clientPatchingStatus = await EnsureClientIsPatched(context, appProductFilePath);
       if (clientPatchingStatus === ClientPatchingStatus.PATCHED) {
-        vscode.window.showInformationMessage("[VSBloom]: The extension is already enabled!");
+        vscode.window.showInformationMessage("The extension is already enabled!");
         return false;
       } else if (clientPatchingStatus === ClientPatchingStatus.FAILED) {
-        vscode.window.showErrorMessage("[VSBloom]: Something went wrong patching the Electron Client while attempting to enable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.");
+        vscode.window.showErrorMessage("Something went wrong patching the Electron Client while attempting to enable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.");
         return false;
       } else if (clientPatchingStatus === ClientPatchingStatus.NEEDS_RESTART) {
         //update last known client patch version in extension state
         context.globalState.update("vsbloom.patcher.lastKnownClientPatchVersion", VersionTracking.GetCurrentExtensionVersion());
 
-        vscode.window.showInformationMessage("[VSBloom]: Successfully patched the Electron Client!");
+        vscode.window.showInformationMessage("Successfully patched the Electron Client!");
         if (showReloadPromptOnSuccess) {
-          const reloadChoice = await vscode.window.showInformationMessage("[VSBloom]: The application window needs to be reloaded for the extension to begin working, would you like to do so now?", "Reload Window");
+          const reloadChoice = await vscode.window.showInformationMessage("The application window needs to be reloaded for the extension to begin working, would you like to do so now?", "Reload Window");
           if (reloadChoice !== undefined) {
             vscode.commands.executeCommand("workbench.action.reloadWindow");
             return true;
@@ -307,9 +307,9 @@ export function activate(context: vscode.ExtensionContext) {
       const clientUnpatchStatus = await EnsureClientIsUnpatched(appProductFilePath);
 
       if (clientUnpatchStatus === ClientPatchingStatus.NEEDS_RESTART) {
-        vscode.window.showInformationMessage("[VSBloom]: Successfully disabled VSBloom and un-patched the Electron Client.");
+        vscode.window.showInformationMessage("Successfully disabled VSBloom and un-patched the Electron Client.");
         if (showReloadPromptOnSuccess) {
-          const reloadChoice = await vscode.window.showInformationMessage("[VSBloom]: You'll need to reload the window for these changes to take effect, would you like to do so now?", "Reload Window");
+          const reloadChoice = await vscode.window.showInformationMessage("You'll need to reload the window for these changes to take effect, would you like to do so now?", "Reload Window");
           if (reloadChoice !== undefined) {
             vscode.commands.executeCommand("workbench.action.reloadWindow");
             return true;
@@ -317,10 +317,10 @@ export function activate(context: vscode.ExtensionContext) {
         }
         return true;
       } else if (clientUnpatchStatus === ClientPatchingStatus.FAILED) {
-        vscode.window.showErrorMessage("[VSBloom]: Something went wrong un-patching the Electron Client while attempting to disable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.");
+        vscode.window.showErrorMessage("Something went wrong un-patching the Electron Client while attempting to disable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.");
         return false;
       } else if (clientUnpatchStatus === ClientPatchingStatus.UNPATCHED) {
-        vscode.window.showInformationMessage("[VSBloom]: The extension is already disabled!");
+        vscode.window.showInformationMessage("The extension is already disabled!");
         return false;
       }
     });
@@ -329,7 +329,7 @@ export function activate(context: vscode.ExtensionContext) {
     const retryPatchCmdDisp = vscode.commands.registerCommand("vsbloom.retryPatch", async () => {
       vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: "[VSBloom]: Re-Patching the Electron Client...",
+        title: "Re-Patching the Electron Client...",
         cancellable: false
       }, (progress) => {
         return new Promise<void>((resolve, reject) => {
@@ -339,17 +339,17 @@ export function activate(context: vscode.ExtensionContext) {
 
           getCurrentlyPatchedPromise.then(async isPatched => {
             if (isPatched) {
-              progress.report({ increment: 33, message: "[VSBloom]: Un-Patching the Electron Client..." });
+              progress.report({ increment: 33, message: "Un-Patching the Electron Client..." });
               await vscode.commands.executeCommand("vsbloom.disable", false);
             }
 
-            progress.report({ increment: 65, message: "[VSBloom]: Patching the Electron Client..." });
+            progress.report({ increment: 65, message: "Patching the Electron Client..." });
 
             await vscode.commands.executeCommand("vsbloom.enable", false);
 
-            progress.report({ increment: 100, message: "[VSBloom]: Re-Patching of the Electron Client Complete!" });
+            progress.report({ increment: 100, message: "Re-Patching of the Electron Client Complete!" });
             setTimeout(() => {
-              vscode.window.showInformationMessage("[VSBloom]: The application window needs to be reloaded for the latest Electron Client patch to take effect, would you like to do so now?", "Reload Window").then(reloadChoice => {
+              vscode.window.showInformationMessage("The application window needs to be reloaded for the latest Electron Client patch to take effect, would you like to do so now?", "Reload Window").then(reloadChoice => {
                 if (reloadChoice !== undefined) {
                   vscode.commands.executeCommand("workbench.action.reloadWindow");
                   return;
@@ -372,11 +372,11 @@ export function activate(context: vscode.ExtensionContext) {
     //TODO: one that hosts the effect manager
     const reloadEffectsCmdDisp = vscode.commands.registerCommand("vsbloom.reloadEffects", async () => {
       if (!effectManager) {
-        vscode.window.showErrorMessage("[VSBloom]: Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
+        vscode.window.showErrorMessage("Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
         return;
       }
       await effectManager.ReloadAllEffects();
-      vscode.window.showInformationMessage(`[VSBloom]: Reloaded ${effectManager.GetLoadedEffects().length} effect(s)!`);
+      vscode.window.showInformationMessage(`Reloaded ${effectManager.GetLoadedEffects().length} effect(s)!`);
     });
     context.subscriptions.push(reloadEffectsCmdDisp);
 
@@ -410,7 +410,7 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.commands.executeCommand("vsbloom.enable", true);
       } else {
         console.log(`${ConstructVSBloomLogPrefix("Extension", "warn")}User declined client patching; going dormant`);
-        vscode.window.showInformationMessage("[VSBloom]: Not patching the Electron Client, VSBloom will not be able to function until this patch is performed - you can trigger this patch at any time in the future to enable VSBloom by running the 'VSBloom: Enable and Patch Electron Client' command!");
+        vscode.window.showInformationMessage("Not patching the Electron Client, VSBloom will not be able to function until this patch is performed - you can trigger this patch at any time in the future to enable VSBloom by running the 'VSBloom: Enable and Patch Electron Client' command!");
         return;
       }
     }

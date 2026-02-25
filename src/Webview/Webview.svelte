@@ -3,12 +3,37 @@
 -->
 <script lang="ts">
 	import './CSS/Main.css';
+	import "./CSS/shadcn.css";
 	import { pageData } from "./Global/Pages.svelte";
 	import Unknown from "./Components/Pages/Unknown.svelte";
 	import { directories } from "./Global/Directories.svelte";
 	import ScaleReflectionSingleton from "./Components/UX/ScaleReflectionSingleton.svelte";
 	import PersistentMetadataDisplay from "./Components/PersistentMetadataDisplay.svelte";
+	import { LoadPersistentState, persistentState } from './Global/PersistentWebviewState.svelte';
 	import { onDestroy } from "svelte";
+	import { vscode } from "./Util/VSCodeAPI";
+
+	//Load up any VSCode persistent state for the webview
+	//first so we can restore certain stateful items in
+	//the webview upon view close-open cycles.
+	LoadPersistentState();
+	pageData.currentPage = persistentState.currentPage;
+	if (pageData.currentPage !== "Main Menu") {
+		vscode.ChangeTitle(pageData.currentPage);
+	}
+
+	const colorsToGenerateInversionsFor = [
+		"--vscode-editor-foreground",
+		"--vscode-editorWidget-background",
+		"--vscode-disabledForeground",
+		"--vscode-errorForeground",
+		"--vscode-descriptionForeground",
+		"--vscode-scrollbar-shadow",
+		
+		"--vsbloom-text-border-color",
+		"--vsbloom-shadowing-color",
+		"--vsbloom-extremum-theme-color"
+	]
 
 	function InvertHexColor(hex: string): string {
 		if (hex.startsWith('#')) {
@@ -52,19 +77,6 @@
 		);
 	}
 
-	const colorsToGenerateInversionsFor = [
-		"--vscode-editor-foreground",
-		"--vscode-editorWidget-background",
-		"--vscode-disabledForeground",
-		"--vscode-errorForeground",
-		"--vscode-descriptionForeground",
-		"--vscode-scrollbar-shadow",
-		
-		"--vsbloom-text-border-color",
-		"--vsbloom-shadowing-color",
-		"--vsbloom-extremum-theme-color"
-	]
-
 	function updateInvertedColorVars() {
 		for (const cssColorName of colorsToGenerateInversionsFor) {
 			const cssColorValue = getComputedStyle(document.body).getPropertyValue(cssColorName).trim();
@@ -106,6 +118,42 @@
 	onDestroy(() => {
 		observer.disconnect();
 	});
+
+	//Let's also listen for VSCode theme class changes,
+	//since shadcn UI relies on the :root element having
+	//a .dark class to apply dark mode styling - we'll
+	//sync this class to :root if the body class has
+	//the VSCode .vscode-dark or .vscode-high-contrast classes
+	//(but not .vscode-high-contrast-light, since light mode)
+	function updateRootDarkModeClass() {
+		const isDark = document.body.classList.contains("vscode-dark") || (document.body.classList.contains("vscode-high-contrast") && !document.body.classList.contains("vscode-high-contrast-light"));
+		if (isDark) {
+			document.documentElement.classList.add("dark");
+		} else {
+			document.documentElement.classList.remove("dark");
+		}
+	}
+
+	//initialize dark mode class on :root during initial load
+	updateRootDarkModeClass();
+
+	//set up observer for class changes on <body> so we can
+	//sync the .dark class to :root if the body class changes
+	const bodyClassObserver = new MutationObserver((mutationsList) => {
+		for (const mutation of mutationsList) {
+			if (mutation.type === "attributes" && mutation.attributeName === "class") {
+				updateRootDarkModeClass();
+				break;
+			}
+		}
+	});
+	bodyClassObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
+	//cleanup observer when component is destroyed
+	onDestroy(() => {
+		bodyClassObserver.disconnect();
+	});
+
 </script>
 
 <!--

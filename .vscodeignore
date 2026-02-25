@@ -10,5 +10,6 @@ tsconfig.json
 tsconfig.effects.json
 eslint.config.mjs
 .gitignore
+components.json
 docs/
 bundler/

@@ -107,6 +107,15 @@ class VSCodeAPI {
         });
     }
 
+    public ChangeTitle(newTitle?: string) {
+        this.PostToExtension({
+            type: 'change-title',
+            data: {
+                newTitle
+            }
+        });
+    }
+
     public GetState() {
         return this.vscode.getState();
     }

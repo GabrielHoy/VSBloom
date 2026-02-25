@@ -61,7 +61,7 @@
         display: block;
         width: 8em;
         height: 1px;
-        background: linear-gradient(to right, transparent, var(--vscode-button-separator), transparent);
+        background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), transparent);
         margin: 0.075em auto 0.075em auto;
     }
 </style>

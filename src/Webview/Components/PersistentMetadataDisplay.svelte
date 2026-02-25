@@ -1,6 +1,7 @@
 <script module>
     import { vscode } from "../Util/VSCodeAPI"
 
+
     vscode.ObserveBloomToSvelteMessage('meta-update', (data) => {
         extensionMetadata.metaLoaded = true;
         extensionMetadata.lastMetaUpdateTimestamp = Date.now();

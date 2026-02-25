@@ -8,11 +8,36 @@
  */
 
 import { vscode } from "../Util/VSCodeAPI";
+import type { PageDescriptor } from "./Pages.svelte";
 
 export interface PersistentWebviewState {
-    
+    currentPage: PageDescriptor["name"];
+    settingsPage: {
+        currentCategory?: string;
+    }
 }
 
-export const persistentState = {
+export const defaultPersistentState: PersistentWebviewState = {
+    currentPage: "Main Menu",
+    settingsPage: {
+        currentCategory: undefined
+    }
+};
 
+export const persistentState: PersistentWebviewState = $state(defaultPersistentState);
+
+export function MutatePersistentState(newState: Partial<PersistentWebviewState>) {
+    Object.assign(persistentState, newState);
+    vscode.SetState(persistentState);
+}
+
+export function LoadPersistentState() {
+    const storedState: PersistentWebviewState = vscode.GetState() as PersistentWebviewState;
+    if (storedState && typeof storedState === "object") {
+        for (const [key, val] of Object.entries(storedState)) {
+            if (key in persistentState) {
+                (persistentState as any)[key] = val;
+            }
+        }
+    }
 }

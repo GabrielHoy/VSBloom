@@ -1,28 +1,36 @@
 <script lang="ts">
     import type { PageDescriptor } from "../../Global/Pages.svelte";
-    import { pageData } from "../../Global/Pages.svelte";
+    import { pageData, SetCurrentPage } from "../../Global/Pages.svelte";
     import Splash from "../Splash.svelte";
-    import PageButton from "../UX/PageButton.svelte";
     import PageContainer from "../PageContainer.svelte";
-    import Button from "../Primitives/Button.svelte";
+    // import Button from "../Primitives/Button.svelte";
     import { vscode } from "../../Util/VSCodeAPI";
+    import { Button } from "$webview-svelte-lib/components/ui/button";
+    import { Spinner } from "$webview-svelte-lib/components/ui/spinner";
+    
+    let pageNameSwappingTo: string | null = $state(null);
 </script>
 
 {#snippet PageSwapButton(descriptor: PageDescriptor)}
-    <div class={["page-swap-button-container", descriptor.notFinished && "unfinished"]}>
-        <Button
-            tooltip={descriptor.description}
-            disabled={descriptor.notFinished}
-            onclick={() => {
-                pageData.currentPage = descriptor.name;
-            }}
-            ondisabledclick={() => {
-                vscode.NotifyUser("warning", `The "${descriptor.name}" page isn't finished yet, check back later!`);
-            }}
-        >
-            {descriptor.name}
-        </Button>
-    </div>
+    <Button
+        disabled={descriptor.notFinished || (pageNameSwappingTo !== null)}
+        title={descriptor.description}
+        class="page-swap-button"
+        onclick={() => {
+            pageNameSwappingTo = descriptor.name;
+            setTimeout(() => {
+                SetCurrentPage(descriptor.name);
+            }, 250);
+        }}
+        ondisabledclick={() => {
+            vscode.NotifyUser("warning", `The "${descriptor.name}" page isn't finished yet, check back later!`);
+        }}
+    >
+        {#if pageNameSwappingTo === descriptor.name}
+            <Spinner />
+        {/if}
+        {descriptor.name}
+    </Button>
 {/snippet}
 
 <PageContainer>
@@ -62,25 +70,4 @@
 		text-align: center;
         gap: 0.5rem 0rem;
 	}
-    .page-swap-button-container {
-        display: inline-block;
-        width: 100%;
-        transition: margin-top 1s var(--vsbloom-bouncy-ease), margin-bottom 1s var(--vsbloom-bouncy-ease);
-
-        --button-height: max(1.25rem, 3.25vmax);
-        height: var(--button-height);
-        font-size: calc(var(--button-height) / 2);
-
-        &:not(.unfinished) {
-            &:hover {
-                margin-top: 0.1em;
-                margin-bottom: 0.1em;
-            }
-    
-            &:active {
-                margin-top: 0.25em;
-                margin-bottom: 0.25em;
-            }
-        }
-    }
 </style>

@@ -2,8 +2,10 @@ import type { Component } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import Main from "../Components/Pages/Main.svelte";
 import Unknown from "../Components/Pages/Unknown.svelte";
-import Settings from "../Components/Pages/Settings.svelte";
+import Settings from "../Components/Pages/Settings/Settings.svelte";
 import GettingStarted from "../Components/Pages/GettingStarted.svelte";
+import { MutatePersistentState } from "./PersistentWebviewState.svelte";
+import { vscode } from "../Util/VSCodeAPI";
 
 export interface PageDescriptor {
     name: string;
@@ -34,8 +36,8 @@ const pageList: SvelteMap<PageDescriptor["name"], PageDescriptor> = $state(new S
     ["Extension Settings", {
         name: "Extension Settings",
         icon: "webview/settings.png",
-        description: "Configure various aspects of the VS: Bloom extension and its behavior.",
-        notFinished: true,
+        description: "Configure various aspects of the VS: Bloom extension and the configurations it provides.",
+        notFinished: false,
         component: Settings
     }],
     ["Unknown", {
@@ -54,4 +56,9 @@ export const pageData = $state({
 
 export function SetCurrentPage(pageName: PageDescriptor["name"]) {
     pageData.currentPage = pageName;
+    if (pageData.pages.has(pageName) && pageName !== "Unknown") {
+        MutatePersistentState({ currentPage: pageName });
+        // set the webview title to the page name, or reset it to the default title if we're going back to the main menu
+        vscode.ChangeTitle(pageName === "Main Menu" ? undefined : pageName);
+    }
 }

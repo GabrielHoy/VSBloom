@@ -3,7 +3,7 @@
     that reflects the scaling factor of the
     window (window.devicePixelRatio) to a
     CSS variable --scale-factor on the global
-    `body` element.
+    `:root` element.
 -->
 <script module>
     import { vscode } from "../../Util/VSCodeAPI";
@@ -26,7 +26,7 @@
 
         //actual logic
         scalingFactor = window.devicePixelRatio;
-        document.body.style.setProperty("--scale-factor", scalingFactor.toString());
+        document.documentElement.style.setProperty("--scale-factor", scalingFactor.toString());
 
 
         matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener("change", UpdateScalingFactor, {once: true});

@@ -94,6 +94,9 @@ function BuildContributedConfigurationArray(packageJSONObject) {
             "order": categoryIndex++,
             "properties": effectCategoryProperties
         };
+        if (category.categoryDescription) {
+            newEffectCategory.categoryDescription = category.categoryDescription;
+        }
 
         for (const effectName of category.effects) {
             const effectConfig = GetEffectConfiguration(effectName);

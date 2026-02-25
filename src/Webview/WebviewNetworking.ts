@@ -25,17 +25,18 @@ export interface SendWindowNotificationMessage {
         message: string
     };
 }
-//TODO implement this on the extension side
-export interface SendLogMessage {
-    type: 'send-log',
-    data: {
-        level: 'debug' | 'info' | 'warning' | 'error',
-        message: string,
-        data?: unknown
-    };
-}
-export interface RequestMetadataUpdateMessage {
-    type: 'request-meta-update',
+export interface WebviewReadyMessage {
+    type: 'webview-ready',
     data: undefined;
 }
-export type SvelteToBloomPayload = SendWindowNotificationMessage | SendLogMessage | RequestMetadataUpdateMessage;
+export interface ChangeWebviewTitleMessage {
+    type: 'change-title',
+    data: {
+        newTitle?: string
+    };
+}
+export interface RequestCurrentSettingsMessage {
+    type: 'request-current-settings',
+    data: undefined;
+}
+export type SvelteToBloomPayload = SendWindowNotificationMessage | WebviewReadyMessage | ChangeWebviewTitleMessage | RequestCurrentSettingsMessage;
