@@ -112,6 +112,8 @@ function BuildContributedConfigurationArray(packageJSONObject) {
                     "type": configurableProp.type,
                     "enum": configurableProp.enum,
                     "default": configurableProp.default,
+                    "step": configurableProp.step,
+                    "displayedUnit": configurableProp.displayedUnit,
                     "description": configurableProp.description,
                     "markdownDescription": configurableProp.markdownDescription
                 };

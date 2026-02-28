@@ -1,21 +1,22 @@
 <script lang="ts">
-    import { vscode } from "../../../Util/VSCodeAPI";
-    import { directories } from "../../../Global/Directories.svelte";
-    import { pageData, type PageDescriptor } from "../../../Global/Pages.svelte";
-    import PageContainer from "../../PageContainer.svelte";
-    import PageHeader from "../../PageHeader.svelte";
-    import extensionPackageJSON from "../../../../../package.json";
+    import { vscode } from "../../Util/VSCodeAPI";
+    import { directories } from "../../Global/Directories.svelte";
+    import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
+    import PageContainer from "../PageContainer.svelte";
+    import PageHeader from "../PageHeader.svelte";
+    import extensionPackageJSON from "../../../../package.json";
     import * as Tabs from '$webview-svelte-lib/components/ui/tabs/index';
     import * as Accordion from '$webview-svelte-lib/components/ui/accordion/index';
     import { Button } from '$webview-svelte-lib/components/ui/button';
     import { Separator } from "$webview-svelte-lib/components/ui/separator";
     import { Checkbox } from "$webview-svelte-lib/components/ui/checkbox";
-    import { persistentState, MutatePersistentState } from "../../../Global/PersistentWebviewState.svelte";
+    import { Input } from "$webview-svelte-lib/components/ui/input";
+    import { persistentState, MutatePersistentState } from "../../Global/PersistentWebviewState.svelte";
     import { fade, fly } from "svelte/transition";
-    import { backIn, backOut, cubicIn, cubicOut } from "svelte/easing";
+    import { backIn, backOut, cubicIn } from "svelte/easing";
     import BadgeInfoIcon from "@lucide/svelte/icons/badge-info"
     import type { Snippet } from "svelte";
-    import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../../Global/Settings.svelte";
+    import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../Global/Settings.svelte";
 
     function GetPrettifiedPropertyPathSegments(internalPath: string): string[] {
         // skip `vsbloom.` prefix, capitalize first letter, insert space before each capital letter
@@ -58,11 +59,17 @@
         vscode.ChangeTitle(prettyCatTitle ? `${prettyCatTitle} Settings` : "Extension Settings");
     });
 
-    type PropertyEntryWithPath = PropertyEntry & { settingPath: string };
+    type ProcessedPropertyEntry = PropertyEntry & {
+        settingPath: string,
+        step?: number,
+        displayedUnit?: string
+    };
+
+    let subcategoriesExpanded: Map<string, string[]> = $state(persistentState.settingsPage.subcategoriesExpanded ? new Map<string, string[]>(Object.entries(persistentState.settingsPage.subcategoriesExpanded)) : new Map<string, string[]>());
 
     let propSubcategoryData = $derived(
-        effectSettings.default.reduce<Record<string, Record<string, PropertyEntryWithPath[]>>>((acc, category) => {
-            const subcategories: Record<string, PropertyEntryWithPath[]> = {};
+        effectSettings.default.reduce<Record<string, Record<string, ProcessedPropertyEntry[]>>>((acc, category) => {
+            const subcategories: Record<string, ProcessedPropertyEntry[]> = {};
 
             for (const [propPath, propData] of Object.entries(category.properties)) {
                 if (blacklistedPathsForWebviewSettingsDisplay.some(bp => propPath.startsWith(bp))) {
@@ -73,7 +80,12 @@
                 if (!subcategories[pathCategory]) {
                     subcategories[pathCategory] = [];
                 }
-                subcategories[pathCategory].push({ ...propData, settingPath: propPath, hideFromCustomEditor: propData.hideFromCustomEditor });
+
+                subcategories[pathCategory].push({
+                    ...propData,
+                    settingPath: propPath,
+                    hideFromCustomEditor: propData.hideFromCustomEditor,
+                });
             }
 
             acc[category.title] = subcategories;
@@ -81,8 +93,68 @@
         }, {})
     );
 
-    const configPropInputTypeSnippets: Record<string, (propData: PropertyEntryWithPath, topLevelCatIdx: number) => ReturnType<Snippet>> = {
-        "boolean": BooleanInput
+    let disabledProps: Set<string> = $derived(Object.entries(effectSettings.values).reduce<Set<string>>((builderSet, [path, value]) => {
+        if (path.endsWith(".enabled")) {
+            return builderSet;
+        }
+
+        const possibleEnabledPath = path.split(".").slice(0,-1).join(".") + ".enabled";
+        const hasEnabledProperty = effectSettings.values[possibleEnabledPath] !== undefined;
+        if (hasEnabledProperty && !effectSettings.values[possibleEnabledPath]) {
+            builderSet.add(path);
+        }
+
+        return builderSet;
+    }, new Set<string>()));
+
+    const configPropInputTypeSnippets: Record<string, (propData: ProcessedPropertyEntry, topLevelCatIdx: number) => ReturnType<Snippet>> = {
+        "boolean": BooleanInput,
+        "number": NumberInput
+    }
+
+    //it's annoying that this has to be done so manually...am I doing something wrong?
+    function resizeToTextContent(node: HTMLElement) {
+        const input = node.querySelector('input');
+        if (!input) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+
+        function resize() {
+            ctx.font = getComputedStyle(input!).font;
+            const textWidth = ctx.measureText(input!.value ? input!.value + "0000" : '').width;
+            const placeholderWidth = input!.placeholder
+                ? ctx.measureText(input!.placeholder + "0000").width
+                : 0;
+            const cs = getComputedStyle(input!);
+            const padding = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+                          + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+            input!.style.width = `calc(((${(Math.ceil(Math.max(textWidth, placeholderWidth))) / parseFloat(getComputedStyle(input!).fontSize)}) * 1em) + ${padding}px)`;
+        }
+
+        const valueDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!;
+        Object.defineProperty(input, 'value', {
+            get() { return valueDesc.get!.call(this); },
+            set(v) { valueDesc.set!.call(this, v); resize(); },
+            configurable: true,
+        });
+
+        resize();
+        input.addEventListener('input', resize);
+
+        // observe changes to the 'style' attribute for --scale-factor updates
+        const rootObserver = new MutationObserver(() => {
+            resize();
+        });
+        rootObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+
+        return {
+            destroy() {
+                input!.removeEventListener('input', resize);
+                rootObserver.disconnect();
+                delete (input as any).value;
+            },
+        };
     }
 
     // Trigger a settings sync when loading the settings page at any point
@@ -93,9 +165,10 @@
     });
 </script>
 
-{#snippet BooleanInput(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
+{#snippet BooleanInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="inline-block align-middle px-2.5">
-        <Checkbox style="transform: scale(1.618);"
+        <Checkbox
+            style="transform: scale(1.618);"
             indeterminate={effectSettings.values[propData.settingPath] === undefined}
             checked={effectSettings.values[propData.settingPath] === true}
             onCheckedChange={(newVal: boolean) => {
@@ -103,23 +176,55 @@
                     UpdateEffectSetting(propData.settingPath, undefined);
                     return;
                 }
-
                 UpdateEffectSetting(propData.settingPath, newVal);
             }}
         />
     </div>
 {/snippet}
-{#snippet UnknownFallbackInput(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
+{#snippet NumberInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+    <div class="inline-flex align-middle px-1" use:resizeToTextContent>
+        <Input
+            type="number"
+            value={effectSettings.values[propData.settingPath] ?? propData.default}
+            step={propData.step ?? undefined}
+            placeholder={propData.default.toLocaleString()}
+            onchange={(e) => {
+                if (Number.isNaN(e.currentTarget.valueAsNumber)) {
+                    e.currentTarget.value = effectSettings.values[propData.settingPath] ?? propData.default.toLocaleString();
+                    e.currentTarget.animate([
+                        { color: "red", scale: 0.9, rotate: (Math.sign(Math.random()-0.5) * 10) + "deg" },
+                        { color: "currentColor", scale: 1, rotate: "0deg" },
+                    ], {
+                        duration: 500,
+                        easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                    });
+                    vscode.NotifyUser("error", `${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}: Invalid/NaN value, resetting to last valid value.`);
+                } else {
+                    if (e.currentTarget.valueAsNumber === propData.default) {
+                        UpdateEffectSetting(propData.settingPath, undefined);
+                    } else {
+                        UpdateEffectSetting(propData.settingPath, e.currentTarget.valueAsNumber);
+                    }
+                }
+
+            }}
+        />
+        {#if propData.displayedUnit}
+            <span class="translate-y-4 text-sm">
+                {propData.displayedUnit}
+            </span>
+        {/if}
+    </div>
+{/snippet}
+{#snippet UnknownFallbackInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="inline-block align-middle" title="This property type isn't supported by the VS: Bloom Settings Editor yet; you'll need to configure it via the default VS Code settings view to change it for now.">
         <BadgeInfoIcon class="size-7 fill-red-900 stroke-pink-300 -translate-y-1/8 transition-all duration-300 hover:scale-110 overflow-visible"></BadgeInfoIcon>
     </div>
 {/snippet}
 
-
-{#snippet ConfigurableProperty(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
-    <div class="config-property">
-        <p class="config-property-name">
-            <!-- dash between left padding and property name -->
+{#snippet ConfigurableProperty(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+    <div class="config-property {disabledProps.has(propData.settingPath) ? 'disabled-config-property' : ''}">
+        <p class="config-property-entry">
             <span
                 class="config-property-name-text"
                 title={propData.description ?? "No description is available for this property yet."}
@@ -139,7 +244,7 @@
             value={currentlySelectedCategory}
             onValueChange={(newVal) => {
                 currentlySelectedCategory = newVal;
-                MutatePersistentState({ settingsPage: { currentCategory: newVal }});
+                MutatePersistentState({ settingsPage: { ...persistentState.settingsPage, currentCategory: newVal }});
             }}
         >
             <!-- Category tabs -->
@@ -149,6 +254,7 @@
                         <!-- Only show tab if there are actually non-blacklisted properties to display -->
                         {#if Object.keys(propSubcategoryData[category.title]).length !== 0}
                             <Tabs.Trigger
+                                class="select-none"
                                 value={category.title}
                                 title={currentlySelectedCategory !== category.title ? category.categoryDescription ?? undefined : undefined}
                             >
@@ -186,11 +292,30 @@
             {#each effectSettings.default as category, catIdx}
                 <Tabs.Content value={category.title}>
                     <div class="settings-accordion">
-                        <Accordion.Root type="multiple" value={Object.keys(propSubcategoryData[category.title]).length > 1 ? [] : [Object.keys(propSubcategoryData[category.title])[0]]}>
+                        <Accordion.Root
+                            type="multiple"
+                            value={Object.keys(propSubcategoryData[category.title]).length > 1 ? (subcategoriesExpanded.get(category.title) ?? []) : [Object.keys(propSubcategoryData[category.title])[0]]}
+                            onValueChange={(newVal) => {
+                                if (newVal.length === 0) {
+                                    subcategoriesExpanded.delete(category.title);
+                                } else {
+                                    subcategoriesExpanded.set(category.title, newVal);
+                                }
+
+                                if (subcategoriesExpanded.size === 0) {
+                                    MutatePersistentState({ settingsPage: { ...persistentState.settingsPage, subcategoriesExpanded: undefined }});
+                                } else {
+                                    MutatePersistentState({ settingsPage: { 
+                                        ...persistentState.settingsPage, 
+                                        subcategoriesExpanded: Object.fromEntries(subcategoriesExpanded) 
+                                    }});
+                                }
+                            }}
+                        >
                             {#each Object.entries(propSubcategoryData[category.title]) as [pathCategory, properties]}
                                 <Accordion.Item value={pathCategory}>
                                     <Accordion.Trigger
-                                        class=""
+                                        class="select-none"
                                     >
                                         {GetPrettifiedPropertyPathSegments(pathCategory).join(" > ")}
                                     </Accordion.Trigger>
@@ -239,6 +364,8 @@
         opacity: 0.5;
         min-height: 0.7em;
         margin-bottom: 2em;
+        user-select: none;
+        pointer-events: none;
     }
     .category-description {
         position: absolute;
@@ -248,6 +375,8 @@
         padding: 0.5em 0 0.5em 0;
     }
     .config-property {
+        transition: all 0.5s var(--vsbloom-bouncy-ease);
+
         padding: 0.618em 0 0.618em 0;
         &:last-child {
             padding-bottom: 0;
@@ -256,8 +385,20 @@
             padding-top: 0;
         }
     }
-    .config-property-name {
-
+    .disabled-config-property {
+        opacity: 0.75;
+        scale: 0.95;
+        translate: -2.5% 0;
+        transform: skewX(-7.5deg);
+        padding: 0.15em 0 0.15em 0;
+        &:last-child {
+            padding-bottom: 0;
+        }
+        &:first-child {
+            padding-top: 0;
+        }
+    }
+    .config-property-entry {
         user-select: none;
         font-size: 1.3141592em;
     }

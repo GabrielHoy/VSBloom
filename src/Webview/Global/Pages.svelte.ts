@@ -2,7 +2,7 @@ import type { Component } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import Main from "../Components/Pages/Main.svelte";
 import Unknown from "../Components/Pages/Unknown.svelte";
-import Settings from "../Components/Pages/Settings/Settings.svelte";
+import Settings from "../Components/Pages/Settings.svelte";
 import GettingStarted from "../Components/Pages/GettingStarted.svelte";
 import { MutatePersistentState } from "./PersistentWebviewState.svelte";
 import { vscode } from "../Util/VSCodeAPI";

@@ -24,6 +24,8 @@
             "name": "disconnectedTrailSegmentLifetime",
             "type": "number",
             "default": 750,
+            "step": 25,
+            "displayedUnit": "ms",
             "description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
             "markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
         },
@@ -38,6 +40,8 @@
             "name": "maxSolidTrailLength",
             "type": "number",
             "default": 100,
+            "step": 5,
+            "displayedUnit": "px",
             "description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
             "markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
         },
@@ -45,6 +49,8 @@
             "name": "solidTrailWidth",
             "type": "number",
             "default": 3,
+            "step": 0.25,
+            "displayedUnit": "px",
             "description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
             "markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
         },
@@ -52,6 +58,8 @@
             "name": "solidTrailSpeed",
             "type": "number",
             "default": 20,
+            "step": 2.5,
+            "displayedUnit": "px/s",
             "description": "The speed at which the trail should pursue the cursor, in pixels/second",
             "markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
         }

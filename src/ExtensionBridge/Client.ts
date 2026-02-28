@@ -79,7 +79,6 @@ class VSBloomClient implements IVSBloomClient {
 
         this._windowId = value;
         if (!isInitialWindowIdAssignment) {
-            this.Log('debug', `My window ID is being changed from "${lastWindowId}" -> "${this._windowId}"`);
             this.FireServer({
                 type: 'change-window-id',
                 newWindowId: this._windowId

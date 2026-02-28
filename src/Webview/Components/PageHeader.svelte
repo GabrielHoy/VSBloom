@@ -72,6 +72,8 @@
         white-space: nowrap;
         padding: 0;
         margin: 0;
+        pointer-events: none;
+        user-select: none;
     }
     .page-header-right {
         justify-self: end;

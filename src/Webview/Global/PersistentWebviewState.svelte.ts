@@ -14,13 +14,15 @@ export interface PersistentWebviewState {
     currentPage: PageDescriptor["name"];
     settingsPage: {
         currentCategory?: string;
+        subcategoriesExpanded?: Record<string, string[]>;
     }
 }
 
 export const defaultPersistentState: PersistentWebviewState = {
     currentPage: "Main Menu",
     settingsPage: {
-        currentCategory: undefined
+        currentCategory: undefined,
+        subcategoriesExpanded: undefined
     }
 };
 

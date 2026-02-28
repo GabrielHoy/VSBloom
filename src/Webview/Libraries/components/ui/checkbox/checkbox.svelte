@@ -115,6 +115,7 @@
 		pointer-events: none;
 
 		&.icon-check {
+			transform: scale(0);
 			animation: checkIconAnim 0.5s ease-in-out forwards;
 			animation-delay: 0.1s;
 		}
@@ -124,6 +125,7 @@
 			background-color: black;
 		}
 		&.icon-x {
+			transform: scale(0);
 			animation: xIconAnim 0.618s var(--vsbloom-bouncy-ease) forwards;
 			animation-delay: 0.1s;
 		}
