@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Checkbox as CheckboxPrimitive } from "bits-ui";
 	import CheckIcon from "@lucide/svelte/icons/check";
-	import MinusIcon from "@lucide/svelte/icons/minus";
+	import IndeterminateIcon from "@lucide/svelte/icons/loader-circle"
 	import XIcon from "@lucide/svelte/icons/x";
 	import { cn, type WithoutChildrenOrChild } from "$webview-svelte-lib/utils.js";
 	import { directories } from "../../../../Global/Directories.svelte";
@@ -36,14 +36,17 @@
 		>
 			{#key checked || indeterminate}
 				<div
-					class="checkbox-icon-container icon-{checked ? 'check' : indeterminate ? 'minus' : 'x'}"
+					class="checkbox-icon-container icon-{checked ? 'check' : indeterminate ? 'indeterminate' : 'x'}"
 					in:fade={{ duration: 175, easing: cubicInOut, delay: 75 }}
 					out:scale={{ duration: 100, easing: linear }}
 				>
 					{#if checked}
 						<CheckIcon class="size-3.5" />
 					{:else if indeterminate}
-						<MinusIcon class="size-3.5" />
+						<span class="w-full h-full absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-xs scale-75">
+							...
+						</span>
+						<IndeterminateIcon class="size-3.5 animate-spin" />
 					{:else}
 						<XIcon class="size-3.5 opacity-25" />
 					{/if}
@@ -115,9 +118,10 @@
 			animation: checkIconAnim 0.5s ease-in-out forwards;
 			animation-delay: 0.1s;
 		}
-		&.icon-minus {
+		&.icon-indeterminate {
 			opacity: 1;
-			color: magenta;
+			color: white;
+			background-color: black;
 		}
 		&.icon-x {
 			animation: xIconAnim 0.618s var(--vsbloom-bouncy-ease) forwards;

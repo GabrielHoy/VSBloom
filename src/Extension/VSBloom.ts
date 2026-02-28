@@ -232,8 +232,12 @@ async function AttemptOpenMenu(context: vscode.ExtensionContext) {
     vscode.window.showErrorMessage("Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
     return;
   }
+  if (!server) {
+    vscode.window.showErrorMessage("Could not find the bridge server, try running this command on the window that has the VSBloom: Extension Bridge channel open in the Output panel!");
+    return;
+  }
 
-  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri, context);
+  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri, context, server);
 }
 
 /**

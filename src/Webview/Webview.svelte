@@ -199,7 +199,7 @@
 		margin: 0px;
 	}
 	.view-shadow {
-		position: absolute;
+		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
@@ -214,7 +214,7 @@
 	.noise-layer {
 		--bg-size-scaled: calc((128px / var(--scale-factor)) * 2.8);
 
-		position: absolute;
+		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;

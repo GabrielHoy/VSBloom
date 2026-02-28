@@ -35,8 +35,20 @@ export interface ChangeWebviewTitleMessage {
         newTitle?: string
     };
 }
-export interface RequestCurrentSettingsMessage {
-    type: 'request-current-settings',
+export interface UpdateSettingMessage {
+    type: 'update-setting',
+    data: {
+        internalSettingPath: string;
+        newValue: any;
+    }
+}
+export interface RequestSettingsSyncMessage {
+    type: 'request-settings-sync',
     data: undefined;
 }
-export type SvelteToBloomPayload = SendWindowNotificationMessage | WebviewReadyMessage | ChangeWebviewTitleMessage | RequestCurrentSettingsMessage;
+export type SvelteToBloomPayload =
+    SendWindowNotificationMessage |
+    WebviewReadyMessage |
+    ChangeWebviewTitleMessage |
+    UpdateSettingMessage |
+    RequestSettingsSyncMessage;

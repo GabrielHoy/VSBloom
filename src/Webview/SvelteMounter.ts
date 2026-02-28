@@ -8,6 +8,12 @@
 import { mount } from "svelte";
 import WebviewPage from "./Webview.svelte";
 import { vscode } from "./Util/VSCodeAPI";
+import { AssignCurrentEffectSettings } from "./Global/Settings.svelte";
+
+// Hookup Bloom -> Svelte message listeners for general state management
+vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
+    AssignCurrentEffectSettings(data);
+});
 
 const webviewPage = mount(WebviewPage, { target: document.getElementById("page")! });
 

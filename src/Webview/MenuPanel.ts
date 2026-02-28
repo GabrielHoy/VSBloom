@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import type { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import * as ClientPatcher from "../Patcher/ClientPatcher";
 import { Uri, Disposable, ViewColumn } from "vscode";
 import type { WebviewPanel, Webview } from "vscode";
@@ -25,17 +26,20 @@ export class MenuPanel {
 	private disposables: Disposable[] = [];
 	public static currentPanel: MenuPanel | undefined;
 	private readonly context: vscode.ExtensionContext;
+	private readonly server: VSBloomBridgeServer;
 
-	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext) {
+	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer) {
 		this.panel = panel;
 		this.context = context;
+		this.server = server;
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri);
 		this.panel.iconPath = Uri.joinPath(uri, "images", "logo.png");
 		this.SetWebviewMessageListener(this.panel.webview);
+		this.SetupExtensionConfigChangedListener();
 	}
 
-	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext) {
+	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer) {
 		if (MenuPanel.currentPanel) {
 			MenuPanel.currentPanel.panel.reveal(ViewColumn.One);
 		} else {
@@ -49,7 +53,7 @@ export class MenuPanel {
 				}
 			);
 
-			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context);
+			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context, server);
 		}
 	}
 
@@ -100,6 +104,14 @@ export class MenuPanel {
         `;
 	}
 
+	private SetupExtensionConfigChangedListener() {
+		vscode.workspace.onDidChangeConfiguration((e) => {
+            if (e.affectsConfiguration('vsbloom')) {
+				this.SendSettingsListToSvelte();
+			}
+		}, undefined, this.disposables);
+	}
+
 	private SetWebviewMessageListener(webview: Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
@@ -123,6 +135,13 @@ export class MenuPanel {
 						break;
 					case "webview-ready":
 						this.SendMetadataUpdateToSvelte();
+						this.SendSettingsListToSvelte();
+						break;
+					case "request-settings-sync":
+						this.SendSettingsListToSvelte();
+						break;
+					case "update-setting":
+						this.UpdateSetting(message.data.internalSettingPath, message.data.newValue);
 						break;
 				}
 			},
@@ -142,5 +161,22 @@ export class MenuPanel {
 				isDevEnvironment: ExtensionReflection.IsDevelopmentEnvironment()
 			}
 		});
+	}
+
+	private async SendSettingsListToSvelte() {
+		const settings = this.server.GetCurrentExtensionConfig();
+		this.PostToSvelte({
+			type: 'sync-settings-list',
+			data: settings
+		});
+	}
+
+	private async UpdateSetting(internalSettingPath: string, newValue: any) {
+		if (!internalSettingPath.startsWith('vsbloom.')) {
+			throw new Error(`Attempted to update a setting that is not a valid VS: Bloom setting path: ${internalSettingPath}`);
+		}
+
+		//TODO: Add support for other configuration targets
+		vscode.workspace.getConfiguration().update(internalSettingPath, newValue, vscode.ConfigurationTarget.Global);
 	}
 }

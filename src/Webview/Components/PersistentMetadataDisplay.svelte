@@ -57,7 +57,7 @@
         align-items: end;
         justify-content: flex-start;
 
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0.125rem;
         width: calc(100vw - 0.125rem);

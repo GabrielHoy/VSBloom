@@ -54,7 +54,7 @@
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
         width: 100%;
-        height: 6.18vh;
+        height: calc(var(--spacing) * 10);
         padding: var(--spacing);
         margin: 0;
     }
@@ -63,7 +63,7 @@
         min-width: 0;
     }
     .page-header-title {
-        font-size: 3.14vh;
+        font-size: calc(var(--spacing) * 5);
         font-weight: 500;
         text-align: center;
         min-width: 0;

@@ -13,12 +13,11 @@
     import { persistentState, MutatePersistentState } from "../../../Global/PersistentWebviewState.svelte";
     import { fade, fly } from "svelte/transition";
     import { backIn, backOut, cubicIn, cubicOut } from "svelte/easing";
-    import InfoIcon from "@lucide/svelte/icons/info"
     import BadgeInfoIcon from "@lucide/svelte/icons/badge-info"
     import type { Snippet } from "svelte";
+    import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../../Global/Settings.svelte";
 
     function GetPrettifiedPropertyPathSegments(internalPath: string): string[] {
-        console.debug(internalPath);
         // skip `vsbloom.` prefix, capitalize first letter, insert space before each capital letter
         return internalPath
             .split('.')
@@ -46,12 +45,12 @@
         "vsbloom.extensionConfigurationsNote"
     ]
     
-    let effectSettings = $state(extensionPackageJSON.contributes.configuration);
-    let effectSettingsByCategoryName = $derived(effectSettings.reduce((esBuilder, category) => {
+    let effectSettingsByCategoryName = $derived(effectSettings.default.reduce((esBuilder, category) => {
         esBuilder[category.title] = category;
         return esBuilder;
-    }, {} as Record<string, typeof effectSettings[number]>));
-    let currentlySelectedCategory = $state(persistentState.settingsPage.currentCategory ?? effectSettings[1].title);
+    }, {} as Record<string, typeof effectSettings.default[number]>));
+
+    let currentlySelectedCategory = $state(persistentState.settingsPage.currentCategory ?? effectSettings.default[1].title);
 
     // title animation & change handling depending on selected category
     $effect(() => {
@@ -59,11 +58,11 @@
         vscode.ChangeTitle(prettyCatTitle ? `${prettyCatTitle} Settings` : "Extension Settings");
     });
 
-    type PropertyEntry = typeof effectSettings[number]['properties'][keyof typeof effectSettings[number]['properties']] & { settingPath: string, hideFromCustomEditor?: boolean };
+    type PropertyEntryWithPath = PropertyEntry & { settingPath: string };
 
     let propSubcategoryData = $derived(
-        effectSettings.reduce<Record<string, Record<string, PropertyEntry[]>>>((acc, category) => {
-            const subcategories: Record<string, PropertyEntry[]> = {};
+        effectSettings.default.reduce<Record<string, Record<string, PropertyEntryWithPath[]>>>((acc, category) => {
+            const subcategories: Record<string, PropertyEntryWithPath[]> = {};
 
             for (const [propPath, propData] of Object.entries(category.properties)) {
                 if (blacklistedPathsForWebviewSettingsDisplay.some(bp => propPath.startsWith(bp))) {
@@ -82,24 +81,42 @@
         }, {})
     );
 
-    const configPropInputTypeSnippets: Record<string, (propData: PropertyEntry, topLevelCatIdx: number) => ReturnType<Snippet>> = {
+    const configPropInputTypeSnippets: Record<string, (propData: PropertyEntryWithPath, topLevelCatIdx: number) => ReturnType<Snippet>> = {
         "boolean": BooleanInput
     }
+
+    // Trigger a settings sync when loading the settings page at any point
+    // to ensure we're up to date display wise
+    vscode.PostToExtension({
+        type: 'request-settings-sync',
+        data: undefined
+    });
 </script>
 
-{#snippet BooleanInput(propData: PropertyEntry, topLevelCatIdx: number)}
+{#snippet BooleanInput(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
     <div class="inline-block align-middle px-2.5">
-        <Checkbox style="transform: scale(1.618);" />
+        <Checkbox style="transform: scale(1.618);"
+            indeterminate={effectSettings.values[propData.settingPath] === undefined}
+            checked={effectSettings.values[propData.settingPath] === true}
+            onCheckedChange={(newVal: boolean) => {
+                if (newVal == propData.default) {
+                    UpdateEffectSetting(propData.settingPath, undefined);
+                    return;
+                }
+
+                UpdateEffectSetting(propData.settingPath, newVal);
+            }}
+        />
     </div>
 {/snippet}
-{#snippet UnknownFallbackInput(propData: PropertyEntry, topLevelCatIdx: number)}
+{#snippet UnknownFallbackInput(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
     <div class="inline-block align-middle" title="This property type isn't supported by the VS: Bloom Settings Editor yet; you'll need to configure it via the default VS Code settings view to change it for now.">
         <BadgeInfoIcon class="size-7 fill-red-900 stroke-pink-300 -translate-y-1/8 transition-all duration-300 hover:scale-110 overflow-visible"></BadgeInfoIcon>
     </div>
 {/snippet}
 
 
-{#snippet ConfigurableProperty(propData: PropertyEntry, topLevelCatIdx: number)}
+{#snippet ConfigurableProperty(propData: PropertyEntryWithPath, topLevelCatIdx: number)}
     <div class="config-property">
         <p class="config-property-name">
             <!-- dash between left padding and property name -->
@@ -128,7 +145,7 @@
             <!-- Category tabs -->
             <div class="tab-list-container">
                 <Tabs.List class="py-0.5">
-                    {#each effectSettings as category, catIdx}
+                    {#each effectSettings.default as category, catIdx}
                         <!-- Only show tab if there are actually non-blacklisted properties to display -->
                         {#if Object.keys(propSubcategoryData[category.title]).length !== 0}
                             <Tabs.Trigger
@@ -137,7 +154,7 @@
                             >
                                 {prettifiedCategoryNameMapping[category.title] ?? category.title}
                             </Tabs.Trigger>
-                            {#if catIdx < effectSettings.length - 1}
+                            {#if catIdx < effectSettings.default.length - 1}
                                 <Separator
                                     orientation="vertical"
                                     class="mx-1"
@@ -166,14 +183,14 @@
             </div>
 
             <!-- Each category's content -->
-            {#each effectSettings as category, catIdx}
+            {#each effectSettings.default as category, catIdx}
                 <Tabs.Content value={category.title}>
                     <div class="settings-accordion">
                         <Accordion.Root type="multiple" value={Object.keys(propSubcategoryData[category.title]).length > 1 ? [] : [Object.keys(propSubcategoryData[category.title])[0]]}>
                             {#each Object.entries(propSubcategoryData[category.title]) as [pathCategory, properties]}
                                 <Accordion.Item value={pathCategory}>
                                     <Accordion.Trigger
-                                        class="mx-2.5"
+                                        class=""
                                     >
                                         {GetPrettifiedPropertyPathSegments(pathCategory).join(" > ")}
                                     </Accordion.Trigger>
@@ -227,11 +244,8 @@
         position: absolute;
         transform: translateX(-50%);
     }
-    .tab-content {
-        /* background-color: color-mix(in srgb, var(--vsbloom-extremum-theme-color) 15%, transparent); */
-    }
     .config-property-list-container {
-        padding: 0.25em 0 0.25em 0;
+        padding: 0.5em 0 0.5em 0;
     }
     .config-property {
         padding: 0.618em 0 0.618em 0;
@@ -243,8 +257,9 @@
         }
     }
     .config-property-name {
+
         user-select: none;
-        font-size: 1.314159em;
+        font-size: 1.3141592em;
     }
     .config-property-name-text {
         transition: border-bottom 0.1618s ease-in-out;
