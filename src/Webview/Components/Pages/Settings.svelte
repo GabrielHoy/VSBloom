@@ -45,6 +45,11 @@
     const blacklistedPathsForWebviewSettingsDisplay: string[] = [
         "vsbloom.extensionConfigurationsNote"
     ]
+    const configPropInputTypeSnippets: Record<string, (propData: ProcessedPropertyEntry, topLevelCatIdx: number) => ReturnType<Snippet>> = {
+        "boolean": BooleanInput,
+        "number": NumberInput,
+        "string": StringInput
+    }
     
     let effectSettingsByCategoryName = $derived(effectSettings.default.reduce((esBuilder, category) => {
         esBuilder[category.title] = category;
@@ -62,7 +67,8 @@
     type ProcessedPropertyEntry = PropertyEntry & {
         settingPath: string,
         step?: number,
-        displayedUnit?: string
+        displayedUnit?: string,
+        enum?: (string | number)[]
     };
 
     let subcategoriesExpanded: Map<string, string[]> = $state(persistentState.settingsPage.subcategoriesExpanded ? new Map<string, string[]>(Object.entries(persistentState.settingsPage.subcategoriesExpanded)) : new Map<string, string[]>());
@@ -107,11 +113,6 @@
         return builderSet;
     }, new Set<string>()));
 
-    const configPropInputTypeSnippets: Record<string, (propData: ProcessedPropertyEntry, topLevelCatIdx: number) => ReturnType<Snippet>> = {
-        "boolean": BooleanInput,
-        "number": NumberInput
-    }
-
     //it's annoying that this has to be done so manually...am I doing something wrong?
     function resizeToTextContent(node: HTMLElement) {
         const input = node.querySelector('input');
@@ -121,10 +122,12 @@
         const ctx = canvas.getContext('2d')!;
 
         function resize() {
+            const extraTextPadding = input!.type === "number" ? "0000" : "";
+
             ctx.font = getComputedStyle(input!).font;
-            const textWidth = ctx.measureText(input!.value ? input!.value + "0000" : '').width;
+            const textWidth = ctx.measureText(input!.value ? input!.value + extraTextPadding : '').width;
             const placeholderWidth = input!.placeholder
-                ? ctx.measureText(input!.placeholder + "0000").width
+                ? ctx.measureText(input!.placeholder + extraTextPadding).width
                 : 0;
             const cs = getComputedStyle(input!);
             const padding = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
@@ -192,8 +195,18 @@
                 if (Number.isNaN(e.currentTarget.valueAsNumber)) {
                     e.currentTarget.value = effectSettings.values[propData.settingPath] ?? propData.default.toLocaleString();
                     e.currentTarget.animate([
-                        { color: "red", scale: 0.9, rotate: (Math.sign(Math.random()-0.5) * 10) + "deg" },
-                        { color: "currentColor", scale: 1, rotate: "0deg" },
+                        {
+                            color: "red",
+                            scale: 0.9,
+                            filter: "blur(2.5px) contrast(150%)",
+                            rotate: (Math.sign(Math.random()-0.5) * 10) + "deg"
+                        },
+                        {
+                            color: "currentColor",
+                            scale: 1,
+                            filter: "blur(0px) contrast(100%)",
+                            rotate: "0deg"
+                        },
                     ], {
                         duration: 500,
                         easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
@@ -216,6 +229,30 @@
         {/if}
     </div>
 {/snippet}
+{#snippet StringInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+    <div class="inline-flex align-middle px-1" use:resizeToTextContent>
+        <Input
+            type="text"
+            value={effectSettings.values[propData.settingPath] ?? propData.default}
+            placeholder={propData.default.toLocaleString()}
+            onchange={(e) => {
+                if (e.currentTarget.value === propData.default) {
+                    UpdateEffectSetting(propData.settingPath, undefined);
+                } else {
+                    UpdateEffectSetting(propData.settingPath, e.currentTarget.value);
+                }
+            }}
+        />
+        {#if propData.displayedUnit}
+            <span class="translate-y-4 text-sm">
+                {propData.displayedUnit}
+            </span>
+        {/if}
+    </div>
+{/snippet}
+{#snippet EnumInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+    {@render UnknownFallbackInput(propData, topLevelCatIdx)}
+{/snippet}
 {#snippet UnknownFallbackInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="inline-block align-middle" title="This property type isn't supported by the VS: Bloom Settings Editor yet; you'll need to configure it via the default VS Code settings view to change it for now.">
         <BadgeInfoIcon class="size-7 fill-red-900 stroke-pink-300 -translate-y-1/8 transition-all duration-300 hover:scale-110 overflow-visible"></BadgeInfoIcon>
@@ -227,11 +264,15 @@
         <p class="config-property-entry">
             <span
                 class="config-property-name-text"
-                title={propData.description ?? "No description is available for this property yet."}
+                title={propData.description ? propData.description : "No description is available for this property yet."}
             >
                 {GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}:
             </span>
-            {@render (configPropInputTypeSnippets[propData.type] ?? UnknownFallbackInput)(propData, topLevelCatIdx)}
+            {#if propData.enum}
+                {@render EnumInput(propData, topLevelCatIdx)}
+            {:else}
+                {@render (configPropInputTypeSnippets[propData.type] ?? UnknownFallbackInput)(propData, topLevelCatIdx)}
+            {/if}
         </p>
     </div>
 {/snippet}
