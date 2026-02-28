@@ -40,7 +40,7 @@
 		WithElementRef<HTMLAnchorAttributes> & {
 			variant?: ButtonVariant;
 			size?: ButtonSize;
-			ondisabledclick?: () => void;
+			ondisabledclick?: HTMLButtonAttributes["onclick"];
 		};
 </script>
 

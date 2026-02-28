@@ -32,10 +32,43 @@ p,h1,h2,h3,h4,h5,h6 {
     text-shadow: var(--vsbloom-text-drop-shadow);
 }
 
-/* Some of the components from shadcn need to be selected globally to apply custom styles like this */
+/*
+    Some of the components from shadcn need
+    to be selected globally to apply custom styles like this
+    (without vomitting 100 inline tailwind classes)
+*/
 /* 1) accordion content & triggers in the settings page */
 .settings-accordion {
-    [data-slot="accordion-content"][data-state=open],[data-slot="accordion-trigger"][data-state=open] {
-        background-color: color-mix(in srgb, var(--vsbloom-extremum-theme-color) 15%, transparent);
+    --open-bg-color: color-mix(in srgb, var(--vsbloom-extremum-theme-color) 15%, transparent);
+    --intense-open-bg-color: color-mix(in srgb, var(--vsbloom-extremum-theme-color) 25%, transparent);
+
+    [data-slot="accordion-content"],[data-slot="accordion-trigger"] {
+        text-shadow: var(--vsbloom-text-drop-shadow);
+        transition: all 0.5s var(--vsbloom-bouncy-ease);
+        position: relative;
+        z-index: 0;
+
+        &::after {
+            content: '';
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            opacity: 0;
+            transition: opacity 0.5s var(--vsbloom-bouncy-ease);
+            z-index: -1;
+        }
+
+        &[data-state=open]::after {
+            opacity: 1;
+        }
+    }
+
+    
+    [data-slot="accordion-trigger"]::after {
+        background: linear-gradient(to bottom, var(--intense-open-bg-color), var(--open-bg-color));
+    }
+    [data-slot="accordion-content"]::after {
+        background: linear-gradient(to top, var(--intense-open-bg-color), var(--open-bg-color));
     }
 }

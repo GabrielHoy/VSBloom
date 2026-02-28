@@ -99,13 +99,12 @@
 	--input: var(--vscode-button-secondaryBackground);
 	--border: var(--vscode-editor-foreground);
 
-	/* account for scaling factor of vscode */
+	/* account for scaling factor of vscode in...many tailwind classes */
 
 	--spacing: calc(0.25rem / var(--tailwind-scaling)); /* 0.25rem */
 
 	--text-base: calc(1rem / var(--tailwind-scaling));
 	--text-base--line-height: calc(calc(1.5 / 1) / var(--tailwind-scaling));
-
 	--text-xs: calc(0.75rem / var(--tailwind-scaling));
     --text-xs--line-height: calc(calc(1 / 0.75) / var(--tailwind-scaling));
 	--text-sm: calc(0.875rem / var(--tailwind-scaling)); /* 0.875rem */

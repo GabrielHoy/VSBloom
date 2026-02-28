@@ -16,13 +16,32 @@
         disabled={descriptor.notFinished || (pageNameSwappingTo !== null)}
         title={descriptor.description}
         class="page-swap-button"
-        onclick={() => {
+        onclick={(e) => {
             pageNameSwappingTo = descriptor.name;
             setTimeout(() => {
                 SetCurrentPage(descriptor.name);
             }, 250);
         }}
-        ondisabledclick={() => {
+        ondisabledclick={(e) => {
+            e.currentTarget.animate([
+                {
+                    color: "red",
+                    filter: "blur(2.5px) contrast(150%)",
+                    scale: 0.9,
+                    transform: "skewX(-7.5deg)",
+                    rotate: Math.sign(Math.random()-0.5) * 2.5 + "deg"
+                },
+                {
+                    color: "currentColor",
+                    filter: "blur(0px) contrast(100%)",
+                    scale: 1,
+                    transform: "skewX(0deg)",
+                    rotate: "0deg"
+                }
+            ], {
+                duration: 1000,
+                easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+            })
             vscode.NotifyUser("warning", `The "${descriptor.name}" page isn't finished yet, check back later!`);
         }}
     >
