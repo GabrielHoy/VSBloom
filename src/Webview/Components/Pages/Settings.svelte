@@ -7,6 +7,7 @@
     import extensionPackageJSON from "../../../../package.json";
     import * as Tabs from '$webview-svelte-lib/components/ui/tabs/index';
     import * as Accordion from '$webview-svelte-lib/components/ui/accordion/index';
+    import * as Select from '$webview-svelte-lib/components/ui/select/index';
     import { Button } from '$webview-svelte-lib/components/ui/button';
     import { Separator } from "$webview-svelte-lib/components/ui/separator";
     import { Checkbox } from "$webview-svelte-lib/components/ui/checkbox";
@@ -125,9 +126,10 @@
             const extraTextPadding = input!.type === "number" ? "0000" : "";
 
             ctx.font = getComputedStyle(input!).font;
-            const textWidth = ctx.measureText(input!.value ? input!.value + extraTextPadding : '').width;
+            const maxChars = 42;
+            const textWidth = ctx.measureText(input!.value ? (input!.value + extraTextPadding).slice(0,maxChars) : '').width;
             const placeholderWidth = input!.placeholder
-                ? ctx.measureText(input!.placeholder + extraTextPadding).width
+                ? ctx.measureText((input!.placeholder + extraTextPadding).slice(0,maxChars)).width
                 : 0;
             const cs = getComputedStyle(input!);
             const padding = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
@@ -158,6 +160,10 @@
                 delete (input as any).value;
             },
         };
+    }
+
+    function IsValidEnum(toCheck: string | number | boolean, enumArray: (string | number | boolean)[]): boolean {
+        return enumArray.find((enumVal) => typeof enumVal === "number" ? enumVal.toLocaleString() === toCheck.toLocaleString() : enumVal.toString() === toCheck.toString()) !== undefined;
     }
 
     // Trigger a settings sync when loading the settings page at any point
@@ -219,7 +225,6 @@
                         UpdateEffectSetting(propData.settingPath, e.currentTarget.valueAsNumber);
                     }
                 }
-
             }}
         />
         {#if propData.displayedUnit}
@@ -230,7 +235,10 @@
     </div>
 {/snippet}
 {#snippet StringInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
-    <div class="inline-flex align-middle px-1" use:resizeToTextContent>
+    <div
+        class="inline-flex align-middle px-1"
+        use:resizeToTextContent
+    >
         <Input
             type="text"
             value={effectSettings.values[propData.settingPath] ?? propData.default}
@@ -251,7 +259,84 @@
     </div>
 {/snippet}
 {#snippet EnumInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
-    {@render UnknownFallbackInput(propData, topLevelCatIdx)}
+    <div class="inline-flex align-middle px-0.5">
+        <Select.Root
+            type="single"
+            loop={true}
+            value={effectSettings.values[propData.settingPath]?.toString() ?? propData.default.toString()}
+            onValueChange={(newVal) => {
+                const isValidEnumValue = IsValidEnum(newVal, propData.enum!);
+                if (!isValidEnumValue) {
+                    // invalid enum value that we're changing to - reset to last valid/default value
+                    vscode.NotifyUser("error", `${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}: Invalid enum value, resetting to last valid/default value.`);
+                    const isLastValueValidEnum = IsValidEnum(effectSettings.values[propData.settingPath], propData.enum!);
+                    if (isLastValueValidEnum) {
+                        UpdateEffectSetting(propData.settingPath, effectSettings.values[propData.settingPath]);
+                    } else {
+                        // if the last value was also invalid, just clear the setting to reset to its default
+                        UpdateEffectSetting(propData.settingPath, undefined);
+                    }
+                    return;
+                }
+
+                // valid enum value that we're changing to - update the setting or 'clear' it if it's the default value
+                if (typeof propData.default === "number" ? newVal === propData.default.toLocaleString() : newVal === propData.default.toString()) {
+                    UpdateEffectSetting(propData.settingPath, undefined);
+                } else {
+                    UpdateEffectSetting(propData.settingPath, newVal);
+                }
+            }}
+        >
+            <Select.Trigger
+                class={effectSettings.values[propData.settingPath] !== undefined ? !propData.enum!.includes(effectSettings.values[propData.settingPath]) ? "invalid-enum-value" : "" : ""}
+            >
+                {propData.enum?.find((enumVal) => enumVal === effectSettings.values[propData.settingPath]) ?? (effectSettings.values[propData.settingPath] ?? propData.default)}
+            </Select.Trigger>
+            <!--
+                quick note, preventScroll *MUST* be false here since bits-ui attempts to utilize
+                inline style application on the `body` element if it is true, causing a CSP
+                violation and the entire webview to break.
+            -->
+            <Select.Content preventScroll={false}>
+                <Select.Group>
+                    {#each propData.enum!.slice().sort((a, b) => {
+                        //sort enum values so that the currently selected value is at the top
+                        const selected = effectSettings.values[propData.settingPath];
+                        const selectedStr = (typeof selected === "number" ? selected.toLocaleString() : selected?.toString?.()) ?? propData.default.toString();
+                        const aStr = typeof a === "number" ? a.toLocaleString() : a.toString();
+                        const bStr = typeof b === "number" ? b.toLocaleString() : b.toString();
+
+                        if (aStr === selectedStr) {
+                            return -1;
+                        }
+                        if (bStr === selectedStr) {
+                            return 1;
+                        }
+                        return 0;
+                    }).filter((enumVal) => {
+                        // after some more iteration, let's just remove the currently
+                        // selected value from the dropdown enum list entirely since it looks better
+                        // though i'll keep the above sort logic for now since it could be useful if i change my mind
+                        return enumVal !== (effectSettings.values[propData.settingPath] ?? propData.default);
+                    }) as enumVal}
+                        {@const stringifiedEnumVal = typeof enumVal === "number" ? enumVal.toLocaleString() : enumVal.toString()}
+                        {@const isCurrentlySelected = stringifiedEnumVal === (typeof effectSettings.values[propData.settingPath] === "number" ? effectSettings.values[propData.settingPath].toLocaleString() : (effectSettings.values[propData.settingPath] ?? propData.default).toString())}
+                        <Select.Item
+                            value={enumVal.toString()}
+                            label={stringifiedEnumVal}
+                            class={["block pe-2 ps-2 text-center", !isCurrentlySelected ? "text-center" : ""]}
+                        >
+                            {stringifiedEnumVal}
+                        </Select.Item>
+                        {#if isCurrentlySelected}
+                            <!-- add a separator below the currently selected value -->
+                            <Separator orientation="horizontal" class="mt-0.5 mb-3 -px-4 -mx-1" style="width: calc(100% + (var(--spacing) * 2)); /* background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), transparent); */" />
+                        {/if}
+                    {/each}
+                </Select.Group>
+            </Select.Content>
+        </Select.Root>
+    </div>
 {/snippet}
 {#snippet UnknownFallbackInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="inline-block align-middle" title="This property type isn't supported by the VS: Bloom Settings Editor yet; you'll need to configure it via the default VS Code settings view to change it for now.">

@@ -175,6 +175,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@utility scroll-noise {
+	animation: scrollNoise 16.18s linear infinite;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

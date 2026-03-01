@@ -72,3 +72,34 @@ p,h1,h2,h3,h4,h5,h6 {
         background: linear-gradient(to top, var(--intense-open-bg-color), var(--open-bg-color));
     }
 }
+/* 2) "select" trigger buttons */
+button[data-slot="select-trigger"] {
+    --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1);
+
+    text-shadow: var(--vsbloom-text-drop-shadow);
+
+    background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
+    background-repeat: repeat;
+
+    animation: scrollNoise 16.18s linear infinite;
+
+
+
+    &.invalid-enum-value {
+        background-color: rgba(255, 0, 0, 0.125);
+        color: red;
+    }
+}
+/* 3) "select" content dropdowns */
+div[data-slot="select-content"] {
+    --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1);
+    --animate-in: scrollNoise 16.18s linear infinite, enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
+    --animate-out: scrollNoise 16.18s linear infinite, exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
+
+    text-shadow: var(--vsbloom-text-drop-shadow);
+
+    background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
+    background-repeat: repeat;
+    animation: var(--animate-in);
+
+}
