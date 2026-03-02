@@ -1,23 +1,28 @@
 <script lang="ts">
-    import { vscode } from "../../Util/VSCodeAPI";
-    import { directories } from "../../Global/Directories.svelte";
-    import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
-    import PageContainer from "../PageContainer.svelte";
-    import PageHeader from "../PageHeader.svelte";
-    import extensionPackageJSON from "../../../../package.json";
+    import { vscode } from "../../../Util/VSCodeAPI";
+    import { colord } from "colord";
+    import { directories } from "../../../Global/Directories.svelte";
+    import { pageData, type PageDescriptor } from "../../../Global/Pages.svelte";
+    import PageContainer from "../../PageContainer.svelte";
+    import PageHeader from "../../PageHeader.svelte";
+    import extensionPackageJSON from "../../../../../package.json";
     import * as Tabs from '$webview-svelte-lib/components/ui/tabs/index';
     import * as Accordion from '$webview-svelte-lib/components/ui/accordion/index';
     import * as Select from '$webview-svelte-lib/components/ui/select/index';
-    import { Button } from '$webview-svelte-lib/components/ui/button';
+    import * as Dialog from '$webview-svelte-lib/components/ui/dialog/index';
+    import { Button, buttonVariants } from '$webview-svelte-lib/components/ui/button';
     import { Separator } from "$webview-svelte-lib/components/ui/separator";
     import { Checkbox } from "$webview-svelte-lib/components/ui/checkbox";
     import { Input } from "$webview-svelte-lib/components/ui/input";
-    import { persistentState, MutatePersistentState } from "../../Global/PersistentWebviewState.svelte";
+    import { persistentState, MutatePersistentState } from "../../../Global/PersistentWebviewState.svelte";
     import { fade, fly } from "svelte/transition";
     import { backIn, backOut, cubicIn } from "svelte/easing";
-    import BadgeInfoIcon from "@lucide/svelte/icons/badge-info"
+    import BadgeInfoIcon from "@lucide/svelte/icons/badge-info";
     import type { Snippet } from "svelte";
-    import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../Global/Settings.svelte";
+    import ColorWrapper from "./ColorWrapper.svelte";
+    import ColorPicker, { ChromeVariant } from "$webview-svelte-lib/components/ui/ColorPicker";
+    import ColorPickerPreview from "./ColorPickerPreview.svelte";
+    import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../../Global/Settings.svelte";
 
     function GetPrettifiedPropertyPathSegments(internalPath: string): string[] {
         // skip `vsbloom.` prefix, capitalize first letter, insert space before each capital letter
@@ -69,7 +74,8 @@
         settingPath: string,
         step?: number,
         displayedUnit?: string,
-        enum?: (string | number)[]
+        enum?: (string | number)[],
+        isColor?: boolean
     };
 
     let subcategoriesExpanded: Map<string, string[]> = $state(persistentState.settingsPage.subcategoriesExpanded ? new Map<string, string[]>(Object.entries(persistentState.settingsPage.subcategoriesExpanded)) : new Map<string, string[]>());
@@ -113,6 +119,8 @@
 
         return builderSet;
     }, new Set<string>()));
+
+    let currentColorPickerHex: string = $state("#FFAFAFAF");
 
     //it's annoying that this has to be done so manually...am I doing something wrong?
     function resizeToTextContent(node: HTMLElement) {
@@ -192,46 +200,48 @@
 {/snippet}
 {#snippet NumberInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="inline-flex align-middle px-1" use:resizeToTextContent>
-        <Input
-            type="number"
-            value={effectSettings.values[propData.settingPath] ?? propData.default}
-            step={propData.step ?? undefined}
-            placeholder={propData.default.toLocaleString()}
-            onchange={(e) => {
-                if (Number.isNaN(e.currentTarget.valueAsNumber)) {
-                    e.currentTarget.value = effectSettings.values[propData.settingPath] ?? propData.default.toLocaleString();
-                    e.currentTarget.animate([
-                        {
-                            color: "red",
-                            scale: 0.9,
-                            filter: "blur(2.5px) contrast(150%)",
-                            rotate: (Math.sign(Math.random()-0.5) * 10) + "deg"
-                        },
-                        {
-                            color: "currentColor",
-                            scale: 1,
-                            filter: "blur(0px) contrast(100%)",
-                            rotate: "0deg"
-                        },
-                    ], {
-                        duration: 500,
-                        easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-                    });
-                    vscode.NotifyUser("error", `${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}: Invalid/NaN value, resetting to last valid value.`);
-                } else {
-                    if (e.currentTarget.valueAsNumber === propData.default) {
-                        UpdateEffectSetting(propData.settingPath, undefined);
+        <div class="inline-flex relative align-middle">
+            <Input
+                type="number"
+                value={effectSettings.values[propData.settingPath] ?? propData.default}
+                step={propData.step ?? undefined}
+                placeholder={propData.default.toLocaleString()}
+                onchange={(e) => {
+                    if (Number.isNaN(e.currentTarget.valueAsNumber)) {
+                        e.currentTarget.value = effectSettings.values[propData.settingPath] ?? propData.default.toLocaleString();
+                        e.currentTarget.animate([
+                            {
+                                color: "red",
+                                scale: 0.9,
+                                filter: "blur(2.5px) contrast(150%)",
+                                rotate: (Math.sign(Math.random()-0.5) * 10) + "deg"
+                            },
+                            {
+                                color: "currentColor",
+                                scale: 1,
+                                filter: "blur(0px) contrast(100%)",
+                                rotate: "0deg"
+                            },
+                        ], {
+                            duration: 500,
+                            easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                        });
+                        vscode.NotifyUser("error", `${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}: Invalid/NaN value, resetting to last valid value.`);
                     } else {
-                        UpdateEffectSetting(propData.settingPath, e.currentTarget.valueAsNumber);
+                        if (e.currentTarget.valueAsNumber === propData.default) {
+                            UpdateEffectSetting(propData.settingPath, undefined);
+                        } else {
+                            UpdateEffectSetting(propData.settingPath, e.currentTarget.valueAsNumber);
+                        }
                     }
-                }
-            }}
-        />
-        {#if propData.displayedUnit}
-            <span class="translate-y-4 text-sm">
-                {propData.displayedUnit}
-            </span>
-        {/if}
+                }}
+            />
+            {#if propData.displayedUnit}
+                <span class="translate-y-4 text-sm absolute left-full">
+                    {propData.displayedUnit}
+                </span>
+            {/if}
+        </div>
     </div>
 {/snippet}
 {#snippet StringInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
@@ -239,23 +249,119 @@
         class="inline-flex align-middle px-1"
         use:resizeToTextContent
     >
-        <Input
-            type="text"
-            value={effectSettings.values[propData.settingPath] ?? propData.default}
-            placeholder={propData.default.toLocaleString()}
-            onchange={(e) => {
-                if (e.currentTarget.value === propData.default) {
-                    UpdateEffectSetting(propData.settingPath, undefined);
-                } else {
-                    UpdateEffectSetting(propData.settingPath, e.currentTarget.value);
-                }
-            }}
-        />
-        {#if propData.displayedUnit}
-            <span class="translate-y-4 text-sm">
-                {propData.displayedUnit}
-            </span>
-        {/if}
+        <div class="inline-flex relative align-middle">
+            <Input
+                type="text"
+                value={effectSettings.values[propData.settingPath] ?? propData.default}
+                placeholder={propData.default.toLocaleString()}
+                onchange={(e) => {
+                    if (e.currentTarget.value === propData.default) {
+                        UpdateEffectSetting(propData.settingPath, undefined);
+                    } else {
+                        UpdateEffectSetting(propData.settingPath, e.currentTarget.value);
+                    }
+                }}
+            />
+            {#if propData.displayedUnit}
+                <span class="translate-y-4 text-sm absolute left-full">
+                    {propData.displayedUnit}
+                </span>
+            {/if}
+        </div>
+    </div>
+{/snippet}
+{#snippet ColorInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+    <div
+        class="inline-block align-middle px-1"
+    >
+        <div class="inline-flex relative align-middle">
+            <Dialog.Root
+                onOpenChange={(isNowOpen: boolean) => {
+                    const defaultColorObj = colord(propData.default as string);
+                    if (isNowOpen) {
+                        const currentColorSetting = effectSettings.values[propData.settingPath];
+
+                        if (!currentColorSetting || currentColorSetting === propData.default) {
+                            currentColorPickerHex = defaultColorObj.toHex();
+                            return;
+                        }
+
+                        const colorObj = colord(currentColorSetting);
+                        
+                        if (colorObj.isValid()) {
+                            currentColorPickerHex = colorObj.toHex();
+                        } else {
+                            vscode.NotifyUser("error", `Setting "${propData.settingPath}" had an invalid current color value assigned when opening the color picker - clearing setting.`);
+                            currentColorPickerHex = defaultColorObj.toHex();
+                            UpdateEffectSetting(propData.settingPath, undefined);
+                        }
+
+                    } else {
+                        const prevColorSetting = effectSettings.values[propData.settingPath];
+
+                        const newColorSetting = currentColorPickerHex;
+                        const newColorObj = colord(newColorSetting);
+
+                        if (newColorObj.isValid()) {
+                            if (newColorObj.toHex() === defaultColorObj.toHex()) {
+                                // clear setting if it matches the default
+                                UpdateEffectSetting(propData.settingPath, undefined)
+                            } else {
+                                // set to new selected color value
+                                UpdateEffectSetting(propData.settingPath, newColorObj.toHex());
+                            }
+                        } else {
+                            vscode.NotifyUser("error", `${propData.settingPath}: Invalid color input, resetting to last valid/default value.`);
+                            if (prevColorSetting) {
+                                const lastColorObj = colord(prevColorSetting);
+                                if (lastColorObj.isValid()) {
+                                    currentColorPickerHex = lastColorObj.toHex();
+                                    return;
+                                }
+                            }
+                            // if we got here, the last color was invalid too - clear the setting to reset it to the default value
+                            currentColorPickerHex = defaultColorObj.toHex();
+                            UpdateEffectSetting(propData.settingPath, undefined);
+                        }
+                    }
+                }}
+            >
+                <Dialog.Trigger
+                    type={"button"}
+                    class={[
+                        buttonVariants({ variant: "bloom" }),
+                        "block hover:scale-110 active:scale-95 dark:hover:border-foreground \
+                        self-center p-1 ps-1 pbe-1 pbs-1 pe-1"
+                    ]}
+                >
+                    <ColorPickerPreview
+                        color={colord(effectSettings.values[propData.settingPath] ?? propData.default)}
+                        class="aspect-square w-full h-full"
+                    />
+                    <span class="color-picker-preview-hex-text self-center text-xs me-1 -ms-1">
+                        {effectSettings.values[propData.settingPath] ?? propData.default}
+                    </span>
+                </Dialog.Trigger>
+                <Dialog.Content
+                    class="text-center self-center block items-center justify-center text-sm"
+                    style="width: 50vw; height: 60vh; aspect-ratio: 1/1.5;"
+                    preventScroll={false} /* see other preventScroll note; must be disabled here for same reason */
+                >
+                    <ColorPicker
+                        bind:hex={currentColorPickerHex}
+                        disableCloseClickOutside={false}
+                        position="responsive"
+                        isAlpha={true}
+                        isOpen={true}
+                        isDialog={false}
+                        sliderDirection="horizontal"
+                        components={{
+                            wrapper: ColorWrapper
+                        }}
+                    />
+                </Dialog.Content>
+            </Dialog.Root>
+        </div>
     </div>
 {/snippet}
 {#snippet EnumInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
@@ -346,20 +452,25 @@
 
 {#snippet ConfigurableProperty(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
     <div class="config-property {disabledProps.has(propData.settingPath) ? 'disabled-config-property' : ''}">
-        <p class="config-property-entry">
+        <p class="config-property-entry mx-50 text-center flex justify-between items-center">
+        <!-- <p class="config-property-entry"> -->
             <span
                 class="config-property-name-text"
                 title={propData.description ? propData.description : "No description is available for this property yet."}
             >
                 {GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}:
             </span>
+
             {#if propData.enum}
                 {@render EnumInput(propData, topLevelCatIdx)}
+            {:else if propData.isColor}
+                {@render ColorInput(propData, topLevelCatIdx)}
             {:else}
                 {@render (configPropInputTypeSnippets[propData.type] ?? UnknownFallbackInput)(propData, topLevelCatIdx)}
             {/if}
         </p>
     </div>
+    <Separator orientation="horizontal" class="settings-prop-separator absolute m-auto text-center max-w-none max-h-none" style="width: 97.5vw; height: calc(1px / var(--tailwind-scaling)); background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), var(--vscode-editor-foreground), transparent);" />
 {/snippet}
 
 <PageContainer>
@@ -448,7 +559,8 @@
                                     <Accordion.Content
                                         class="mx-5"
                                     >
-                                        <div class="config-property-list-container">
+                                        <!-- <div class="config-property-list-container"> -->
+                                        <div class="config-property-list-container mx-auto flex-col min-w-full w-max "> <!-- min-w-max -->
                                             {#each properties as propertyData}
                                                 {#if !propertyData.hideFromCustomEditor}
                                                     {@render ConfigurableProperty(propertyData, catIdx)}
@@ -502,6 +614,7 @@
     }
     .config-property {
         transition: all 0.5s var(--vsbloom-bouncy-ease);
+        margin-inline: calc(var(--spacing) * 10);
 
         padding: 0.618em 0 0.618em 0;
         &:last-child {
@@ -513,8 +626,7 @@
     }
     .disabled-config-property {
         opacity: 0.75;
-        scale: 0.95;
-        translate: -2.5% 0;
+        scale: 0.995 0.95;
         transform: skewX(-7.5deg);
         padding: 0.15em 0 0.15em 0;
         &:last-child {

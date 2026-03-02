@@ -12,6 +12,7 @@
 	import { LoadPersistentState, persistentState } from './Global/PersistentWebviewState.svelte';
 	import { onDestroy } from "svelte";
 	import { vscode } from "./Util/VSCodeAPI";
+	import * as Dialog from "$webview-svelte-lib/components/ui/dialog/index";
 
 	//Load up any VSCode persistent state for the webview
 	//first so we can restore certain stateful items in

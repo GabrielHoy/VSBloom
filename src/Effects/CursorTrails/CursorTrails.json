@@ -33,6 +33,7 @@
             "name": "color",
             "type": "string",
             "default": "#FFFFFFAF",
+            "isColor": true,
             "description": "The color of the trail that follows behind the cursor as it moves.",
             "markdownDescription": "The color of the trail that follows behind the cursor as it moves."
         },

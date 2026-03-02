@@ -3,7 +3,6 @@
     import { directories } from "../../Global/Directories.svelte";
     import { pageData, type PageDescriptor } from "../../Global/Pages.svelte";
     import PageContainer from "../PageContainer.svelte";
-
 </script>
 
 <PageContainer>

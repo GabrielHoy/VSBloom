@@ -101,5 +101,23 @@ div[data-slot="select-content"] {
     background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
     background-repeat: repeat;
     animation: var(--animate-in);
+}
+/* 4) "dialog" triggers */
+button[data-slot="dialog-trigger"] {
+    --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1);
 
+    text-shadow: var(--vsbloom-text-drop-shadow);
+
+    background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
+    background-repeat: repeat;
+
+    animation: scrollNoise 16.18s linear infinite;
+}
+
+.config-property-list-container {
+    .config-property:is(:last-child) {
+        .settings-prop-separator {
+            display: none;
+        }
+    }
 }
