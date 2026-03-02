@@ -113,11 +113,3 @@ button[data-slot="dialog-trigger"] {
 
     animation: scrollNoise 16.18s linear infinite;
 }
-
-.config-property-list-container {
-    .config-property:is(:last-child) {
-        .settings-prop-separator {
-            display: none;
-        }
-    }
-}

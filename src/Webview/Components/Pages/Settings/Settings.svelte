@@ -344,7 +344,7 @@
                 </Dialog.Trigger>
                 <Dialog.Content
                     class="text-center self-center block items-center justify-center text-sm"
-                    style="width: 50vw; height: 60vh; aspect-ratio: 1/1.5;"
+                    style="width: calc(var(--spacing) * 82.5); height: calc(var(--spacing) * 100); aspect-ratio: 1/1.5;"
                     preventScroll={false} /* see other preventScroll note; must be disabled here for same reason */
                 >
                     <ColorPicker
@@ -470,7 +470,6 @@
             {/if}
         </p>
     </div>
-    <Separator orientation="horizontal" class="settings-prop-separator absolute m-auto text-center max-w-none max-h-none" style="width: 97.5vw; height: calc(1px / var(--tailwind-scaling)); background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), var(--vscode-editor-foreground), transparent);" />
 {/snippet}
 
 <PageContainer>
@@ -557,13 +556,16 @@
                                         {GetPrettifiedPropertyPathSegments(pathCategory).join(" > ")}
                                     </Accordion.Trigger>
                                     <Accordion.Content
-                                        class="mx-5"
+                                        class="mx-5 pb-1"
                                     >
                                         <!-- <div class="config-property-list-container"> -->
                                         <div class="config-property-list-container mx-auto flex-col min-w-full w-max "> <!-- min-w-max -->
-                                            {#each properties as propertyData}
+                                            {#each properties as propertyData, propIdx}
                                                 {#if !propertyData.hideFromCustomEditor}
                                                     {@render ConfigurableProperty(propertyData, catIdx)}
+                                                    {#if propIdx !== properties.length - 1}
+                                                        <Separator orientation="horizontal" class="settings-prop-separator absolute m-auto text-center max-w-none max-h-none" style="width: 97.5vw; height: calc(1px / var(--tailwind-scaling)); background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), var(--vscode-editor-foreground), transparent);" />
+                                                    {/if}
                                                 {/if}
                                             {/each}
                                         </div>

@@ -179,7 +179,7 @@ _N.A._
 		user-select: none;
 	}
 	input {
-		width: calc(var(--spacing) * 15);
+		width: calc(var(--spacing) * 17.5);
 		height: calc(var(--spacing) * 7.5);
 		font-family: inherit;
 		color: var(--foreground);
