@@ -1,6 +1,7 @@
 {
     "effectDisplayName": "Line Number Effects",
     "disabled": false,
+    "cssVarPrefix": "lineNumbers",
     "configurableProperties": [
         {
             "name": "enabled",
