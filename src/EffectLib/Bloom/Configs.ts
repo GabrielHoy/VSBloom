@@ -211,7 +211,6 @@ export async function SetupEffectConfigMutatorsForEffectConfigChanges(
         const mutator = await RegisterEffectConfigMutator({
             pathResolver: configResolver.GetPropertyPath(propName),
             internalValueMutator: (changedValue, isInit) => {
-                console.debug("MUTATED", propName, changedValue, isInit, defaultPropVal, cssVarName, cssVarUnit);
                 effectConfig[propName as keyof typeof effectConfig] = changedValue;
 
                 if (doesPropHaveCSSVarData) {
@@ -220,7 +219,6 @@ export async function SetupEffectConfigMutatorsForEffectConfigChanges(
 
                 if (!isInit) {
                     window.__VSBLOOM__.Log('debug', propName + ' changed to ' + changedValue);
-                    console.debug("settings:", effectConfig);
                 }
             }
         });

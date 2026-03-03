@@ -1,6 +1,6 @@
 :root {
-    --vsbloom-tab-border-color: var(--vscode-foreground);
-    --vsbloom-tab-border-style: dashed;
+    --vsbloom-tabOverhaul-tab-separator-style: dashed;
+    --vsbloom-tabOverhaul-glow-size: 1px;
 }
 
 @keyframes tabGlowPulseAnim {
@@ -8,7 +8,7 @@
         text-shadow: 0 0 0px;
     }
     100% {
-        text-shadow: 0 0 1px;
+        text-shadow: 0 0 var(--vsbloom-tabOverhaul-glow-size);
     }
 }
 
@@ -43,7 +43,6 @@
 div.tabs-container > div.tab {
     transition: border-bottom-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-    border-bottom: 0px solid var(--vsbloom-tab-border-color);
     animation: tabIntroAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 
     /* hover animations for the entire tab */
@@ -75,7 +74,6 @@ div.tabs-container > div.tab {
 
     /* active/selected tab */
     &.active {
-        border-bottom: 1px solid var(--vsbloom-tab-border-color);
 
         /* tab text */
         & .label-name > span.monaco-highlighted-label {
@@ -91,7 +89,7 @@ div.tabs-container > div.tab {
     }
 
     &:not(:last-child) {
-        border-right-style: var(--vsbloom-tab-border-style) !important;
+        border-right-style: var(--vsbloom-tabOverhaul-tab-separator-style) !important;
     }
 
     &.dirty {

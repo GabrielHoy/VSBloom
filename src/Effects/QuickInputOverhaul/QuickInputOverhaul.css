@@ -1,3 +1,33 @@
+:root {
+    --vsbloom-qio-border-width: 5px;
+    --vsbloom-qio-initial-widget-rotation: 5deg;
+}
+
+/* applied to the *container* of the widget as it gets shown */
+@keyframes quickInputWidgetShowAnim {
+    0% {
+        opacity: 0;
+        rotate: var(--vsbloom-qio-initial-widget-rotation);
+        backdrop-filter: blur(0px) hue-rotate(180deg);
+    }
+    25% {
+        backdrop-filter: blur(10px) saturate(85%) brightness(75%) hue-rotate(90deg);
+    }
+    100% {
+        opacity: 1;
+        rotate: 0deg;
+        backdrop-filter: blur(3px) saturate(0%) brightness(100%) hue-rotate(0deg);
+    }
+}
+
+/* actual widget as a whole */
+.quick-input-widget {
+    animation: quickInputWidgetShowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    border-width: var(--vsbloom-qio-border-width) !important;
+    border-style: double !important;
+    border-radius: 6px !important;
+}
+
 /* wrapper around the 'header' that contains the input box */
 .quick-input-widget .ibwrapper {
     border: 1px solid color-mix(in srgb, var(--vscode-widget-border) 50%, transparent);
@@ -60,7 +90,7 @@
 
 /* applied to each row as it gets shown */
 .quick-input-list .monaco-list-row {
-    transition: border-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: border-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin-bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin-top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     /* actual label text for this row */
     & .quick-input-list-label .label-name>.monaco-highlighted-label {
@@ -71,6 +101,8 @@
 
     /* when this row is currently focused */
     &.focused {
+        margin-bottom: 20px;
+        margin-top: 20px;
         border: 1px solid color-mix(in srgb, var(--vscode-list-focusOutline) 50%, transparent);
 
         /* label text for row while focused */
@@ -81,29 +113,4 @@
             text-shadow: 0 0 2px var(--vscode-list-focusOutline);
         }
     }
-}
-
-/* applied to the *container* of the widget as it gets shown */
-@keyframes quickInputWidgetShowAnim {
-    0% {
-        opacity: 0;
-        rotate: 5deg;
-        backdrop-filter: blur(0px) hue-rotate(180deg);
-    }
-    25% {
-        backdrop-filter: blur(10px) saturate(85%) brightness(75%) hue-rotate(90deg);
-    }
-    100% {
-        opacity: 1;
-        rotate: 0deg;
-        backdrop-filter: blur(3px) saturate(0%) brightness(100%) hue-rotate(0deg);
-    }
-}
-
-/* actual widget as a whole */
-.quick-input-widget {
-    animation: quickInputWidgetShowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    border-width: 5px !important;
-    border-style: double !important;
-    border-radius: 6px !important;
 }

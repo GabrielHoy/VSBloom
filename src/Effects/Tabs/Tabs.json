@@ -1,5 +1,6 @@
 {
     "effectDisplayName": "Tab Overhaul",
+    "cssVarPrefix": "tabOverhaul",
     "disabled": false,
     "configurableProperties": [
         {
@@ -8,6 +9,27 @@
             "default": true,
             "description": "Enable or disable visual revamps applied to code editor tabs.",
             "markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
+        },
+        {
+            "name": "tabSeparatorStyle",
+            "type": "string",
+            "enum": [
+                "dashed",
+                "dotted",
+                "solid"
+            ],
+            "cssUnit": "",
+            "default": "dashed",
+            "description": "The style of a separator border that appears between two open tabs.",
+            "markdownDescription": "The style of a separator border that appears between two open tabs."
+        },
+        {
+            "name": "glowSize",
+            "type": "number",
+            "cssUnit": "px",
+            "default": 1,
+            "description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
+            "markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."
         }
     ]
 }

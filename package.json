@@ -236,6 +236,27 @@
 						"default": true,
 						"description": "Enable or disable visual revamps applied to code editor tabs.",
 						"markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
+					},
+					"vsbloom.tabOverhaul.tabSeparatorStyle": {
+						"order": 18,
+						"type": "string",
+						"enum": [
+							"dashed",
+							"dotted",
+							"solid"
+						],
+						"default": "dashed",
+						"cssUnit": "",
+						"description": "The style of a separator border that appears between two open tabs.",
+						"markdownDescription": "The style of a separator border that appears between two open tabs."
+					},
+					"vsbloom.tabOverhaul.glowSize": {
+						"order": 19,
+						"type": "number",
+						"default": 1,
+						"cssUnit": "px",
+						"description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
+						"markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."
 					}
 				},
 				"categoryDescription": "Effects specific to the actual code editor."
@@ -245,21 +266,21 @@
 				"order": 5,
 				"properties": {
 					"vsbloom.windowFocusEffects.enabled": {
-						"order": 18,
+						"order": 20,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the effects that occur when the window becomes unfocused.",
 						"markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
-						"order": 19,
+						"order": 21,
 						"type": "string",
 						"default": "blur(0.75px) grayscale(25%)",
 						"description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
-						"order": 20,
+						"order": 22,
 						"type": "number",
 						"default": 0.5,
 						"step": 0.05,
@@ -268,14 +289,14 @@
 						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
-						"order": 21,
+						"order": 23,
 						"type": "string",
 						"default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
 						"description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
-						"order": 22,
+						"order": 24,
 						"type": "number",
 						"default": 30,
 						"cssUnit": "s",
@@ -283,7 +304,7 @@
 						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
-						"order": 23,
+						"order": 25,
 						"type": "number",
 						"default": 0.618,
 						"step": 0.05,
@@ -292,7 +313,7 @@
 						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
-						"order": 24,
+						"order": 26,
 						"type": "number",
 						"default": 120,
 						"step": 5,
@@ -301,21 +322,38 @@
 						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
 					},
 					"vsbloom.quick-InputOverhaul.enabled": {
-						"order": 25,
+						"order": 27,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
 						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
 					},
+					"vsbloom.quick-InputOverhaul.borderWidth": {
+						"order": 28,
+						"type": "number",
+						"default": 5,
+						"cssUnit": "px",
+						"description": "The width of the added border around the Quick-Input Menu widget, in pixels.",
+						"markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels.",
+						"settingsEditorDisplayName": "Widget Border Width"
+					},
+					"vsbloom.quick-InputOverhaul.initialWidgetRotation": {
+						"order": 29,
+						"type": "number",
+						"default": 5,
+						"cssUnit": "deg",
+						"description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
+						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
+					},
 					"vsbloom.explorerOverhaul.enabled": {
-						"order": 26,
+						"order": 30,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable a visual overhaul of the Explorer view.",
 						"markdownDescription": "Enable or disable a visual overhaul of the Explorer view."
 					},
 					"vsbloom.dynamicInteractables.enabled": {
-						"order": 27,
+						"order": 31,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",
