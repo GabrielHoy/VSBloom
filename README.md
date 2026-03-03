@@ -3,9 +3,9 @@
 ---
 
 <h1 align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i><strong>VS: Bloom</strong></i>
-  <img src="images/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </h1>
 
 ## What is VS: Bloom?
@@ -59,7 +59,7 @@ This warning *can* appear due to VS Code detecting that modifications have been 
 keeps track of the checksums for many application files during the time of VS Code's compilation and compares those stored checksums to the current file checksum at each launch;
 if a mismatch is detected between the two, you'll see a warning that looks something like this:
 
-![](images/CorruptExample.png)
+![](imagery/CorruptExample.png)
 
 VSBloom's client patching process makes changes to some of the files that VS Code keeps track of with these checksums - so even though this extension doesn't do anything malicious, you may still see a "corruption warning" like this and VS Code asking you to reinstall, purely due to the client being modified.
 
@@ -67,7 +67,7 @@ With that being said though, it's still not great UX to have a relatively scary 
 
 If you notice this warning happening to you and dislike it, VSBloom provides a toggleable setting to suppress the client corruption notification in a more direct manner in addition to updating these checksums - The method we use to suppress these notifications is admittedly rather fragile, so if after an update of your IDE the notification suppression stops working and this setting no longer helps absolutely reach out or make a new issue on GitHub!
 
-![](images/CorruptionSuppressionSetting.png)
+![](imagery/CorruptionSuppressionSetting.png)
 
 > **Note**: Enabling the above setting to suppress client modification warnings should be done at your own risk! Client corruption warnings exist for admittedly good reason in VS Code, and while the patches that VSBloom applies are not malicious the same cannot be said about other extensions on the marketplace or other applications which may modify VS Code for their own nefarious purposes.
 
@@ -129,9 +129,9 @@ VSBloom is provided under the terms of the [MIT License](LICENSE).
 ---
 
 <p align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i>TamperedReality 2026</i>
-  <img src="images/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </p>
 
 ---

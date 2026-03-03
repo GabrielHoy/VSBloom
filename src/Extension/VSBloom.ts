@@ -9,6 +9,7 @@ import { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import { EffectManager } from "../Effects/EffectManager";
 import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
 import { MenuPanel } from "../Webview/MenuPanel";
+import { StatusBarIconManager } from "./StatusBarIconManager";
 
 enum ClientPatchingStatus {
   PATCHED = 0,
@@ -20,6 +21,7 @@ enum ClientPatchingStatus {
 //Global references for the bridge and effect manager
 let server: VSBloomBridgeServer | null = null;
 let effectManager: EffectManager | null = null;
+let statusBarIconManager: StatusBarIconManager | null = null;
 
 /**
  * Get(or create) the bridge server singleton
@@ -260,6 +262,8 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
     //initialize the effect manager and do the same for it
     const manager = GetEffectManager(context);
     context.subscriptions.push(manager);
+    
+
 
     console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Extension activation flow completed!`);
   } catch (error) {
@@ -268,6 +272,48 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
       "Failed to start the bridge server. Some features may not work correctly. " +
       "Another VSCode window may already be hosting the bridge."
     );
+  }
+}
+
+async function OnExtensionConfigChanged(context: vscode.ExtensionContext, e: vscode.ConfigurationChangeEvent) {
+  if (!e.affectsConfiguration('vsbloom')) {
+    return; //this config change doesn't affect us
+  }
+
+  statusBarIconManager?.ExtensionConfigurationUpdated(e);
+  
+  if (e.affectsConfiguration('vsbloom.extensionConfigurationsNote.README')) {
+    // If&when the user checks the 'readme' config, we'll attempt to redirect them to the menu
+    // (and uncheck the config box accordingly)
+    const config = vscode.workspace.getConfiguration();
+    if (config.get<boolean>("vsbloom.extensionConfigurationsNote.README")) {
+      // Just checked the readme config
+
+      //TODO: Short-circuit here into the settings page instead of opening to the main menu
+      AttemptOpenMenu(context);
+
+      // Un-check the readme config by un-setting the config value
+      // We'll try and handle odd cases as well here such as the user
+      // manually editing it in a workspace .settings.json file etc.
+      const readmeCfgData = config.inspect("vsbloom.extensionConfigurationsNote.README");
+      if (readmeCfgData) {
+        if (readmeCfgData.globalValue) {
+          try {
+            await config.update("vsbloom.extensionConfigurationsNote.README", undefined, vscode.ConfigurationTarget.Global);
+          } catch {}
+        }
+        if (readmeCfgData.workspaceValue) {
+          try {
+            await config.update("vsbloom.extensionConfigurationsNote.README", undefined, vscode.ConfigurationTarget.Workspace);
+          } catch {}
+        }
+        if (readmeCfgData.workspaceFolderValue) {
+          try {
+            await config.update("vsbloom.extensionConfigurationsNote.README", undefined, vscode.ConfigurationTarget.WorkspaceFolder);
+          } catch {}
+        }
+      }
+    }
   }
 }
 
@@ -389,6 +435,18 @@ export function activate(context: vscode.ExtensionContext) {
       await AttemptOpenMenu(context);
     });
     context.subscriptions.push(openWebViewCmdDisp);
+
+    // Hookup an event listener for extension config changes
+    // We also do this in a few other places, but this is a 'top level'
+    // listener for actual extension reactivity vs. other areas for things like client replication
+    const extensionCfgChangedDisp = vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
+      OnExtensionConfigChanged(context, e);
+    });
+    context.subscriptions.push(extensionCfgChangedDisp);
+
+    // Initialize the status bar icon manager
+    statusBarIconManager = new StatusBarIconManager(context);
+    context.subscriptions.push(statusBarIconManager);
 
     //ensure that we're working with a patched client
     //before we continue with the rest of the extension

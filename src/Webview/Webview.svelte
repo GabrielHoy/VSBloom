@@ -181,7 +181,7 @@
 
 <!-- View-wide radial gradient 'shadow' to add a bit of depth -->
 <div class="view-shadow"></div>
-<div class="noise-layer" style="background-image: url('{directories.images}/webview/bluenoise/opaque_mono.png');"></div>
+<div class="noise-layer" style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono.png');"></div>
 
 <!--
 	Persistently present metadata display

@@ -10,7 +10,14 @@
                 "default": false,
                 "hideFromCustomEditor": true,
                 "description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
-                "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the **dedicated settings page** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\nChecking this box will take you directly to the VS: Bloom Menu's settings page!"
+                "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**"
+            },
+            "vsbloom.statusBarIcon.enabled": {
+                "order": 2,
+                "type": "boolean",
+                "default": true,
+                "description": "Whether or not to enable an icon in the VS Code Status Bar which opens the VS: Bloom Menu when clicked.",
+                "markdownDescription": "Whether or not to enable an icon in the VS Code [Status Bar](https://code.visualstudio.com/api/ux-guidelines/status-bar) which opens the VS: Bloom Menu when clicked.\nRegardless of this setting, you can still open the VS: Bloom Menu at any time by using the `VSBloom: Open Menu` command!"
             }
         }
     },
@@ -20,7 +27,7 @@
         "categoryDescription": "Configurations regarding VS: Bloom's Electron Patcher and its associated functionality.",
         "properties": {
             "vsbloom.patcher.appProductFile": {
-                "order": 2,
+                "order": 3,
                 "settingsEditorDisplayName": {
                     "text": "IDE `product.json` File Path",
                     "useMarkdown": true
@@ -31,7 +38,7 @@
                 "markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
             },
             "vsbloom.patcher.suppressCorruptionWarning": {
-                "order": 3,
+                "order": 4,
                 "settingsEditorDisplayName": "Suppress \"Client Corrupted\" Warning",
                 "type": "boolean",
                 "default": true,
@@ -46,7 +53,7 @@
         "categoryDescription": "Configurations affecting the rendering of effects along with general controls applying to canvas-based rendering.",
         "properties": {
             "vsbloom.effectRendering.enableAntiAliasing": {
-                "order": 4,
+                "order": 5,
                 "settingsEditorDisplayName": "Enable Canvas Anti-Aliasing",
                 "type": "boolean",
                 "default": true,

@@ -34,7 +34,7 @@
 			"transition-all duration-300 bg-popover text-popover-foreground/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-0 data-[state=open]:zoom-in-0 data-[side=bottom]:slide-in-from-top-25 data-[side=left]:slide-in-from-end-2 data-[side=right]:slide-in-from-start-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--bits-select-content-available-height) min-w-32 origin-(--bits-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-sm border border-current/75 shadow-md data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
 			className
 		)}
-		style={`background-image: url('${directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${selStyling ?? ""}`}
+		style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${selStyling ?? ""}`}
 		{...restProps}
 	>
 		<SelectScrollUpButton />

@@ -34,7 +34,7 @@ export class MenuPanel {
 		this.server = server;
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri);
-		this.panel.iconPath = Uri.joinPath(uri, "images", "logo.png");
+		this.panel.iconPath = Uri.joinPath(uri, "imagery", "logo.png");
 		this.SetWebviewMessageListener(this.panel.webview);
 		this.SetupExtensionConfigChangedListener();
 	}
@@ -49,7 +49,7 @@ export class MenuPanel {
 				ViewColumn.One,
 				{
 					enableScripts: true,
-					localResourceRoots: [Uri.joinPath(webviewURI, "build"), Uri.joinPath(webviewURI, "images")]
+					localResourceRoots: [Uri.joinPath(webviewURI, "build"), Uri.joinPath(webviewURI, "imagery")]
 				}
 			);
 
@@ -76,7 +76,7 @@ export class MenuPanel {
 	public GetWebviewContent(webview: Webview, uri: Uri) {
 		const scriptUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.js"]);
 		const styleUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.css"]);
-		const iconUri = GetWebviewURI(webview, uri, ["images", "logo.png"]);
+		const iconUri = GetWebviewURI(webview, uri, ["imagery", "logo.png"]);
 		const nonce = GetScriptNOnce();
 
 		/**
@@ -97,7 +97,7 @@ export class MenuPanel {
 					<link href="${styleUri}" rel="stylesheet" />
                 </head>
 
-                <body id="page" webview-images-uri="${GetWebviewURI(webview, uri, ["images"])}">
+                <body id="page" webview-imagery-uri="${GetWebviewURI(webview, uri, ["imagery"])}">
                 	<script nonce="${nonce}" src="${scriptUri}"></script>
                 </body>
             </html>

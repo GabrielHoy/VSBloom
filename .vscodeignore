@@ -1,15 +1,50 @@
+#"Dot" Directories&Files
 .vscode
 .cursor
 .claude
 .github
 .vscode-test.mjs
+
+#Dependencies
 node_modules
+
+#Source Code
 src/
-images/logoHQ.png
+
+#High-Quality Imagery, unnecessary for extension & just adds unnecessary package size bloat
+imagery/logoHQ.png
+
+#TypeScript Configurations
 tsconfig.json
 tsconfig.effects.json
+
+#ESLint Configurations
 eslint.config.mjs
+
+#Gitignore is unnecessary for packaged extension
 .gitignore
+
+#Svelte shadcn Components
 components.json
+
+#Documentation
 docs/
+
+#Bundler/"Builder" Files to actually build the final bundled extension
 bundler/
+
+#Schemas for JSON files used around the extension
+schemas/
+
+#Intermediary Glyph Generation Files
+imagery/glyphs/*.ttf
+imagery/glyphs/*.svg
+
+#README's (besides the main extension README, of course)
+README_LOGO.md
+
+#Unused Imagery
+imagery/logoBlackAndWhiteSemiSimple.png
+imagery/logoBlackAndWhiteSimple.png
+imagery/CorruptionSuppressionSetting.png
+imagery/CorruptionExaxmple.png

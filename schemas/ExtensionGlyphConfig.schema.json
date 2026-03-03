@@ -1,0 +1,92 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "required": ["fileName", "glyphs"],
+        "properties": {
+            "fileName": {
+                "type": "string",
+                "description": "The file name for the .woff font file that will be generated."
+            },
+            "glyphs": {
+                "description": "An array of glyph definitions that will be included in an exported .woff font file based upon this object.",
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "required": ["glyphName", "codepoint", "source"],
+                    "properties": {
+                        "glyphName": {
+                            "type": "string",
+                            "description": "The name of the glyph, used for referencing the glyph inside of VS Code."
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "A human-readable description of the glyph. Purely used for documentation purposes, this field is directly written into the extension's package.json file under the 'icons' contribution section."
+                        },
+                        "codepoint": {
+                            "type": "string",
+                            "description": "The unicode codepoint that the glyph will be represented by."
+                        },
+                        "source": {
+                            "type": "string",
+                            "description": "The path to the source image file that will be used to generate the glyph. This can be a PNG or SVG file."
+                        },
+                        "potraceOptions": {
+                            "description": "Options for the potrace library used to trace the PNG file to an SVG file.\n\nOnly required if the source is a PNG file; can be omitted with SVG sources.",
+                            "type": "object",
+                            "required": ["threshold"],
+                            "properties": {
+                                "threshold": {
+                                    "type": "number",
+                                    "description": "The threshold of the glyph."
+                                },
+                                "turdSize": {
+                                    "type": "number",
+                                    "description": "The turd size of the glyph."
+                                },
+                                "optTolerance": {
+                                    "type": "number",
+                                    "description": "The opt tolerance of the glyph."
+                                },
+                                "alphaMax": {
+                                    "type": "number",
+                                    "description": "The alpha max of the glyph."
+                                },
+                                "background": {
+                                    "type": "string",
+                                    "description": "The background of the glyph."
+                                },
+                                "color": {
+                                    "type": "string",
+                                    "description": "The color of the glyph."
+                                },
+                                "steps": {
+                                    "type": "number",
+                                    "description": "The steps of the glyph."
+                                },
+                                "blackOnWhite": {
+                                    "type": "boolean",
+                                    "description": "Whether the glyph is black on white."
+                                },
+                                "width": {
+                                    "type": "number",
+                                    "description": "The width of the glyph."
+                                },
+                                "height": {
+                                    "type": "number",
+                                    "description": "The height of the glyph."
+                                },
+                                "optCurve": {
+                                    "type": "boolean",
+                                    "description": "Whether the glyph is an 'opt curve' - a curve that is optimized for the glyph."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

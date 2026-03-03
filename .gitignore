@@ -1,5 +1,14 @@
 .claude/
+
+#Dependencies
 node_modules/
+
+#Build outputs
 build/
 
+#Intermediary glyph generation files
+imagery/glyphs/*.ttf
+imagery/glyphs/*.svg
+
+#Packaged Extension Files
 vsbloom-*.vsix

@@ -13,7 +13,7 @@
 
 <div
     class="noise-bg"
-    style="background-image: url('{directories.images}/webview/bluenoise/opaque_mono.png'); --bg-size-scaled: calc(({128 * scaleFactor}px / var(--scale-factor)) * 2.1); animation: scrollNoise {16.18 * scrollSpeed}s linear infinite; opacity: {opacity}; {nsStyling}"
+    style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono.png'); --bg-size-scaled: calc(({128 * scaleFactor}px / var(--scale-factor)) * 2.1); animation: scrollNoise {16.18 * scrollSpeed}s linear infinite; opacity: {opacity}; {nsStyling}"
     {...restProps}
 ></div>
 

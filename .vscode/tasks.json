@@ -14,8 +14,8 @@
 				},
 				"background": {
 					"activeOnStart": true,
-					"beginsPattern": "^\\[watch\\] build started$",
-					"endsPattern": "^\\[watch\\] build finished$"
+				"beginsPattern": "^(?:\u001b\\[[0-9;]*m)*\\[watch\\]\\s+(?:\u001b\\[[0-9;]*m)*[Bb]uild\\s+(?:\u001b\\[[0-9;]*m)*started",
+				"endsPattern": "^(?:\u001b\\[[0-9;]*m)*\\[watch\\]\\s+(?:\u001b\\[[0-9;]*m)*[Bb]uild\\s+(?:\u001b\\[[0-9;]*m)*[Ff]inished"
 				}
 			},
 			"isBackground": true,

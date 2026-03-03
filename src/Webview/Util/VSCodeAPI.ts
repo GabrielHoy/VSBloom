@@ -26,8 +26,8 @@ class VSCodeAPI {
             return;
         }
 
-        const webviewImagesURI = pageElement.getAttribute('webview-images-uri');
-        if (!webviewImagesURI) {
+        const webviewImageryURI = pageElement.getAttribute('webview-imagery-uri');
+        if (!webviewImageryURI) {
             this.PostToExtension({
                 type: 'send-notification',
                 data: {
@@ -38,7 +38,7 @@ class VSCodeAPI {
             return;
         }
 
-        directories.images = webviewImagesURI;
+        directories.imagery = webviewImageryURI;
     }
     
     private InitializeWindowMessageListener() {

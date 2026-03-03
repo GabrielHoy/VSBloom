@@ -32,7 +32,7 @@
 		<div
 			data-slot="checkbox-indicator"
 			class="checkbox-indicator transition-none"
-			style="background-image: url('{directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png');"
+			style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png');"
 		>
 			{#key checked || indeterminate}
 				<div

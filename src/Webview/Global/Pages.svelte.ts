@@ -9,7 +9,7 @@ import { vscode } from "../Util/VSCodeAPI";
 
 export interface PageDescriptor {
     name: string;
-    icon: string; //assumed to be relative to the images directory
+    icon: string; //assumed to be relative to the imagery directory
     description: string;
     component: Component;
 

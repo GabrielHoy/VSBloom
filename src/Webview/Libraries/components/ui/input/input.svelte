@@ -35,12 +35,12 @@
 			"aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
 			className
 		)}
-		style={`background-image: url('${directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${inpStyling}`}
+		style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${inpStyling}`}
 		type="file"
 		bind:files
 		bind:value
 		{...restProps}
-	/>
+	/>imagery
 {:else}
 	<input
 		bind:this={ref}
@@ -52,7 +52,7 @@
 			"aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
 			className
 		)}
-		style={`background-image: url('${directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${inpStyling}`}
+		style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${inpStyling}`}
 		{type}
 		bind:value
 		{...restProps}

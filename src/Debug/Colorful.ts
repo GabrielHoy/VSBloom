@@ -30,6 +30,7 @@ export const coloredLogSourceNameColors: Record<string, ColorDefinition> = {
     Client: {rgb: [ 0, 180, 0 ], rgbFunc: colorful.rgb}, //colorful.green,
     EffectManager: {rgb: [ 229, 229, 16 ], rgbFunc: colorful.rgb}, //colorful.yellow,
     Extension: {rgb: [ 128, 128, 128 ], rgbFunc: colorful.rgb}, //colorful.grey,
+    GlyphBuilder: {rgb: [ 144, 0, 255 ], rgbFunc: colorful.bold.rgb}, // rich, bright purple
 };
 export const logTypeColoring: Record<string, ColorDefinition> = {
     debug: {rgb: [ 255, 0, 255 ], rgbFunc: colorful.rgb}, //colorful.magentaBright,
@@ -86,6 +87,42 @@ export function ConstructNonBrandedLogPrefix(source: keyof typeof coloredLogSour
     }
 }
 
+export function GetColoredString(rgb: [number, number, number], str: string, modifiers?: ("bold" | "underline" | "inverse" | "dim" | "italic" | "reset")[]): string {
+    if (isColoredOutputEnabled) {
+        if (modifiers) {
+            let func = colorful;
+            for (const modifier of modifiers) {
+                switch (modifier) {
+                    case "bold":
+                        func = func.bold;
+                        break;
+                    case "underline":
+                        func = func.underline;
+                        break;
+                    case "inverse":
+                        func = func.inverse;
+                        break;
+                    case "dim":
+                        func = func.dim;
+                        break;
+                    case "italic":
+                        func = func.italic;
+                        break;
+                    case "reset":
+                        func = colorful.reset;
+                        break;
+                    default:
+                        throw new Error(`Unknown modifier given to ColorFormatString: ${modifier}`);
+                }
+            }
+            return func.rgb(...rgb)(str);
+        } else {
+            return colorful.rgb(...rgb)(str);
+        }
+    } else {
+        return str;
+    }
+}
 
 export function SetColoredOutputEnabled(shouldColor: boolean): void {
     isColoredOutputEnabled = shouldColor;

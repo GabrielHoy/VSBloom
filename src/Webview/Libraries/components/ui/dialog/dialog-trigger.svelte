@@ -12,6 +12,7 @@
 <DialogPrimitive.Trigger
 	bind:ref
 	data-slot="dialog-trigger"
-	style={`background-image: url('${directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${trigStyling ?? ""}`}
+	style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${trigStyling ?? ""}`}
 	{...restProps}
 />
+imagery

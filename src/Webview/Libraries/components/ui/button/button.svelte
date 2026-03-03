@@ -70,7 +70,7 @@
 		aria-disabled={disabled}
 		role={disabled ? "link" : undefined}
 		tabindex={disabled ? -1 : undefined}
-		style="background-image: url('{directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); {btnStyling}"
+		style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); {btnStyling}"
 		{...restProps}
 	>
 		{@render children?.()}
@@ -80,7 +80,7 @@
 		bind:this={ref}
 		data-slot="button"
 		class={cn(buttonVariants({ variant, size }), className, disabled ? "shad-disabled" : "shad-enabled", variant ? `${variant}-variant` : undefined)}
-		style="background-image: url('{directories.images}/webview/bluenoise/opaque_mono_90p_transparent.png'); {btnStyling}"
+		style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); {btnStyling}"
 		onclick={disabled ? ondisabledclick : onclick}
 		{type}
 		{...restProps}
