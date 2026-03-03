@@ -116,7 +116,8 @@ function BuildContributedConfigurationArray(packageJSONObject) {
                     "isColor": configurableProp.isColor,
                     "cssUnit": configurableProp.cssUnit,
                     "description": configurableProp.description,
-                    "markdownDescription": configurableProp.markdownDescription
+                    "markdownDescription": configurableProp.markdownDescription,
+                    "settingsEditorDisplayName": configurableProp.settingsEditorDisplayName
                 };
             }
         }

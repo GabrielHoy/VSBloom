@@ -17,6 +17,7 @@
     import { persistentState, MutatePersistentState } from "../../../Global/PersistentWebviewState.svelte";
     import { fade, fly } from "svelte/transition";
     import { backIn, backOut, cubicIn } from "svelte/easing";
+    import Markdown from "svelte-exmarkdown";
     import BadgeInfoIcon from "@lucide/svelte/icons/badge-info";
     import type { Snippet } from "svelte";
     import ColorWrapper from "./ColorWrapper.svelte";
@@ -75,7 +76,8 @@
         step?: number,
         cssUnit?: string,
         enum?: (string | number)[],
-        isColor?: boolean
+        isColor?: boolean,
+        settingsEditorDisplayName?: string | { text: string, useMarkdown?: boolean }
     };
 
     let subcategoriesExpanded: Map<string, string[]> = $state(persistentState.settingsPage.subcategoriesExpanded ? new Map<string, string[]>(Object.entries(persistentState.settingsPage.subcategoriesExpanded)) : new Map<string, string[]>());
@@ -458,7 +460,16 @@
                 class="config-property-name-text"
                 title={propData.description ? propData.description : "No description is available for this property yet."}
             >
-                {GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}:
+                {#if propData.settingsEditorDisplayName && typeof propData.settingsEditorDisplayName === "object" && 'text' in propData.settingsEditorDisplayName && 'useMarkdown' in propData.settingsEditorDisplayName && propData.settingsEditorDisplayName.useMarkdown === true }
+                    <!-- Display name for this property exists and is markdown -->
+                    <Markdown md={propData.settingsEditorDisplayName.text} />
+                {:else if propData.settingsEditorDisplayName && (typeof propData.settingsEditorDisplayName === "string" || 'text' in propData.settingsEditorDisplayName)}
+                    <!-- Display name for this property exists and is not markdown -->
+                    {typeof propData.settingsEditorDisplayName === "string" ? propData.settingsEditorDisplayName : propData.settingsEditorDisplayName.text}
+                {:else}
+                    <!-- No display name for this property explicitly provided -->
+                    {GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(" > ")}:
+                {/if}
             </span>
 
             {#if propData.enum}

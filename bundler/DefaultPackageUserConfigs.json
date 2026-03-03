@@ -21,6 +21,10 @@
         "properties": {
             "vsbloom.patcher.appProductFile": {
                 "order": 2,
+                "settingsEditorDisplayName": {
+                    "text": "IDE `product.json` File Path",
+                    "useMarkdown": true
+                },
                 "type": "string",
                 "default": "auto",
                 "description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
@@ -28,6 +32,7 @@
             },
             "vsbloom.patcher.suppressCorruptionWarning": {
                 "order": 3,
+                "settingsEditorDisplayName": "Suppress \"Client Corrupted\" Warning",
                 "type": "boolean",
                 "default": true,
                 "description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
@@ -42,6 +47,7 @@
         "properties": {
             "vsbloom.effectRendering.enableAntiAliasing": {
                 "order": 4,
+                "settingsEditorDisplayName": "Enable Canvas Anti-Aliasing",
                 "type": "boolean",
                 "default": true,
                 "description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",

@@ -121,7 +121,7 @@ class VSBloomClient implements IVSBloomClient {
         //to the websocket server hosted by the extension
         this.ConnectToWebsocketServer();
 
-        this.Log('info', 'VSBloom Client Bootstrap Complete:', {
+        this.Log('debug', 'VSBloom Client Bootstrap Complete:', {
             windowId: this._windowId,
             trustedTypesEnabled: this.trustedPolicy !== null
         });
@@ -208,7 +208,7 @@ class VSBloomClient implements IVSBloomClient {
                 }
 
                 if (event.code === 1006 && event.reason === "" && event.target instanceof WebSocket && event.target.readyState === WebSocket.CLOSED) {
-                    this.Log('debug', "WebSocket connection closed with an internal error code, server likely still initializing or not available", { event });
+                    this.Log('debug', "WebSocket connection closed with an internal error code, server likely still initializing or not available; scheduling a reconnect attempt", { event });
                     this.ScheduleReconnect();
                     return;
                 }
@@ -220,8 +220,8 @@ class VSBloomClient implements IVSBloomClient {
             this.ws.onerror = (error: Event) => {
                 // WebSocket errors are typically followed by close events
                 // Log but don't take action here
-                if (error.target instanceof WebSocket && error.target.readyState === WebSocket.CLOSED) {
-                    this.Log('debug', "An error occurred with the WebSocket while it was closed, this likely means that the server is either still initializing or is generally not available", { errorMessage: String(error) });
+                if (error.target instanceof WebSocket && error.target.readyState === WebSocket.CLOSED && !(('code' in error) && (error.code === 1006))) {
+                    this.Log('debug', "An error occurred with the WebSocket while it was closed", { errorMessage: String(error) });
                     return;
                 }
                 this.Log('error', 'An internal error occurred with the WebSocket', { errorMessage: String(error) });
@@ -550,8 +550,6 @@ class VSBloomClient implements IVSBloomClient {
             },
         });
         window.dispatchEvent(event);
-
-        this.Log('debug', 'Configuration updated', { settings });
     }
 
     /**
