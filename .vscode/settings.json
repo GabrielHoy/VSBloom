@@ -9,5 +9,21 @@
 	"typescript.tsc.autoDetect": "off",
 	"files.associations": {
 		"*.css": "tailwindcss"
-	}
+	},
+	"json.schemas": [
+		{
+			"fileMatch": [
+                "src/Effects/*/*.json",
+                "!src/Effects/*/tsconfig.json",
+                "!src/Effects/EffectConfigOrdering.json"
+			],
+			"url": "./schemas/EffectConfig.schema.json"
+		},
+		{
+			"fileMatch": [
+				"src/Effects/EffectConfigOrdering.json"
+			],
+			"url": "./schemas/EffectConfigOrderingFile.schema.json"
+		}
+	]
 }

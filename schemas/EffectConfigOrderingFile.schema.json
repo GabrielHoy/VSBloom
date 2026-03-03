@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["categories"],
+    "properties": {
+        "categories": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["categoryName", "categoryDescription", "effects"],
+                "properties": {
+                    "categoryName": {
+                        "type": "string",
+                        "description": "The name of the category which will be shown in the VS Code Settings UI to the user."
+                    },
+                    "categoryDescription": {
+                        "type": "string",
+                        "description": "The description of the category which will be shown in the VS Code Settings UI to the user as an explanation for the category."
+                    },
+                    "effects": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An array of effect names that will be shown in the VS Code Settings UI to the user as a list of effects that belong to this category."
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    },
+    "additionalProperties": false
+}
