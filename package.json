@@ -88,7 +88,7 @@
 					"vsbloom.patcher.appProductFile": {
 						"order": 2,
 						"settingsEditorDisplayName": {
-							"text": "IDE `Product.json` ***File*** Path",
+							"text": "IDE `product.json` File Path",
 							"useMarkdown": true
 						},
 						"type": "string",

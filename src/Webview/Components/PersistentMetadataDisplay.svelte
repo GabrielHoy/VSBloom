@@ -1,5 +1,6 @@
 <script module>
     import { vscode } from "../Util/VSCodeAPI"
+    import { pageData } from "../Global/Pages.svelte";
 
 
     vscode.ObserveBloomToSvelteMessage('meta-update', (data) => {
@@ -18,7 +19,7 @@
 <script lang="ts">
     import { extensionMetadata } from "../Global/Metadata.svelte";
     import { fade, fly } from "svelte/transition";
-    import { backIn, backOut, elasticOut } from "svelte/easing";
+    import { backIn, backOut, cubicOut, elasticOut } from "svelte/easing";
 </script>
 
 <div class="metadata-display-container">
@@ -46,6 +47,20 @@
         >
             handshake in progress...
         </span>
+    {/if}
+
+    {#if pageData.currentPage === "Main Menu"}
+        {#key extensionMetadata.metaLoaded}
+            <div
+                in:fly={{ y: "50%", opacity: 0, duration: 2250, delay: 3250, easing: elasticOut }}
+                out:fly={{ duration: 200, opacity: 0, y: "50%", easing: cubicOut }}
+                class="webview-beta-indicator"
+            >
+                <i>
+                    MENU IN BETA
+                </i>
+            </div>
+        {/key}
     {/if}
 </div>
 
@@ -109,5 +124,17 @@
             font-size: calc(var(--clamped-font-size) * 1.25);
             text-decoration: underline;
         }
+    }
+    .webview-beta-indicator {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 0.125em;
+
+        font-size: calc(var(--spacing) * 4);
+        font-style: italic;
+        text-shadow: 0px 1px 1px color-mix(in srgb, var(--vsbloom-shadowing-color) 75%, transparent);
+        font-weight: bolder;
+        color: color-mix(in srgb, var(--vsbloom-text-border-color) 40%, transparent);
     }
 </style>
