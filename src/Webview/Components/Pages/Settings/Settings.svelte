@@ -1,27 +1,24 @@
 <script lang="ts">
     import { vscode } from "../../../Util/VSCodeAPI";
     import { colord } from "colord";
-    import { directories } from "../../../Global/Directories.svelte";
-    import { pageData, type PageDescriptor } from "../../../Global/Pages.svelte";
     import PageContainer from "../../PageContainer.svelte";
     import PageHeader from "../../PageHeader.svelte";
-    import extensionPackageJSON from "../../../../../package.json";
     import * as Tabs from '$webview-svelte-lib/components/ui/tabs/index';
     import * as Accordion from '$webview-svelte-lib/components/ui/accordion/index';
     import * as Select from '$webview-svelte-lib/components/ui/select/index';
     import * as Dialog from '$webview-svelte-lib/components/ui/dialog/index';
-    import { Button, buttonVariants } from '$webview-svelte-lib/components/ui/button';
+    import { buttonVariants } from '$webview-svelte-lib/components/ui/button';
     import { Separator } from "$webview-svelte-lib/components/ui/separator";
     import { Checkbox } from "$webview-svelte-lib/components/ui/checkbox";
     import { Input } from "$webview-svelte-lib/components/ui/input";
     import { persistentState, MutatePersistentState } from "../../../Global/PersistentWebviewState.svelte";
     import { fade, fly } from "svelte/transition";
-    import { backIn, backOut, cubicIn } from "svelte/easing";
+    import { backIn, backOut } from "svelte/easing";
     import Markdown from "svelte-exmarkdown";
     import BadgeInfoIcon from "@lucide/svelte/icons/badge-info";
     import type { Snippet } from "svelte";
     import ColorWrapper from "./ColorWrapper.svelte";
-    import ColorPicker, { ChromeVariant } from "$webview-svelte-lib/components/ui/ColorPicker";
+    import ColorPicker from "$webview-svelte-lib/components/ui/ColorPicker";
     import ColorPickerPreview from "./ColorPickerPreview.svelte";
     import { effectSettings, UpdateEffectSetting, type PropertyEntry } from "../../../Global/Settings.svelte";
 
@@ -50,7 +47,8 @@
         "Window Effects": "Window",
     };
     const blacklistedPathsForWebviewSettingsDisplay: string[] = [
-        "vsbloom.extensionConfigurationsNote"
+        "vsbloom.extensionConfigurationsNote", //this just brings the user to the menu when clicked - and they'd already be here if they're on this page
+        "vsbloom.statusBarIcon" //only other setting within "General", so hiding this makes things neater and gets rid of the entire category
     ]
     const configPropInputTypeSnippets: Record<string, (propData: ProcessedPropertyEntry, topLevelCatIdx: number) => ReturnType<Snippet>> = {
         "boolean": BooleanInput,
