@@ -14,7 +14,7 @@
             "type": "number",
             "default": 0.35,
             "step": 0.05,
-            "displayedUnit": "s",
+            "cssUnit": "s",
             "description": "The duration of the animation that occurs when the active line number changes, in seconds.",
             "markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
         },
@@ -23,7 +23,7 @@
             "type": "number",
             "default": 3,
             "step": 0.5,
-            "displayedUnit": "px",
+            "cssUnit": "px",
             "description": "The offset of the active line number to the right, in pixels.",
             "markdownDescription": "The offset of the active line number to the right, in **pixels**."
         },
@@ -32,7 +32,7 @@
             "type": "number",
             "default": 2.5,
             "step": 0.25,
-            "displayedUnit": "px",
+            "cssUnit": "px",
             "description": "The size of the glow effect around the active line number, in pixels.",
             "markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
         },
@@ -41,7 +41,7 @@
             "type": "number",
             "default": -7.5,
             "step": 0.5,
-            "displayedUnit": "deg",
+            "cssUnit": "deg",
             "description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
             "markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
         }

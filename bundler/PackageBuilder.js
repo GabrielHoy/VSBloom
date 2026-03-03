@@ -114,7 +114,7 @@ function BuildContributedConfigurationArray(packageJSONObject) {
                     "default": configurableProp.default,
                     "step": configurableProp.step,
                     "isColor": configurableProp.isColor,
-                    "displayedUnit": configurableProp.displayedUnit,
+                    "cssUnit": configurableProp.cssUnit,
                     "description": configurableProp.description,
                     "markdownDescription": configurableProp.markdownDescription
                 };

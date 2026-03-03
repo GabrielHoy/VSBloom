@@ -216,9 +216,6 @@ _N.A._
 		width: 100%;
 		transition: all 0.1618s;
 	}
-	.disappear {
-		/* color: color-mix(in srgb, currentColor 75%, transparent); */
-	}
 	button:hover .appear {
 		text-decoration: underline;
 	}

@@ -142,7 +142,7 @@
 						"type": "number",
 						"default": 750,
 						"step": 25,
-						"displayedUnit": "ms",
+						"cssUnit": "ms",
 						"description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
 						"markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
 					},
@@ -159,7 +159,7 @@
 						"type": "number",
 						"default": 100,
 						"step": 5,
-						"displayedUnit": "px",
+						"cssUnit": "px",
 						"description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
 						"markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
 					},
@@ -168,7 +168,7 @@
 						"type": "number",
 						"default": 3,
 						"step": 0.25,
-						"displayedUnit": "px",
+						"cssUnit": "px",
 						"description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
 						"markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
 					},
@@ -177,7 +177,7 @@
 						"type": "number",
 						"default": 20,
 						"step": 2.5,
-						"displayedUnit": "px/s",
+						"cssUnit": "px/s",
 						"description": "The speed at which the trail should pursue the cursor, in pixels/second",
 						"markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
 					},
@@ -193,7 +193,7 @@
 						"type": "number",
 						"default": 0.35,
 						"step": 0.05,
-						"displayedUnit": "s",
+						"cssUnit": "s",
 						"description": "The duration of the animation that occurs when the active line number changes, in seconds.",
 						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
 					},
@@ -202,7 +202,7 @@
 						"type": "number",
 						"default": 3,
 						"step": 0.5,
-						"displayedUnit": "px",
+						"cssUnit": "px",
 						"description": "The offset of the active line number to the right, in pixels.",
 						"markdownDescription": "The offset of the active line number to the right, in **pixels**."
 					},
@@ -211,7 +211,7 @@
 						"type": "number",
 						"default": 2.5,
 						"step": 0.25,
-						"displayedUnit": "px",
+						"cssUnit": "px",
 						"description": "The size of the glow effect around the active line number, in pixels.",
 						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
 					},
@@ -220,7 +220,7 @@
 						"type": "number",
 						"default": -7.5,
 						"step": 0.5,
-						"displayedUnit": "deg",
+						"cssUnit": "deg",
 						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
 						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
 					},
@@ -257,7 +257,7 @@
 						"type": "number",
 						"default": 0.5,
 						"step": 0.05,
-						"displayedUnit": "s",
+						"cssUnit": "s",
 						"description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
 					},
@@ -272,7 +272,7 @@
 						"order": 22,
 						"type": "number",
 						"default": 30,
-						"displayedUnit": "s",
+						"cssUnit": "s",
 						"description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
 						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
 					},
@@ -281,7 +281,7 @@
 						"type": "number",
 						"default": 0.618,
 						"step": 0.05,
-						"displayedUnit": "s",
+						"cssUnit": "s",
 						"description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
 						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
 					},
@@ -290,7 +290,7 @@
 						"type": "number",
 						"default": 120,
 						"step": 5,
-						"displayedUnit": "s",
+						"cssUnit": "s",
 						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
 						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
 					},

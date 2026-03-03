@@ -5,14 +5,13 @@
 import bloom from 'bloom';
 import type { Janitor } from 'src/EffectLib/Bloom/Janitors';
 import type { EffectConfigResolver } from 'src/EffectLib/Bloom/Configs';
+import effectConfigJSON from './LineNumbers.json';
 
-const effectConfig = {
-    enabled: true,
-    activeLineAnimationDuration: 0.35,
-    activeLineOffset: 3,
-    activeLineGlowSize: 2.5,
-    activeLineSkewAngle: -7.5,
-};
+const effectConfig = effectConfigJSON.configurableProperties.reduce((cfgVars, property) => {
+    cfgVars[property.name] = property.default;
+
+    return cfgVars;
+}, {} as Record<typeof effectConfigJSON.configurableProperties[number]['name'], typeof effectConfigJSON.configurableProperties[number]['default']>);
 
 const vsbloom = window.__VSBLOOM__;
 let janitor: Janitor;

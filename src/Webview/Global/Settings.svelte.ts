@@ -39,7 +39,6 @@ export function AssignCurrentEffectSettings(newSettings: VSBloomClientConfig) {
 
 export function UpdateEffectSetting(internalSettingPath: string, newValue: any) {
     effectSettings.values[internalSettingPath] = newValue;
-    console.debug("Updating setting", internalSettingPath, "to", newValue);
     vscode.PostToExtension({
         type: 'update-setting',
         data: {

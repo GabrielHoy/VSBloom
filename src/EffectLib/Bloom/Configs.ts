@@ -21,6 +21,7 @@
 import type { VSBloomClientConfig, VSBloomConfigValue } from "../../ExtensionBridge/Bridge";
 import { GetEffectConfigValueNoDefault, GetInternalPathForEffectProperty } from "../../ExtensionBridge/Bridge";
 import type { VSBloomConfigUpdateEvent } from "../../ExtensionBridge/ElectronGlobals";
+import type { Janitor } from "./Janitors";
 
 export type ExtensionConfigPathResolver = string | ((config: VSBloomClientConfig) => VSBloomConfigValue);
 /**
@@ -39,6 +40,24 @@ export type EffectConfigMutator = {
     pathResolver: ExtensionConfigPathResolver,
     internalValueMutator: (changedValue: VSBloomConfigValue, initial?: boolean) => void
 }
+
+export type EffectConfigJSON = {
+    effectDisplayName: string;
+    cssVarPrefix?: string;
+    configurableProperties: {
+        name: string;
+        default: any;
+        cssUnit?: string;
+    }[]
+};
+
+export type CSSVariableData = {
+    cssVarName: string;
+    cssVarUnit: string;
+};
+
+export type ReducedEffectConfigVariableRecord = Record<EffectConfigJSON['configurableProperties'][number]['name'], EffectConfigJSON['configurableProperties'][number]['default']>;
+export type ReducedEffectConfigKeyToCSSVariableDataRecord = Record<EffectConfigJSON['configurableProperties'][number]['name'], CSSVariableData>;
 
 const internalEffectConfigMutators: Map<EffectConfigMutator, VSBloomConfigValue> = new Map();
 function OnExtensionConfigUpdate(event: VSBloomConfigUpdateEvent): void {
@@ -136,5 +155,75 @@ export class EffectConfigResolver {
 
     public GetPropertyPath(propName: string): string {
         return GetInternalPathForEffectProperty(this.effectDisplayName, propName);
+    }
+}
+
+export function EffectConfigVariableReducer(cfgVars: ReducedEffectConfigVariableRecord, property: EffectConfigJSON['configurableProperties'][number]) {
+    cfgVars[property.name as keyof typeof cfgVars] = property.default;
+
+    return cfgVars;
+}
+
+export function GetReducedEffectConfigJSONToConfigKeyToCSSVariables(effectCfgJSON: EffectConfigJSON) {
+    return effectCfgJSON.configurableProperties.reduce((cfgVars: ReducedEffectConfigKeyToCSSVariableDataRecord, property: EffectConfigJSON['configurableProperties'][number]) => {
+        if (!('cssUnit' in property) || !property.cssUnit || typeof property.cssUnit !== 'string') {
+            return cfgVars;
+        }
+        if (!('cssVarPrefix' in effectCfgJSON) || !effectCfgJSON.cssVarPrefix || typeof effectCfgJSON.cssVarPrefix !== 'string') {
+            throw new Error(`The effect config JSON for effect display name "${(effectCfgJSON as any).effectDisplayName}" has no "cssVarPrefix" field, but has a property named ${property.name} which defines a "cssUnit" field to facilitate automatic forwarding of the VS Code extension config value into a CSS variable. If you define "cssUnit" variables for an effect property, you *must* also define a "cssVarPrefix" field in the effect config JSON - even if it is an empty string.`);
+        }
+
+        cfgVars[property.name as keyof typeof cfgVars] = {
+            cssVarName: '--vsbloom-' + (effectCfgJSON.cssVarPrefix.length > 0 ? effectCfgJSON.cssVarPrefix + '-' : '') + property.name.replace(/([A-Z])/g, '-$1').toLowerCase(),
+            cssVarUnit: property.cssUnit
+        };
+
+        return cfgVars;
+    }, {} as ReducedEffectConfigKeyToCSSVariableDataRecord);
+}
+
+export function GetReducedTypeScriptVariablesFromEffectJSON(effectCfgJSON: EffectConfigJSON): [ReducedEffectConfigVariableRecord, ReducedEffectConfigKeyToCSSVariableDataRecord] {
+    return [effectCfgJSON.configurableProperties.reduce(EffectConfigVariableReducer, {} as ReducedEffectConfigVariableRecord), GetReducedEffectConfigJSONToConfigKeyToCSSVariables(effectCfgJSON)];
+}
+
+/**
+ * 
+ * This function is used to setup effect config mutators for the effect config variables that are to be mutated when the effect config changes.
+ * It is used to forward the effect config values to the CSS variables defined in the effect config JSON as well.
+ * 
+ * @param effectConfig - A record of the effect config variables that are to be mutated when the effect config changes
+ * @param effectConfigKeyToCSSVar - A record of the effect config keys to CSS variable data to which the effect config values are to be forwarded
+ * @param configResolver - The effect config resolver object passed to the effect's Start function
+ * @param janitor - The janitor to which the effect config mutators are to be added, to faciliate cleanup of the mutators when the effect is stopped
+ * 
+ * @returns A promise that resolves when the effect config mutators are fully setup
+ */
+export async function SetupEffectConfigMutatorsForEffectConfigChanges(
+    effectConfig: ReducedEffectConfigVariableRecord,
+    effectConfigKeyToCSSVar: ReducedEffectConfigKeyToCSSVariableDataRecord,
+    configResolver: EffectConfigResolver,
+    janitor: Janitor
+) {
+    for (const [propName, defaultPropVal] of Object.entries(effectConfig)) {
+        const doesPropHaveCSSVarData = effectConfigKeyToCSSVar[propName] !== undefined;
+        const { cssVarName, cssVarUnit } = doesPropHaveCSSVarData ? effectConfigKeyToCSSVar[propName] : {};
+
+        const mutator = await RegisterEffectConfigMutator({
+            pathResolver: configResolver.GetPropertyPath(propName),
+            internalValueMutator: (changedValue, isInit) => {
+                console.debug("MUTATED", propName, changedValue, isInit, defaultPropVal, cssVarName, cssVarUnit);
+                effectConfig[propName as keyof typeof effectConfig] = changedValue;
+
+                if (doesPropHaveCSSVarData) {
+                    document.documentElement.style.setProperty(cssVarName!, changedValue + cssVarUnit!);
+                }
+
+                if (!isInit) {
+                    window.__VSBLOOM__.Log('debug', propName + ' changed to ' + changedValue);
+                    console.debug("settings:", effectConfig);
+                }
+            }
+        });
+        janitor.Add(() => UnregisterEffectConfigMutator(mutator));
     }
 }

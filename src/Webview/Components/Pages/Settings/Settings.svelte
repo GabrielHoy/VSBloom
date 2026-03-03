@@ -73,7 +73,7 @@
     type ProcessedPropertyEntry = PropertyEntry & {
         settingPath: string,
         step?: number,
-        displayedUnit?: string,
+        cssUnit?: string,
         enum?: (string | number)[],
         isColor?: boolean
     };
@@ -236,9 +236,9 @@
                     }
                 }}
             />
-            {#if propData.displayedUnit}
+            {#if propData.cssUnit}
                 <span class="translate-y-4 text-sm absolute left-full">
-                    {propData.displayedUnit}
+                    {propData.cssUnit}
                 </span>
             {/if}
         </div>
@@ -262,9 +262,9 @@
                     }
                 }}
             />
-            {#if propData.displayedUnit}
+            {#if propData.cssUnit}
                 <span class="translate-y-4 text-sm absolute left-full">
-                    {propData.displayedUnit}
+                    {propData.cssUnit}
                 </span>
             {/if}
         </div>
