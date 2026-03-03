@@ -52,9 +52,10 @@
     {#if pageData.currentPage === "Main Menu"}
         {#key extensionMetadata.metaLoaded}
             <div
-                in:fly={{ y: "50%", opacity: 0, duration: 2250, delay: 3250, easing: elasticOut }}
+                in:fly={{ y: "50%", opacity: 0, duration: 1250, delay: 3250, easing: elasticOut }}
                 out:fly={{ duration: 200, opacity: 0, y: "50%", easing: cubicOut }}
-                class="webview-beta-indicator"
+                class="webview-beta-indicator stand-out-on-hover"
+                title="The VS: Bloom Menu is currently in an early beta; there may not be much content available in here yet but check back later for much more!"
             >
                 <i>
                     MENU IN BETA
@@ -126,6 +127,7 @@
         }
     }
     .webview-beta-indicator {
+        --clamped-font-size: calc(var(--spacing) * 4);
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
