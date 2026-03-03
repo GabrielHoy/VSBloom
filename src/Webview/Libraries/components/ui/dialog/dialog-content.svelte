@@ -37,7 +37,7 @@
 			class="bg-background rounded-lg border dialog-background absolute top-0 left-0 w-full h-full select-none pointer-events-none scroll-noise"
 			style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1); background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px); background-repeat: repeat;`}
 		></div>
-		{@render children?.()}imagery
+		{@render children?.()}
 		{#if showCloseButton}
 			<DialogPrimitive.Close
 				class="[&_svg]:transition-all [&_svg]:duration-200 hover:[&_svg]:scale-125 active:[&_svg]:scale-90 \

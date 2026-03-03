@@ -11,17 +11,24 @@
  */
 import * as fs from "fs";
 import * as path from "path";
-import { Readable } from "stream";
-import { SVGIcons2SVGFontStream } from "svgicons2svgfont";
-import svg2ttf from "svg2ttf";
-import ttf2woff from "ttf2woff";
 import * as potrace from "potrace";
 import * as Colorful from "../src/Debug/Colorful.ts";
 
-// svgicons2svgfont uses sax internally; raise its buffer limit
-// to handle the large path data produced by bitmap tracing
-const sax = require("sax") as { MAX_BUFFER_LENGTH: number };
-sax.MAX_BUFFER_LENGTH = 1024 * 1024;
+declare module "webfont" {
+    interface WebfontOptions {
+        files: string[];
+        formats: string[];
+        startUnicode: number;
+        verbose?: boolean;
+        normalize?: boolean;
+        sort?: boolean;
+    }
+    interface WebfontResult {
+        woff: Buffer;
+        [format: string]: Buffer;
+    }
+    export function webfontFunc(options: WebfontOptions): Promise<WebfontResult>;
+}
 
 const prettyLogPrefix: string = Colorful.ConstructNonBrandedLogPrefix("GlyphBuilder", "info") + " ";
 
@@ -108,42 +115,7 @@ function TracePNGToSVG(pngPath: string, svgPath: string, options: PotraceOptions
     });
 }
 
-// ---------------------------------------------------------------------------
-// SVG → WOFF font generation
-// ---------------------------------------------------------------------------
-
-function GenerateSVGFont(fontName: string, glyphs: ResolvedGlyph[]): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const chunks: Buffer[] = [];
-        const fontStream = new SVGIcons2SVGFontStream({
-            fontName,
-            fontHeight: 1000,
-            normalize: true,
-        });
-
-        fontStream.on("data", (chunk: Buffer | string) =>
-            chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk)
-        );
-        fontStream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
-        fontStream.on("error", reject);
-
-        for (const glyph of glyphs) {
-            const svgContent = fs.readFileSync(glyph.svgPath, "utf-8");
-            const glyphStream = new Readable({ read() {} }) as Readable & {
-                metadata: { unicode: string[]; name: string };
-            };
-            glyphStream.push(svgContent);
-            glyphStream.push(null);
-            glyphStream.metadata = {
-                unicode: [glyph.unicode],
-                name: glyph.name,
-            };
-            fontStream.write(glyphStream);
-        }
-
-        fontStream.end();
-    });
-}
+// (font generation handled by `webfont` package in BuildFont)
 
 // ---------------------------------------------------------------------------
 // Resolve a single glyph source to an SVG path, tracing PNGs when necessary
@@ -207,6 +179,8 @@ function FormatBytes(bytes: number): string {
 }
 
 async function BuildFont(fontDef: FontDefinition): Promise<void> {
+    const { webfont: webfontFunc } = await import("webfont");
+
     console.log(`\n${prettyLogPrefix}Font: ${fontDef.fileName}.woff ${Colorful.GetColoredString([144,0,255], `(${fontDef.glyphs.length} glyph(s))`, ["bold"])}`);
 
     console.log(`${prettyLogPrefix}Resolving glyph sources...`);
@@ -215,19 +189,21 @@ async function BuildFont(fontDef: FontDefinition): Promise<void> {
         resolvedGlyphs.push(await ResolveGlyphSource(glyph));
     }
 
-    console.log(`${prettyLogPrefix}Generating SVG font...`);
-    const svgFont = await GenerateSVGFont(fontDef.fileName, resolvedGlyphs);
+    const startUnicode = resolvedGlyphs[0].unicode.charCodeAt(0);
 
-    console.log(`${prettyLogPrefix}Converting SVG -> TTF...`);
-    const ttf = svg2ttf(svgFont, {});
-    // Save the TTF file to the GLYPH_OUTPUT_DIR just for completeness' sake
-    const ttfPath = path.join(GLYPH_OUTPUT_DIR, `${fontDef.fileName}.ttf`);
-    fs.writeFileSync(ttfPath, Buffer.from(ttf.buffer));
+    console.log(`${prettyLogPrefix}Generating WOFF via webfont...`);
+    const result = await webfontFunc({
+        files: resolvedGlyphs.map((g) => g.svgPath.replace(/\\/g, "/")),
+        formats: ["woff"],
+        startUnicode,
+        verbose: false,
+        normalize: true,
+        sort: false,
+    });
 
-    console.log(`${prettyLogPrefix}Converting TTF -> WOFF...`);
-    const woff = ttf2woff(ttf.buffer);
+    fs.mkdirSync(GLYPH_OUTPUT_DIR, { recursive: true });
     const woffPath = path.join(GLYPH_OUTPUT_DIR, `${fontDef.fileName}.woff`);
-    fs.writeFileSync(woffPath, Buffer.from(woff.buffer));
+    fs.writeFileSync(woffPath, result.woff as any, "binary");
 
     const stats = fs.statSync(woffPath);
     console.log(`${prettyLogPrefix}Built ${fontDef.fileName}.woff ${Colorful.GetColoredString([255,255,0], `(${FormatBytes(stats.size)})`, ["bold"])}`);

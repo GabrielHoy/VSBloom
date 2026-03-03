@@ -40,7 +40,7 @@
 		bind:files
 		bind:value
 		{...restProps}
-	/>imagery
+	/>
 {:else}
 	<input
 		bind:this={ref}

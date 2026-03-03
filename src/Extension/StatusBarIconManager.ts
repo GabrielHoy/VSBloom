@@ -12,7 +12,7 @@ export class StatusBarIconManager {
 
     private async CreateStatusBarIcon() {
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 1_000_000);
-        this.statusBarItem.text = "$(vsbloom-simple) VS: Bloom";
+        this.statusBarItem.text = "$(vsbloom-glyph)";
         this.statusBarItem.command = "vsbloom.openMenu";
         this.statusBarItem.tooltip = "VS: Bloom Menu";
         this.statusBarItem.show();

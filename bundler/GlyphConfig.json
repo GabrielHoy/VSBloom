@@ -3,22 +3,10 @@
         "fileName": "vsbloom-glyphs",
         "glyphs": [
             {
-                "glyphName": "vsbloom-simple",
+                "glyphName": "vsbloom-glyph",
                 "description": "A simplified version of the VS: Bloom Extension's Logo, intended for use in relatively 'small'/'tight' spaces like the VS Code Status Bar.",
                 "codepoint": "\uE001",
-                "source": "imagery/svg/logoPointedSVG.svg"
-            },
-            {
-                "glyphName": "vsbloom-detailed",
-                "description": "The VS: Bloom Extension's Logo.",
-                "codepoint": "\uE002",
-                "source": "imagery/logoHQ.png",
-                "potraceOptions": {
-                    "threshold": 230,
-                    "turdSize": 50,
-                    "optTolerance": 1.5,
-                    "alphaMax": 1.0
-                }
+                "source": "imagery/svg/logoPointed.svg"
             }
         ]
     }

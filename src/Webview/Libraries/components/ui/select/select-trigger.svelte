@@ -34,7 +34,7 @@
 	)}
 	style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${selStyling}`}
 	{...restProps}
->imagery
+>
 	{@render children?.()}
 	<ChevronDownIcon class="size-4" />
 </SelectPrimitive.Trigger>

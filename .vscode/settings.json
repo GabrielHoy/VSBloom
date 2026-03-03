@@ -24,6 +24,12 @@
 				"src/Effects/EffectConfigOrdering.json"
 			],
 			"url": "./schemas/EffectConfigOrderingFile.schema.json"
+		},
+		{
+			"fileMatch": [
+				"bundler/GlyphConfig.json"
+			],
+			"url": "./schemas/ExtensionGlyphConfig.schema.json"
 		}
 	]
 }

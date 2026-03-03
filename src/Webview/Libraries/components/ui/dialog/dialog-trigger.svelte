@@ -15,4 +15,3 @@
 	style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); ${trigStyling ?? ""}`}
 	{...restProps}
 />
-imagery

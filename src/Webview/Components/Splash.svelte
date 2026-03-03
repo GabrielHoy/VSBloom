@@ -19,7 +19,7 @@
 
 {#if visible}
     <div class="splash-container" style="padding-top: {paddingTop}; max-height: {maxHeightVh}vh; min-height: {minHeightVh}vh; font-size: {textBaseSize};">
-        <img class="splash-image" src="{directories.imagery}/logo.png" style="height: calc({height} * 0.6imagery-height: {maxHeightVh*0.6}vh; min-height: {minHeightVh*0.6}vh;" alt="VS: Bloom Logo" />
+        <img class="splash-image" src="{directories.imagery}/logo.png" style="height: calc({height} * 0.6); max-height: {maxHeightVh*0.6}vh; min-height: {minHeightVh*0.6}vh;" alt="VS: Bloom Logo" />
         <p class="splash-title" style="line-height: {textBaseSize}; height: {textBaseSize}; margin-top: calc({textBaseSize} * 0.2); max-height: {maxHeightVh*0.25}vh; min-height: {minHeightVh*0.25}vh;">{text}</p> 
         <span class="header-separator-decoration" style="max-width: calc({textBaseSize} * 6.18);"></span>
         <p class="splash-sub-title" style="font-size: {subTextBaseSize}; line-height: {subTextBaseSize}; height: {subTextBaseSize}; max-height: {maxHeightVh*0.1}vh; min-height: {minHeightVh*0.1}vh;">{subTitle}</p>
