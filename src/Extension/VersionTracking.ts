@@ -4,7 +4,6 @@
  * extension itself.
  */
 
-import * as vscode from "vscode";
 import * as ExtensionReflection from "./ExtensionReflection";
 
 export function GetCurrentExtensionVersion() {

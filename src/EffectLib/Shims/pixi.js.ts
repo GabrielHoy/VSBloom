@@ -8,7 +8,7 @@
 
 /// <reference lib="dom" />
 
-const libs = (window as any).__VSBLOOM__?.libs;
+const libs = (window as Window).__VSBLOOM__?.libs;
 
 if (!libs?.pixi) {
     throw new Error("[VSBloom]: Pixi.JS was not available, VSBloom's SharedLibraries may not have loaded correctly.");

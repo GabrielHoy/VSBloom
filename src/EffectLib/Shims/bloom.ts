@@ -4,7 +4,7 @@
 
 /// <reference lib="dom" />
 
-const libs = (window as any).__VSBLOOM__?.libs;
+const libs = (window as Window).__VSBLOOM__?.libs;
 
 if (!libs?.bloom) {
     throw new Error("[VSBloom]: Bloom library not available, VSBloom's SharedLibraries may not have loaded correctly.");

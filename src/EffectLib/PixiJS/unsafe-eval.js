@@ -159,7 +159,9 @@ var unsafe_eval_js = (function (exports) {
       for (const i in properties) {
         const property = properties[i];
         if (dynamic !== property.dynamic)
+        {
           continue;
+        }
         funcFragments.push(`offset = index + ${offset}`);
         funcFragments.push(property.code);
         const attributeInfo = PIXI.getAttributeInfoFromFormat(property.format);
@@ -182,6 +184,7 @@ var unsafe_eval_js = (function (exports) {
         this._size = 0;
         this._generateParticleUpdateCache = {};
         var _a;
+        // eslint-disable-next-line eqeqeq
         const size = this._size = (_a = options.size) != null ? _a : 1e3;
         const properties = options.properties;
         let staticVertexSize = 0;
@@ -975,7 +978,9 @@ var unsafe_eval_js = (function (exports) {
       const functionMap = {};
       for (const i in group.uniformStructures) {
         if (!uniformData[i])
+        {
           continue;
+        }
         const uniform = group.uniformStructures[i];
         let parsed = false;
         for (let j = 0; j < PIXI.uniformParsers.length; j++) {

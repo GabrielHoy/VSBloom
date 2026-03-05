@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-file -->
 <div align="center">
 
 <h3> "Why are you using AI Art for the VS: Bloom Logo?"</h3>

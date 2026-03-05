@@ -1,3 +1,21 @@
+/**
+ * 
+ * VS: Bloom Default VSCode User Configs
+ * 
+ * This file defines a base set of user-configurable options
+ *      for the VS: Bloom extension. These form the foundation for the extension's
+ *      VSCode `contributes.configuration` entries, dictating which settings
+ *      appear in the VSCode settings UI under the extension without any effects etc added.
+ *
+ * IMPORTANT:
+ *  - This file is NOT copied verbatim to the final extension package!
+ *      Instead, it is loaded and programmatically merged into the built
+ *      `package.json` during compile-time by build scripts (`PackageBuilder.ts`).
+ *
+ * If you wish to add or modify "base" extension settings, do so here
+ *      instead of in the VSCode package.json and let the build tool handle
+ *      injecting the settings into your final package.json!
+ */
 [
     {
         "title": "VS: Bloom",

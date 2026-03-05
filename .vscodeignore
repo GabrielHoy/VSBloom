@@ -3,7 +3,6 @@
 .cursor
 .claude
 .github
-.vscode-test.mjs
 
 #Dependencies
 node_modules
@@ -47,4 +46,4 @@ README_LOGO.md
 imagery/logoBlackAndWhiteSemiSimple.png
 imagery/logoBlackAndWhiteSimple.png
 imagery/CorruptionSuppressionSetting.png
-imagery/CorruptionExaxmple.png
+imagery/CorruptExample.png

@@ -13,7 +13,7 @@
 	"json.schemas": [
 		{
 			"fileMatch": [
-                "src/Effects/*/*.json",
+                "src/Effects/*/*.jsonc",
                 "!src/Effects/*/tsconfig.json",
                 "!src/Effects/EffectConfigOrdering.json"
 			],
@@ -31,5 +31,21 @@
 			],
 			"url": "./schemas/ExtensionGlyphConfig.schema.json"
 		}
-	]
+	],
+	"cSpell.words": [
+		"componentized",
+		"exmarkdown",
+		"gsap",
+		"ibwrapper",
+		"iconified",
+		"oklch",
+		"ondisabledclick",
+		"rgba",
+		"shadcn",
+		"Slerp",
+		"srgb",
+		"unfocus",
+		"vsbloom",
+		"WGSL"
+	],
 }

@@ -107,7 +107,7 @@ export interface VSBloomConfigObject {
  * whenever new configuration options are added to the
  * extension's package.json file
  * 
- * I guaruntee there's a better way to do this or to generate
+ * I guarantee there's a better way to do this or to generate
  * the type information from the actual package.json file entry's
  * structure, but I am not versed in TS black magic enough to do
  * so yet so for now this will work nicely :)
@@ -148,7 +148,7 @@ export function GetExtensionConfigValue<T extends VSBloomConfigValue>(
         current = (current as VSBloomConfigObject)[part];
     }
 
-    //if the final value generally isnt found, return the default value
+    //if the final value generally isn't found, return the default value
     if (current === null || current === undefined) {
         return defaultValue;
     }
@@ -216,7 +216,7 @@ export function DoesExtensionConfigValueExist(config: VSBloomClientConfig, path:
  * Checks if a configuration section exists and is an object,
  * since we're working with extension configuration structures
  * that generally stay static barring extension updates, this is
- * teeechnically pointless - but it's nice for being nice and
+ * technically pointless - but it's nice for being nice and
  * 'explicit' about type safety/following 'best practices'
  * 
  * @param config The configuration object

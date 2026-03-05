@@ -1,11 +1,9 @@
 import * as vscode from "vscode";
 
 export class StatusBarIconManager {
-    private readonly context: vscode.ExtensionContext;
     private statusBarItem: vscode.StatusBarItem | undefined;
 
-    constructor(context: vscode.ExtensionContext) {
-        this.context = context;
+    constructor() {
 
         this.UpdateStatusBarIconEnabledState();
     }

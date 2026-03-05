@@ -5,17 +5,20 @@
  * Svelte "application" ends up getting mounted into
  * the webview's DOM.
  */
-import { mount } from "svelte";
-import WebviewPage from "./Webview.svelte";
-import { vscode } from "./Util/VSCodeAPI";
-import { AssignCurrentEffectSettings } from "./Global/Settings.svelte";
+import { mount } from 'svelte';
+import { AssignCurrentEffectSettings } from './Global/Settings.svelte';
+import { vscode } from './Util/VSCodeAPI';
+import WebviewPage from './Webview.svelte';
 
 // Hookup Bloom -> Svelte message listeners for general state management
 vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
-    AssignCurrentEffectSettings(data);
+	AssignCurrentEffectSettings(data);
 });
 
-const webviewPage = mount(WebviewPage, { target: document.getElementById("mount-sentinel-element")! });
+const webviewPage = mount(WebviewPage, {
+	// biome-ignore lint/style/noNonNullAssertion: <we ensure this is always present in the DOM via the static HTML we generate, this non-null assertion is safe>
+	target: document.getElementById('mount-sentinel-element')!,
+});
 
 //Once we've mounted the webview Svelte page,
 //let's let the extension know that we're ready
@@ -23,8 +26,8 @@ const webviewPage = mount(WebviewPage, { target: document.getElementById("mount-
 //some initial data to be sent to us from the
 //extension side.
 vscode.PostToExtension({
-    type: 'webview-ready',
-    data: undefined
+	type: 'webview-ready',
+	data: undefined,
 });
 
 export default webviewPage;

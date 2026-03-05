@@ -41,7 +41,7 @@ if (action === "patch") {
     const bridgePort = parseInt(args[3], 10);
     const authToken = args[4];
 
-    if (isNaN(bridgePort)) {
+    if (Number.isNaN(bridgePort)) {
         console.error("[VSBloom]: ElevatedClientPatcher's bridgePort argument is not a valid number");
         process.exit(1);
     }
@@ -63,12 +63,12 @@ if (action === "patch") {
         console.error("[VSBloom]: ElevatedClientPatcher's process encountered an error during the client patching process: ", err);
         process.exit(1);
     });
-} else if (action === "unpatch") {
-    ClientPatcher.UnpatchClient(mainAppProductFilePath).then(() => {
-        console.log("Unpatching successful");
+} else if (action === "unPatch") {
+    ClientPatcher.UnPatchClient(mainAppProductFilePath).then(() => {
+        console.log("Un-patching successful");
         process.exit(0);
     }).catch(err => {
-        console.error("[VSBloom]: ElevatedClientPatcher's process encountered an error during the client unpatching process: ", err);
+        console.error("[VSBloom]: ElevatedClientPatcher's process encountered an error during the client un-patching process: ", err);
         process.exit(1);
     });
 } else {

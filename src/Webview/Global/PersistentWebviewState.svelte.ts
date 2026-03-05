@@ -7,39 +7,39 @@
  * upon every click off&onto the menu tab is awful UX.
  */
 
-import { vscode } from "../Util/VSCodeAPI";
-import type { PageDescriptor } from "./Pages.svelte";
+import { vscode } from '../Util/VSCodeAPI';
+import type { PageDescriptor } from './Pages.svelte';
 
 export interface PersistentWebviewState {
-    currentPage: PageDescriptor["name"];
-    settingsPage: {
-        currentCategory?: string;
-        subcategoriesExpanded?: Record<string, string[]>;
-    }
+	currentPage: PageDescriptor['name'];
+	settingsPage: {
+		currentCategory?: string;
+		subcategoriesExpanded?: Record<string, string[]>;
+	};
 }
 
 export const defaultPersistentState: PersistentWebviewState = {
-    currentPage: "Main Menu",
-    settingsPage: {
-        currentCategory: undefined,
-        subcategoriesExpanded: undefined
-    }
+	currentPage: 'Main Menu',
+	settingsPage: {
+		currentCategory: undefined,
+		subcategoriesExpanded: undefined,
+	},
 };
 
 export const persistentState: PersistentWebviewState = $state(defaultPersistentState);
 
 export function MutatePersistentState(newState: Partial<PersistentWebviewState>) {
-    Object.assign(persistentState, newState);
-    vscode.SetState(persistentState);
+	Object.assign(persistentState, newState);
+	vscode.SetState(persistentState);
 }
 
 export function LoadPersistentState() {
-    const storedState: PersistentWebviewState = vscode.GetState() as PersistentWebviewState;
-    if (storedState && typeof storedState === "object") {
-        for (const [key, val] of Object.entries(storedState)) {
-            if (key in persistentState) {
-                (persistentState as any)[key] = val;
-            }
-        }
-    }
+	const storedState: PersistentWebviewState = vscode.GetState() as PersistentWebviewState;
+	if (storedState && typeof storedState === 'object') {
+		for (const [key, val] of Object.entries(storedState)) {
+			if (key in persistentState) {
+				(persistentState as unknown as Record<string, unknown>)[key] = val;
+			}
+		}
+	}
 }

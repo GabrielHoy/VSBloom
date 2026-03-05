@@ -42,7 +42,7 @@ export interface WatchConfig {
      * Called when a matching element is added to the DOM.
      * Can optionally return a cleanup function that runs when the element is removed.
      */
-    onAdded?: (element: Element) => CleanupFn | void;
+    onAdded?: (element: Element) => CleanupFn | undefined;
     
     /**
      * Called when a matching element is removed from the DOM.

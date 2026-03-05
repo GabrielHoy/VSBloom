@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
+import * as jsonc from 'jsonc-parser';
 
 const OUTPUT_PACKAGE_FILE: string = "package.json";
-const DEFAULT_PACKAGE_USER_CONFIGS_FILE: string = "bundler/DefaultPackageUserConfigs.json";
-const EFFECT_CONFIG_ORDERING_FILE: string = "src/Effects/EffectConfigOrdering.json";
+const DEFAULT_PACKAGE_USER_CONFIGS_FILE: string = "bundler/DefaultPackageUserConfigs.jsonc";
+const EFFECT_CONFIG_ORDERING_FILE: string = "src/Effects/EffectConfigOrdering.jsonc";
 
 interface SettingsEditorDisplayName {
     text: string;
@@ -90,16 +91,16 @@ function GetEffectConfiguration(effectName: string): EffectConfig {
         throw new Error(`getEffectConfiguration - Effect "${effectName}" does not have a directory at "${effectDir}"`);
     }
 
-    const configFileForEffect = path.join(effectDir, `${effectName}.json`);
+    const configFileForEffect = path.join(effectDir, `${effectName}.jsonc`);
     if (!fs.existsSync(configFileForEffect)) {
         throw new Error(`getEffectConfiguration - Effect "${effectName}" does not have a configuration file at "${configFileForEffect}"`);
     }
 
-    return JSON.parse(fs.readFileSync(configFileForEffect, "utf8")) as EffectConfig;
+    return jsonc.parse(fs.readFileSync(configFileForEffect, "utf8")) as EffectConfig;
 }
 
 function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
-    const defaultUserConfigs: PackageConfigurationCategory[] = JSON.parse(
+    const defaultUserConfigs: PackageConfigurationCategory[] = jsonc.parse(
         fs.readFileSync(DEFAULT_PACKAGE_USER_CONFIGS_FILE, "utf8")
     );
     const userConfigsArray: PackageConfigurationCategory[] = [];
@@ -122,7 +123,7 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
         userConfigsArray.push(defaultUserConfig);
     }
 
-    const effectConfigOrdering: EffectConfigOrderingFile = JSON.parse(
+    const effectConfigOrdering: EffectConfigOrderingFile = jsonc.parse(
         fs.readFileSync(EFFECT_CONFIG_ORDERING_FILE, "utf8")
     );
 

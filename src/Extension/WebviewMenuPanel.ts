@@ -1,13 +1,12 @@
 import * as vscode from "vscode";
+import { type Disposable, Uri, ViewColumn } from "vscode";
 import type { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import * as ClientPatcher from "../Patcher/ClientPatcher";
-import { Uri, Disposable, ViewColumn } from "vscode";
-import type { WebviewPanel, Webview } from "vscode";
 import type { BloomToSveltePayload, SvelteToBloomPayload } from "../Webview/WebviewNetworking";
 import * as ExtensionReflection from "./ExtensionReflection";
 import * as VersionTracking from "./VersionTracking";
 
-function GetWebviewURI(webview: Webview, extensionUri: Uri, pathList: string[]) {
+function GetWebviewURI(webview: vscode.Webview, extensionUri: Uri, pathList: string[]) {
 	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
 }
 
@@ -22,14 +21,14 @@ export function GetScriptNOnce() {
 }
 
 export class MenuPanel {
-	private readonly panel: WebviewPanel;
+	private readonly panel: vscode.WebviewPanel;
 	private disposables: Disposable[] = [];
 	private readonly context: vscode.ExtensionContext;
 	private readonly server: VSBloomBridgeServer;
 	public static currentPanel: MenuPanel | undefined;
 	public visible: boolean = false;
 
-	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
+	private constructor(panel: vscode.WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
 		this.panel = panel;
 		this.context = context;
 		this.server = server;
@@ -92,7 +91,7 @@ export class MenuPanel {
 		}
 	}
 
-	public GetWebviewContent(webview: Webview, uri: Uri, initialPageName?: string) {
+	public GetWebviewContent(webview: vscode.Webview, uri: Uri, initialPageName?: string) {
 		const scriptUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.js"]);
 		const styleUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.css"]);
 		const iconUri = GetWebviewURI(webview, uri, ["imagery", "logo.png"]);
@@ -130,7 +129,7 @@ export class MenuPanel {
 			}
 		}, undefined, this.disposables);
 
-		this.panel.onDidChangeViewState((e) => {
+		this.panel.onDidChangeViewState((_e) => {
 			if (this.panel.visible) {
 				this.visible = true;
 				console.debug(`Webview menu panel visibility changed to true`);
@@ -143,7 +142,7 @@ export class MenuPanel {
 		}, undefined, this.disposables);
 	}
 
-	private SetWebviewMessageListener(webview: Webview) {
+	private SetWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
 
@@ -202,7 +201,7 @@ export class MenuPanel {
 		});
 	}
 
-	private async UpdateSetting(internalSettingPath: string, newValue: any) {
+	private async UpdateSetting(internalSettingPath: string, newValue: unknown) {
 		if (!internalSettingPath.startsWith('vsbloom.')) {
 			throw new Error(`Attempted to update a setting that is not a valid VS: Bloom setting path: ${internalSettingPath}`);
 		}

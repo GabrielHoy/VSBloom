@@ -3,7 +3,7 @@
  * 'Colorful'
  * 
  * Long story short, ooh aah pretty colors for
- * the debug console oooh aaaaah oh wow hey
+ * the debug console ooh aaaaah oh wow hey
  * look at that it's completely unusable
  * for any other VSC console besides the
  * debug console wooooo!
@@ -54,9 +54,10 @@ function SlerpColorDefinitions(c1: ColorDefinition, c2: ColorDefinition, t: numb
     const sinTheta = Math.sin(theta);
     const factor1 = Math.sin((1 - t) * theta) / sinTheta;
     const factor2 = Math.sin(t * theta) / sinTheta;
-    const slerpy = a.map((val, i) => val * factor1 + b[i] * factor2);
 
-    return slerpy.map(val => Math.round(val * 255)) as [number, number, number];
+    const slerpValues = a.map((val, i) => val * factor1 + b[i] * factor2);
+
+    return slerpValues.map(val => Math.round(val * 255)) as [number, number, number];
 }
 
 export function ConstructVSBloomLogPrefix(source: keyof typeof coloredLogSourceNameColors, logType?: keyof typeof logTypeColoring): string {

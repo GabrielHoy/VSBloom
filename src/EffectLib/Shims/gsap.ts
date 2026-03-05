@@ -11,7 +11,7 @@
 
 /// <reference lib="dom" />
 
-const libs = (window as any).__VSBLOOM__?.libs;
+const libs = (window as unknown as { __VSBLOOM__?: { libs: { [key: string]: unknown } } }).__VSBLOOM__?.libs;
 
 if (!libs?.gsap) {
     throw new Error("[VSBloom]: GSAP was not available, VSBloom's SharedLibraries may not have loaded correctly.");

@@ -3,16 +3,16 @@
  * related to the VSBloom extension itself.
  */
 
-import * as vscode from "vscode";
-import * as path from "path";
+import * as path from 'node:path';
+import * as vscode from 'vscode';
 
 export function GetExtensionDirectory() {
-    // __dirname will point to the `build` directory
-    return path.join(__dirname, "..");
+	// __dirname will point to the `build` directory
+	return path.join(__dirname, '..');
 }
 
 export function GetExtensionPackageJSON() {
-    return vscode.extensions.getExtension("tamperedreality.vsbloom")?.packageJSON;
+	return vscode.extensions.getExtension('tamperedreality.vsbloom')?.packageJSON;
 }
 
 /**
@@ -23,5 +23,5 @@ export function GetExtensionPackageJSON() {
  * development environment.
  */
 export function IsDevelopmentEnvironment() {
-    return process.env.VSBLOOM_DEVELOPMENT_MODE === "true";
+	return process.env.VSBLOOM_DEVELOPMENT_MODE === 'true';
 }

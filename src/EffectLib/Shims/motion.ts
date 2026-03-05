@@ -11,7 +11,7 @@
 
 /// <reference lib="dom" />
 
-const libs = (window as any).__VSBLOOM__?.libs;
+const libs = (window as Window).__VSBLOOM__?.libs;
 
 if (!libs?.motion) {
     throw new Error("[VSBloom]: Motion was not available, VSBloom's SharedLibraries may not have loaded correctly.");
@@ -19,7 +19,6 @@ if (!libs?.motion) {
 
 export const {
     animate,
-    timeline,
     stagger,
     spring,
     scroll,

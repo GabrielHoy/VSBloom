@@ -1,4 +1,7 @@
 {
+	"files": [
+		"src/EffectLib/jsonc-module.d.ts"
+	],
 	"compilerOptions": {
 		"module": "ESNext",
 		"moduleResolution": "Bundler",

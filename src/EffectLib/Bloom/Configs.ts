@@ -46,7 +46,7 @@ export type EffectConfigJSON = {
     cssVarPrefix?: string;
     configurableProperties: {
         name: string;
-        default: any;
+        default: unknown;
         cssUnit?: string;
     }[]
 };
@@ -61,7 +61,7 @@ export type ReducedEffectConfigKeyToCSSVariableDataRecord = Record<EffectConfigJ
 
 const internalEffectConfigMutators: Map<EffectConfigMutator, VSBloomConfigValue> = new Map();
 function OnExtensionConfigUpdate(event: VSBloomConfigUpdateEvent): void {
-    const { current, previous } = event.detail;
+    const { current } = event.detail;
     for (const [mutator, currentCfgVal] of internalEffectConfigMutators) {
         const newValue = typeof mutator.pathResolver === 'string' ? GetEffectConfigValueNoDefault(current, mutator.pathResolver) : mutator.pathResolver(current);
         if (newValue !== currentCfgVal) {
@@ -101,7 +101,7 @@ export async function RegisterEffectConfigMutator(mutator: EffectConfigMutator):
                     const customEvent = event as VSBloomConfigUpdateEvent;
                     //unregister the listener we've setup after the first invocation
                     window.removeEventListener("vsbloom-config-update", handleEvent);
-                    if (customEvent.detail && customEvent.detail.current) {
+                    if (customEvent.detail?.current) {
                         resolve(customEvent.detail.current);
                     } else {
                         reject(
@@ -170,11 +170,11 @@ export function GetReducedEffectConfigJSONToConfigKeyToCSSVariables(effectCfgJSO
             return cfgVars;
         }
         if (!('cssVarPrefix' in effectCfgJSON) || !effectCfgJSON.cssVarPrefix || typeof effectCfgJSON.cssVarPrefix !== 'string') {
-            throw new Error(`The effect config JSON for effect display name "${(effectCfgJSON as any).effectDisplayName}" has no "cssVarPrefix" field, but has a property named ${property.name} which defines a "cssUnit" field to facilitate automatic forwarding of the VS Code extension config value into a CSS variable. If you define "cssUnit" variables for an effect property, you *must* also define a "cssVarPrefix" field in the effect config JSON - even if it is an empty string.`);
+            throw new Error(`The effect config JSON for effect display name "${(effectCfgJSON as unknown as { effectDisplayName: string }).effectDisplayName}" has no "cssVarPrefix" field, but has a property named ${property.name} which defines a "cssUnit" field to facilitate automatic forwarding of the VS Code extension config value into a CSS variable. If you define "cssUnit" variables for an effect property, you *must* also define a "cssVarPrefix" field in the effect config JSON - even if it is an empty string.`);
         }
 
         cfgVars[property.name as keyof typeof cfgVars] = {
-            cssVarName: '--vsbloom-' + (effectCfgJSON.cssVarPrefix.length > 0 ? effectCfgJSON.cssVarPrefix + '-' : '') + property.name.replace(/([A-Z])/g, '-$1').toLowerCase(),
+            cssVarName: `--vsbloom-${(effectCfgJSON.cssVarPrefix.length > 0 ? `${effectCfgJSON.cssVarPrefix}-` : '') + property.name.replace(/([A-Z])/g, '-$1').toLowerCase()}`,
             cssVarUnit: property.cssUnit
         };
 
@@ -204,7 +204,7 @@ export async function SetupEffectConfigMutatorsForEffectConfigChanges(
     configResolver: EffectConfigResolver,
     janitor: Janitor
 ) {
-    for (const [propName, defaultPropVal] of Object.entries(effectConfig)) {
+    for (const [propName, _defaultPropVal] of Object.entries(effectConfig)) {
         const doesPropHaveCSSVarData = effectConfigKeyToCSSVar[propName] !== undefined;
         const { cssVarName, cssVarUnit } = doesPropHaveCSSVarData ? effectConfigKeyToCSSVar[propName] : {};
 
@@ -214,11 +214,12 @@ export async function SetupEffectConfigMutatorsForEffectConfigChanges(
                 effectConfig[propName as keyof typeof effectConfig] = changedValue;
 
                 if (doesPropHaveCSSVarData) {
+                    // biome-ignore lint/style/noNonNullAssertion: <These are inherently checked to exist via the doesPropHaveCSSVarData check above>
                     document.documentElement.style.setProperty(cssVarName!, changedValue + cssVarUnit!);
                 }
 
                 if (!isInit) {
-                    window.__VSBLOOM__.Log('debug', propName + ' changed to ' + changedValue);
+                    window.__VSBLOOM__.Log('debug', `${propName} changed to ${changedValue}`);
                 }
             }
         });

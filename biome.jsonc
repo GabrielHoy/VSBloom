@@ -1,0 +1,41 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"src/**/*.ts",
+			"src/**/*.js",
+			"!src/**/*.svelte",
+			"src/**/*.json",
+			"!src/EffectLib/PixiJS/*.js"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"lineWidth": 100,
+		"bracketSameLine": true,
+		"bracketSpacing": true,
+		"indentStyle": "tab",
+		"indentWidth": 4,
+		"trailingNewline": true
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"semicolons": "always",
+			"trailingCommas": "all",
+			"arrowParentheses": "always",
+			"quoteProperties": "asNeeded"
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {}
+				}
+			}
+		}
+	}
+}

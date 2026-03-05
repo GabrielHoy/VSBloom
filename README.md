@@ -1,3 +1,5 @@
+<!-- markdownlint-disable-file-->
+
 <div style="min-height: 100vh; margin: 0; display: grid; grid-template-rows: auto 1fr auto;">
 
 ---
@@ -27,7 +29,7 @@ VSBloom works differently from typical VS Code extensions and its effects are ma
 ## Current Features
 
 - **Editor Effects**: These affect the Code Editor window, including things like animated trails that follow your cursor around, dynamic tab animations, and line number animations!
-- **Window Effects**: These affect the application window at large, including things like "idle" effects when you unfocus the window, more dynamic animated buttons around the app, and visual overhauls to many menus!
+- **Window Effects**: These affect the application window at large, including things like "idle" effects when you un-focus the window, more dynamic animated buttons around the app, and visual overhauls to many menus!
 
 - **Completely Configurable**: Tweak and tinker with all of VSBloom's effects to your hearts content! Everything is individually toggleable, so you can tune down or entirely disable any effects you find too distracting.
 
@@ -80,12 +82,12 @@ VSBloom to un-patch and re-patch VS Code accordingly!
 
 ### Does VSBloom affect performance?
 
-While VSBloom's effects *are* designed with an intention of being lightweight in mind the priority behind VSBloom is visual fidelity and eye candy, **not** blazing fast performance - so I can't realistically give a guaruntee that VSBloom won't cause some kind of degraded performance on lower end devices!
+While VSBloom's effects *are* designed with an intention of being lightweight in mind the priority behind VSBloom is visual fidelity and eye candy, **not** blazing fast performance - so I can't realistically give a guarantee that VSBloom won't cause some kind of degraded performance on lower end devices!
 
 If you end up experiencing significant performance issues due to any effects that VSBloom provides, you can always configure the effect to try and reduce the resources it takes up
 or disable said effect entirely: Due to how VSBloom works behind the scenes the code behind disabled effects literally **does not run** at all, so all performance impact associated with them should disappear as soon as you un-toggle an effect!
 
-With that said though, even if performance is not the #1 "priority" I won't try to use that as an excuse, as such all effects are still designed to try and perform at least relatively well - if you notice any particular effect is unperformant or you've read the code behind an effect and notice room for optimization in any regard, absolutely make an issue on GitHub or contact me directly; I'll dig into it and I'm *always* open to contributors!
+With that said though, even if performance is not the #1 "priority" I won't try to use that as an excuse, as such all effects are still designed to try and perform at least relatively well - if you notice any particular effect is un-performant or you've read the code behind an effect and notice room for optimization in any regard, absolutely make an issue on GitHub or contact me directly; I'll dig into it and I'm *always* open to contributors!
 
 ## External Libraries
 

@@ -90,12 +90,12 @@ export function SlerpVector(a: Point, b: Point, t: number): Point {
     // Slerp formula for 2D points
     // Compute the interpolation coefficients
     const sinTheta = Math.sin(theta);
-    const coeffA = Math.sin((1 - t) * theta) / sinTheta;
-    const coeffB = Math.sin(t * theta) / sinTheta;
+    const coefficientA = Math.sin((1 - t) * theta) / sinTheta;
+    const coefficientB = Math.sin(t * theta) / sinTheta;
 
     // Interpolate directions on the unit circle
-    const x = aNorm.x * coeffA + bNorm.x * coeffB;
-    const y = aNorm.y * coeffA + bNorm.y * coeffB;
+    const x = aNorm.x * coefficientA + bNorm.x * coefficientB;
+    const y = aNorm.y * coefficientA + bNorm.y * coefficientB;
 
     // Interpolate magnitudes linearly (for most slerp implementations)
     const mag = aMag + (bMag - aMag) * t;

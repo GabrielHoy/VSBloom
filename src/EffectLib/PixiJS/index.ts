@@ -18,10 +18,10 @@ import './unsafe-eval.js';
 import './math-extras.js';
 
 // Save the polyfill install functions before we overwrite window.PIXI
-const polyfills = (window as any).PIXI;
+const polyfills = (window as unknown as { PIXI: { selfInstall: () => void, installMathExtras: () => void } }).PIXI;
 
 // Now set window.PIXI to the real PixiJS module
-(window as any).PIXI = pixi;
+(window as unknown as { PIXI: { [key: string]: unknown } }).PIXI = pixi;
 
 // Call the install functions to apply the polyfill patches to the real PixiJS classes
 if (polyfills?.selfInstall) {

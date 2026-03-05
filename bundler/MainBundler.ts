@@ -2,6 +2,7 @@ import * as esbuild from "esbuild";
 import chokidar from "chokidar";
 import fs from "fs";
 import path from "path";
+import * as jsonc from "jsonc-parser";
 import * as Colorful from "../src/Debug/Colorful.ts";
 
 import { RebuildPackageFile } from "./PackageBuilder";
@@ -18,8 +19,11 @@ const buildBanners: Record<string, string> = {
     "build/VSBloomClient.js": `/* VS: Bloom Client */\n//\n//Hi!\n//\n//This is the client at the core of VSBloom.\n//It's a small runtime that attempts to establish a WebSocket connection to the *actual* VSBloom extension\n//running inside of VSCode, creating a critical bridge between the VSCode Extension Host and the Electron Client which renders your VSCode application.\n//Once that connection is made, the client can send and receive data from the extension in real-time\n//to facilitate dynamically loading and unloading 'effects' and modifications to\n//the VSCode application UI, as well as maintaining real-time synchronization of things like user settings and preferences.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the client does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
     "build/ElevatedClientPatcher.js": `/* VS: Bloom Elevated Client Patcher */\n//\n//Hi!\n//\n//This is a NodeJS script designed to be run within an environment\n//that has elevated privileges, it is exclusively used in the event\n//of VSBloom running into permission errors when patching the Electron Client,\n//this normally doesn't require any elevation, but if VSCode is\n//installed system-wide instead of being local to the user, its files will\n//be located within a system directory(varying based on OS and 'flavor' of VSCode) which unfortunately\n//requires process elevation to be able to perform file read/write operations inside of.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the elevated patcher does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
     "__EFFECT_JS__": `/* VS: Bloom Effect JS */\n/* Effect Name: "${EFFECT_NAME_SENTINEL}" */\n//\n//Hi!\n//\n//This is the source code for a componentized effect script that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+    "__EFFECT_CSS__": `/* VS: Bloom Effect CSS */\n/* Effect Name: "${EFFECT_NAME_SENTINEL}" */\n/*\n * Hi!\n *\n * This is the stylesheet for a componentized effect that the VSBloom Extension dynamically\n * loads and unloads within the Electron Renderer's DOM.\n *\n * This won't be very readable within a production environment,\n * so if you'd like to know more about what effects do, how they work, or how to make your own\n * you should visit the GitHub repo associated with VSBloom\n * for an un-minified version of this file!\n *\n * Build Date: ${new Date().toISOString()}\n */`,
+    "__EFFECT_JSON__": `/* VS: Bloom Effect Configuration */\n/* Effect Name: "${EFFECT_NAME_SENTINEL}" */\n//\n//Hi!\n//\n//This is a configuration file utilized by a componentized effect that the VSBloom Extension dynamically\n//loads and unloads within the Electron Renderer's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what effects do, how they work, or how to make your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
     "build/VSBloomSharedLibs.js": `/* VS: Bloom Shared Library Provider */\n//\n//Hi!\n//\n//This rather monolithic file serves to bundle shared libraries that are used across\n//multiple effects in VSBloom; it's meant to be loaded before the VSBloom Client to ensure that\n//libraries are available immediately when effects load.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what libraries we preload, how these shared imports are loaded, or how to add your own\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
     "build/Webview/view.js": `/* VS: Bloom Webview Page */\n//\n//Hi!\n//\n//This is the main entry point for the VS: Bloom Webview, it's responsible for mounting a compiled Svelte application\n//into the webview's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the webview does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
+    "build/Webview/view.css": `/* VS: Bloom Webview Stylesheet */\n/*\n * Hi!\n *\n * This is the compiled stylesheet for the VS: Bloom Webview Page, it contains all of the Tailwind CSS\n * and globally-applied Svelte component styles needed to render the webview UI.\n *\n * This won't be very readable within a production environment,\n * so if you'd like to know more about what the webview does or how it works\n * you should visit the GitHub repo associated with VSBloom\n * for an un-minified version of this file!\n *\n * Build Date: ${new Date().toISOString()}\n */`,
 };
 
 async function EffectCSSFileChangedDuringWatch(cssFilePath: string): Promise<void> {
@@ -33,12 +37,27 @@ async function EffectCSSFileChangedDuringWatch(cssFilePath: string): Promise<voi
 
     try {
         const fileContents = await fs.promises.readFile(cssFilePath, "utf8");
-        await fs.promises.writeFile(outputFilePath, fileContents, "utf8");
+        let outputContents = fileContents;
+        if (isProductionBuild) {
+            outputContents = buildBanners["__EFFECT_CSS__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + fileContents;
+        }
+        await fs.promises.writeFile(outputFilePath, outputContents, "utf8");
         console.log(`[watch]   CSS updated: ${fileName} -> ${outputFilePath}`);
     } catch (err) {
         console.error(`[watch]   Failed to process CSS "${cssFilePath}":`, (err as Error).message);
     }
 }
+
+const jsoncImportPlugin: esbuild.Plugin = {
+    name: "esbuild-jsonc-import",
+    setup(build) {
+        build.onLoad({ filter: /\.jsonc$/ }, async (args) => {
+            const raw = await fs.promises.readFile(args.path, "utf8");
+            const parsed = jsonc.parse(raw);
+            return { contents: JSON.stringify(parsed), loader: "json" };
+        });
+    },
+};
 
 const gsapShimmerPlugin: esbuild.Plugin = {
     name: "esbuild-gsap-shim",
@@ -89,20 +108,32 @@ const effectPlugin: esbuild.Plugin = {
                         const outputFilePath = path.join(path.dirname(outFile), file);
                         fileCopyPromises.push(
                             fs.promises.readFile(path.join(effectDirectory, file), "utf8").then(async (fileContents) => {
-                                await fs.promises.writeFile(outputFilePath, fileContents, "utf8");
+                                let outputContents = fileContents;
+                                if (isProductionBuild) {
+                                    const effectName = outFile.split("/").pop()?.split(".")[0] ?? "";
+                                    outputContents = buildBanners["__EFFECT_CSS__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + fileContents;
+                                }
+                                await fs.promises.writeFile(outputFilePath, outputContents, "utf8");
                                 console.log(`[build]     - minified ${Colorful.GetColoredString([144,0,255], "CSS", ["bold"])} file "${Colorful.GetColoredString([255,255,255], `${file}`, ["bold"])}" and copied to "${Colorful.GetColoredString([255,255,255], `${outputFilePath}`, ["bold"])}"`);
                             })
                         );
-                    } else if (file.endsWith(".json")) {
+                    } else if (file.endsWith(".json") || file.endsWith(".jsonc")) {
+                        const isJsonC = file.endsWith(".jsonc");
+
                         const outputFilePath = path.join(path.dirname(outFile), file);
                         const jsonFileContents = fs.readFileSync(path.join(effectDirectory, file), "utf8");
                         try {
-                            const json: unknown = JSON.parse(jsonFileContents);
+                            const json: unknown = isJsonC ? jsonc.parse(jsonFileContents) : JSON.parse(jsonFileContents);
                             const whitespaceRemoved = JSON.stringify(json, null, isProductionBuild ? 0 : 4);
-                            fs.writeFileSync(outputFilePath, whitespaceRemoved, "utf8");
-                            console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,0], "JSON", ["bold"])} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
+                            let outputContents = whitespaceRemoved;
+                            if (isProductionBuild && isJsonC) {
+                                const effectName = outFile.split("/").pop()?.split(".")[0] ?? "";
+                                outputContents = buildBanners["__EFFECT_JSON__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + whitespaceRemoved;
+                            }
+                            fs.writeFileSync(outputFilePath, outputContents, "utf8");
+                            console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,0], isJsonC ? "JSON-C" : "JSON", ["bold"].concat(isJsonC ? ["underline", "inverse"] : []) as any)} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
                         } catch (err) {
-                            console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to shorten and copy JSON file "${file}":`, ["bold", "underline"])}`, (err as Error).message);
+                            console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to shorten and copy ${isJsonC ? "JSON-C" : "JSON"} file "${file}":`, ["bold", "underline"])}`, (err as Error).message);
                         }
                     } else {
                         const outputFilePath = path.join(path.dirname(outFile), file);
@@ -234,6 +265,9 @@ async function Main(): Promise<void> {
         entryPoints: ["src/Extension/VSBloom.ts"],
         outfile: "build/VSBloom.js",
         external: ["vscode"],
+        alias: {
+            "jsonc-parser": path.resolve("node_modules/jsonc-parser/lib/esm/main.js"),
+        },
         banner: isProductionBuild ? { js: buildBanners["build/VSBloom.js"] } : undefined,
     });
 
@@ -316,7 +350,7 @@ async function Main(): Promise<void> {
         alias: {
             "$webview-svelte-lib": path.resolve("src/Webview/Libraries"),
         },
-        banner: isProductionBuild ? { js: buildBanners["build/Webview/view.js"] } : undefined,
+        banner: isProductionBuild ? { js: buildBanners["build/Webview/view.js"], css: buildBanners["build/Webview/view.css"] } : undefined,
     });
 
     const effectContexts: esbuild.BuildContext[] = [];
@@ -343,7 +377,8 @@ async function Main(): Promise<void> {
                     errorReporterPlugin,
                     isProductionBuild ? oneLinerPlugin : undefined,
                     effectPlugin,
-                    gsapShimmerPlugin
+                    gsapShimmerPlugin,
+                    jsoncImportPlugin
                 ),
                 entryPoints: [`src/Effects/${effectDir}/${effectDir}.ts`],
                 outfile: `build/Effects/${effectDir}/${effectDir}.js`,

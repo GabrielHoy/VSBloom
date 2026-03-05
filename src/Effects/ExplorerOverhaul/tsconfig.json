@@ -3,5 +3,8 @@
 	"include": [
 		"./**/*.ts",
 		"../../ExtensionBridge/ElectronGlobals.ts"
-	]
+	],
+	"compilerOptions": {
+		"resolveJsonModule": true
+	}
 }

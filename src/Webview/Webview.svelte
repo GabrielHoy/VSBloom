@@ -3,55 +3,61 @@
 -->
 <script lang="ts">
 	import './CSS/Main.css';
-	import "./CSS/shadcn.css";
-	import { pageData, SetCurrentPage } from "./Global/Pages.svelte";
-	import Unknown from "./Components/Pages/Unknown.svelte";
-	import { directories } from "./Global/Directories.svelte";
-	import ScaleReflectionSingleton from "./Components/UX/ScaleReflectionSingleton.svelte";
-	import PersistentMetadataDisplay from "./Components/PersistentMetadataDisplay.svelte";
+	import './CSS/shadcn.css';
+	import { pageData, SetCurrentPage } from './Global/Pages.svelte';
+	import Unknown from './Components/Pages/Unknown.svelte';
+	import { directories } from './Global/Directories.svelte';
+	import ScaleReflectionSingleton from './Components/UX/ScaleReflectionSingleton.svelte';
+	import PersistentMetadataDisplay from './Components/PersistentMetadataDisplay.svelte';
 	import { LoadPersistentState, persistentState } from './Global/PersistentWebviewState.svelte';
-	import { mount, onDestroy } from "svelte";
-	import { vscode } from "./Util/VSCodeAPI";
-	import * as Dialog from "$webview-svelte-lib/components/ui/dialog/index";
-	import type { ExternalPageSwapMessage } from "./WebviewNetworking";
+	import { mount, onDestroy } from 'svelte';
+	import { vscode } from './Util/VSCodeAPI';
+	import * as Dialog from '$webview-svelte-lib/components/ui/dialog/index';
+	import type { ExternalPageSwapMessage } from './WebviewNetworking';
 
 	//Load up any VSCode persistent state for the webview
 	//first so we can restore certain stateful items in
 	//the webview upon view close-open cycles.
 	LoadPersistentState();
 	pageData.currentPage = persistentState.currentPage;
-	if (pageData.currentPage !== "Main Menu") {
+	if (pageData.currentPage !== 'Main Menu') {
 		vscode.ChangeTitle(pageData.currentPage);
 	}
 
-	const mountingSentinelElement = document.getElementById("mount-sentinel-element");
+	const mountingSentinelElement = document.getElementById('mount-sentinel-element');
 	if (!mountingSentinelElement) {
-		throw new Error("Unable to resolve mount sentinel element within mounted Webview Svelte component; this should never happen.");
+		throw new Error(
+			'Unable to resolve mount sentinel element within mounted Webview Svelte component; this should never happen.',
+		);
 	}
-	const initialPageNameFromExtension = mountingSentinelElement.getAttribute("data-initial-page-name");
+	const initialPageNameFromExtension =
+		mountingSentinelElement.getAttribute('data-initial-page-name');
 	if (initialPageNameFromExtension) {
 		pageData.currentPage = initialPageNameFromExtension;
 	}
 
 	const colorsToGenerateInversionsFor = [
-		"--vscode-editor-foreground",
-		"--vscode-editorWidget-background",
-		"--vscode-disabledForeground",
-		"--vscode-errorForeground",
-		"--vscode-descriptionForeground",
-		"--vscode-scrollbar-shadow",
-		
-		"--vsbloom-text-border-color",
-		"--vsbloom-shadowing-color",
-		"--vsbloom-extremum-theme-color"
-	]
+		'--vscode-editor-foreground',
+		'--vscode-editorWidget-background',
+		'--vscode-disabledForeground',
+		'--vscode-errorForeground',
+		'--vscode-descriptionForeground',
+		'--vscode-scrollbar-shadow',
+
+		'--vsbloom-text-border-color',
+		'--vsbloom-shadowing-color',
+		'--vsbloom-extremum-theme-color',
+	];
 
 	function InvertHexColor(hex: string): string {
 		if (hex.startsWith('#')) {
 			hex = hex.slice(1);
 		}
 		if (hex.length === 3) {
-			hex = hex.split('').map(x => x + x).join('');
+			hex = hex
+				.split('')
+				.map((x) => x + x)
+				.join('');
 		}
 
 		const num = parseInt(hex, 16);
@@ -65,7 +71,7 @@
 	//it's rather stupid that *this* has to be done to just get
 	//a hex color from a CSS variable, but I didn't make CSS3...:/
 	function GetHexColorFromValidCSSColor(color: string): string {
-		var temp = document.createElement("div");
+		var temp = document.createElement('div');
 		temp.style.color = color;
 		document.body.appendChild(temp);
 
@@ -74,25 +80,24 @@
 
 		var match = computed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
 		if (!match) {
-			return "#000000";
+			return '#000000';
 		}
 		var r = parseInt(match[1], 10);
 		var g = parseInt(match[2], 10);
 		var b = parseInt(match[3], 10);
-		return (
-			"#" +
-			((1 << 24) + (r << 16) + (g << 8) + b)
-				.toString(16)
-				.slice(1)
-				.toUpperCase()
-		);
+		return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 	}
 
 	function updateInvertedColorVars() {
 		for (const cssColorName of colorsToGenerateInversionsFor) {
-			const cssColorValue = getComputedStyle(document.body).getPropertyValue(cssColorName).trim();
+			const cssColorValue = getComputedStyle(document.body)
+				.getPropertyValue(cssColorName)
+				.trim();
 			const hex = GetHexColorFromValidCSSColor(cssColorValue);
-			document.body.style.setProperty(`--inverted-${cssColorName.slice(2)}`, InvertHexColor(hex));
+			document.body.style.setProperty(
+				`--inverted-${cssColorName.slice(2)}`,
+				InvertHexColor(hex),
+			);
 		}
 	}
 
@@ -101,26 +106,25 @@
 
 	//setup a mutation observer that'll watch for any
 	//of the 'base' colors changing so we can update our inversions appropriately
-	var observer = new MutationObserver(function(mutationsList) {
+	var observer = new MutationObserver(function (mutationsList) {
 		for (var i = 0; i < mutationsList.length; ++i) {
 			var mutation = mutationsList[i];
-			if (
-				mutation.type === "attributes"
-				&& mutation.attributeName === "style"
-			) {
+			if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
 				updateInvertedColorVars();
 				break;
 			}
 		}
 	});
 	//actually observe body for style changes
-	observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
+	observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
 
 	//also update on theme/color scheme change just to be nice and 'safe'
 	if (window.matchMedia) {
 		var dark = window.matchMedia('(prefers-color-scheme: dark)');
 		var light = window.matchMedia('(prefers-color-scheme: light)');
-		var handler = function() { updateInvertedColorVars(); };
+		var handler = function () {
+			updateInvertedColorVars();
+		};
 		dark.addEventListener('change', handler);
 		light.addEventListener('change', handler);
 	}
@@ -137,11 +141,14 @@
 	//the VSCode .vscode-dark or .vscode-high-contrast classes
 	//(but not .vscode-high-contrast-light, since light mode)
 	function updateRootDarkModeClass() {
-		const isDark = document.body.classList.contains("vscode-dark") || (document.body.classList.contains("vscode-high-contrast") && !document.body.classList.contains("vscode-high-contrast-light"));
+		const isDark =
+			document.body.classList.contains('vscode-dark') ||
+			(document.body.classList.contains('vscode-high-contrast') &&
+				!document.body.classList.contains('vscode-high-contrast-light'));
 		if (isDark) {
-			document.documentElement.classList.add("dark");
+			document.documentElement.classList.add('dark');
 		} else {
-			document.documentElement.classList.remove("dark");
+			document.documentElement.classList.remove('dark');
 		}
 	}
 
@@ -152,21 +159,20 @@
 	//sync the .dark class to :root if the body class changes
 	const bodyClassObserver = new MutationObserver((mutationsList) => {
 		for (const mutation of mutationsList) {
-			if (mutation.type === "attributes" && mutation.attributeName === "class") {
+			if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
 				updateRootDarkModeClass();
 				break;
 			}
 		}
 	});
-	bodyClassObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-
+	bodyClassObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 	//listen for page swap requests from the extension
-	function HandlePageSwapRequest(data: ExternalPageSwapMessage["data"]) {
+	function HandlePageSwapRequest(data: ExternalPageSwapMessage['data']) {
 		SetCurrentPage(data.newPage);
 	}
 	vscode.ObserveBloomToSvelteMessage('swap-page', HandlePageSwapRequest);
-	
+
 	//cleanup observer when component is destroyed
 	onDestroy(() => {
 		vscode.RemoveBloomToSvelteMessageObserver('swap-page', HandlePageSwapRequest);
@@ -199,7 +205,10 @@
 
 <!-- View-wide radial gradient 'shadow' to add a bit of depth -->
 <div class="view-shadow"></div>
-<div class="noise-layer" style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono.png');"></div>
+<div
+	class="noise-layer"
+	style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono.png');"
+></div>
 
 <!--
 	Persistently present metadata display
@@ -227,7 +236,11 @@
 		pointer-events: none;
 		user-select: none;
 
-		background-image: radial-gradient(circle, var(--vscode-editor-background) 0%, var(--vsbloom-shadowing-color) 100%);
+		background-image: radial-gradient(
+			circle,
+			var(--vscode-editor-background) 0%,
+			var(--vsbloom-shadowing-color) 100%
+		);
 	}
 
 	.noise-layer {
