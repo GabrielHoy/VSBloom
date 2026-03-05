@@ -34,6 +34,7 @@ export const coloredLogSourceNameColors: Record<string, ColorDefinition> = {
 	EffectManager: { rgb: [229, 229, 16], rgbFunc: colorful.rgb }, //colorful.yellow,
 	Extension: { rgb: [128, 128, 128], rgbFunc: colorful.rgb }, //colorful.grey,
 	GlyphBuilder: { rgb: [144, 0, 255], rgbFunc: colorful.bold.rgb }, // rich, bright purple
+	PackageBuilder: { rgb: [255, 0, 255], rgbFunc: colorful.bold.rgb }, // rich, bright pink
 };
 export const logTypeColoring: Record<string, ColorDefinition> = {
 	debug: { rgb: [255, 0, 255], rgbFunc: colorful.rgb }, //colorful.magentaBright,

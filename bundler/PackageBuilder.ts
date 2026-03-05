@@ -1,10 +1,13 @@
 import fs from "fs";
 import path from "path";
 import * as jsonc from 'jsonc-parser';
+import * as Colorful from "../src/Debug/Colorful.ts";
 
 const OUTPUT_PACKAGE_FILE: string = "package.json";
 const DEFAULT_PACKAGE_USER_CONFIGS_FILE: string = "bundler/DefaultPackageUserConfigs.jsonc";
 const EFFECT_CONFIG_ORDERING_FILE: string = "src/Effects/EffectConfigOrdering.jsonc";
+
+const prettyLogPrefix: string = Colorful.ConstructNonBrandedLogPrefix("PackageBuilder", "info") + " ";
 
 interface SettingsEditorDisplayName {
     text: string;
@@ -45,7 +48,7 @@ interface ConfigurableProperty {
     settingsEditorDisplayName?: string | SettingsEditorDisplayName;
 }
 
-interface EffectConfig {
+export interface EffectConfig {
     effectDisplayName: string;
     disabled: boolean;
     configurableProperties: ConfigurableProperty[];
@@ -151,6 +154,10 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
 
         for (const effectName of category.effects) {
             const effectConfig = GetEffectConfiguration(effectName);
+            if (effectConfig.disabled) {
+                console.log(`${prettyLogPrefix}The effect "${effectName}" is ${Colorful.GetColoredString([255,0,255], "disabled", ["bold", "italic", "underline"])}; not including it in the configuration for this build...`);
+                continue;
+            }
             if (!effectConfig.configurableProperties) {
                 throw new Error(
                     `buildContributedConfigurationArray - Effect "${effectName}" does not have a configurable properties array defined in its configuration file`

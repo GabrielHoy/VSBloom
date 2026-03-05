@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import * as jsonc from "jsonc-parser";
 import * as Colorful from "../src/Debug/Colorful.ts";
+import { IsEffectEnabled } from "./EffectBuildConfigProvider";
 
 import { RebuildPackageFile } from "./PackageBuilder";
 
@@ -32,6 +33,10 @@ async function EffectCSSFileChangedDuringWatch(cssFilePath: string): Promise<voi
     const effectName = path.basename(effectDir);
     const outputDir = path.join(EFFECTS_BUILD_DIR, effectName);
     const outputFilePath = path.join(outputDir, fileName);
+
+    if (!await IsEffectEnabled(cssFilePath)) {
+        return;
+    }
 
     await fs.promises.mkdir(outputDir, { recursive: true });
 
@@ -93,6 +98,9 @@ const effectPlugin: esbuild.Plugin = {
                     return;
                 }
                 const effectDirectory = path.dirname(entryPoints[0]);
+                if (!(await IsEffectEnabled(path.join(effectDirectory, `${effectDirectory}.json`)))) {
+                    return;
+                }
                 const allFilesInEffectDir = fs.readdirSync(effectDirectory);
                 const fileCopyPromises: Promise<void>[] = [];
 
@@ -363,6 +371,10 @@ async function Main(): Promise<void> {
     }
 
     for (const effectDir of effectDirectories) {
+        if (!(await IsEffectEnabled(path.join(EFFECTS_DIR, effectDir, `${effectDir}.json`)))) {
+            continue;
+        }
+
         effectContexts.push(
             await esbuild.context({
                 bundle: true,

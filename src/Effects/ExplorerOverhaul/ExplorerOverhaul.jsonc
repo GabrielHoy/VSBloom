@@ -1,6 +1,6 @@
 {
     "effectDisplayName": "Explorer Overhaul",
-    "disabled": false,
+    "disabled": true,
     "configurableProperties": [
         {
             "name": "enabled",

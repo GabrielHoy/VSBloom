@@ -1,6 +1,32 @@
+<!-- markdownlint-disable-file-->
+
 # Changelog
 
 All notable changes to the VS: Bloom project will be documented in this file.
+
+## [1.4.0] - 2026-03-05
+
+### Added
+- New user-facing configs for the **Tab Overhaul** effect: ***Tab Separator Style*** and ***Active Tab Glow Size***
+- New user-facing configs for the **Quick-Input Overhaul** effect: ***Widget Border Width*** and ***Initial Widget Rotation***
+- **<u>VSBloom Menu</u>** — a dedicated *Svelte*-based **Webview Panel** providing a *much* nicer experience for browsing and tweaking all of VSBloom's configurations compared to the default VS Code settings list (in my opinion at least), accessible via the `VSBloom: Open Menu` command
+- **Settings Editor** page within the VSBloom Menu, supporting interactive controls for all setting types including color pickers, number sliders with step controls & unit displays, enum selectors, etc. Currently only supports User-level configurations, though the backend is built with the intention for this to change in the future...
+- **Status Bar Entry** with a custom-built VSBloom glyph rendered in the VS Code Status Bar (...this was a surprisingly deep rabbit hole to do haha!), clicking it opens the VSBloom Menu — can be entirely toggled on/off via the `vsbloom.statusBarIcon.enabled` setting of course, if you prefer the status bar to stay clear
+- **New Commands**: `VSBloom: Open Menu` and `VSBloom: Open Settings Editor` for quick access to the VSBloom Menu and a shortcut into its settings page respectively
+- **Command Enablement Clauses** so the commands added by VS: Bloom only appear in the Command Palette when they're *actually* valid (e.g. "Enable" only shows when the client isn't already patched, "Open Menu" hides when it's already open, etc.)
+- A README note & checkbox at the top of VSBloom's section in the default VS Code settings view that takes users directly to the VSBloom Menu's Settings Editor when checked, to avoid people having a moment
+of "what am i looking at???" when seeing 400 config entries eventually under the VSBloom section in VS Code
+
+### Internal Overhauls
+- Attempted standardization of code formatting and practices around the codebase with the addition of **Biome** and **Prettier** configurations, along with performing spellcheck passes with the hope of
+making the project more scalable in the future as well as being friendly to outside contributors etc.
+- <u>Massive</u> internal **codebase refactoring**, including compartmentalization of all areas of the extension's logic into dedicated directories with individual modules for version tracking/extension reflection/status bar icon management/the webview panel/patching/etc.
+- Completely rewrote the **ESBuild Bundler** to convert it from JavaScript to strictly-typed TypeScript; new bundler, package builder, and an automated glyph builder for automation of custom font glyph compilation from PNG&SVG sources without needing to fuss with low-level OpenType .WOFF/.TTF file internals in the future
+- Internal **JSON Schemas** for Effect Configuration files, Effect Config Ordering file, the Extension Glyph Configuration, etc. - all leading into dynamic/automatic population of package manifests and font compilation, to allow for faster effect creation velocity in the future without the fuss of configuring effect settings and exposing user configurations etc.
+- Effect configuration files migrated from `.json` to **JSONC** format with new metadata properties like `step`, `cssUnit`, `isColor`, and `settingsEditorDisplayName` to power the Settings Editor with the configuration property metadata and reflection necessary to drive its features
+- Automated Effect Config population & CSS Variable forwarding support — Internal Effect JSONC configs are now automatically pulled into both the extension's `package.json` and forwarded as CSS variables into the Electron Renderer without needing tons of boilerplate TS code anymore to do so; helps hasten effect development velocity same as above schemas
+
+
 
 ## [1.3.0] - 2026-02-14
 

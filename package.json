@@ -8,7 +8,7 @@
 		"email": "tampered@tamperedreality.net",
 		"url": "https://tamperedreality.net"
 	},
-	"version": "1.3.0",
+	"version": "1.4.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",
 	"pricing": "Free",
@@ -394,15 +394,8 @@
 						"description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
 						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
 					},
-					"vsbloom.explorerOverhaul.enabled": {
-						"order": 31,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable a visual overhaul of the Explorer view.",
-						"markdownDescription": "Enable or disable a visual overhaul of the Explorer view."
-					},
 					"vsbloom.dynamicInteractables.enabled": {
-						"order": 32,
+						"order": 31,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",
