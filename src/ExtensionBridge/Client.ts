@@ -18,11 +18,11 @@ import type { ClientToExtensionMessage, ExtensionToClientMessage } from './Bridg
 import { INITIAL_RECONNECT_DELAY_MS, MAX_RECONNECT_DELAY_MS } from './Bridge';
 import './ElectronGlobals'; //side-effect import for global augmentation
 import type {
-    IVSBloomClient,
-    LoadedVSBloomEffectHandle,
-    TrustedTypePolicy,
-    VSBloomClientConfig,
-    VSBloomEffectModule
+	IVSBloomClient,
+	LoadedVSBloomEffectHandle,
+	TrustedTypePolicy,
+	VSBloomClientConfig,
+	VSBloomEffectModule,
 } from './ElectronGlobals';
 
 //these constants are replaced during the esbuild

@@ -1,12 +1,12 @@
-import { Plugin } from "../extend";
+import { Plugin } from '../extend';
 interface ConvertOptions {
-    closest?: boolean;
+	closest?: boolean;
 }
-declare module "../colord" {
-    interface Colord {
-        /** Finds CSS color keyword that matches with the color value */
-        toName(options?: ConvertOptions): string | undefined;
-    }
+declare module '../colord' {
+	interface Colord {
+		/** Finds CSS color keyword that matches with the color value */
+		toName(options?: ConvertOptions): string | undefined;
+	}
 }
 /**
  * Plugin to work with named colors.

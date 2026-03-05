@@ -6,25 +6,28 @@ import type Wrapper from '../components/variant/default/Wrapper.svelte';
 import type PickerIndicator from '../components/variant/default/PickerIndicator.svelte';
 import type NullabilityCheckbox from '../components/variant/default/NullabilityCheckbox.svelte';
 export type Components = {
-    pickerIndicator: typeof PickerIndicator;
-    textInput: typeof TextInput;
-    input: typeof Input;
-    nullabilityCheckbox: typeof NullabilityCheckbox;
-    wrapper: typeof Wrapper;
-    a11yNotice?: typeof A11yNotice;
-    a11ySingleNotice?: typeof A11ySingleNotice;
+	pickerIndicator: typeof PickerIndicator;
+	textInput: typeof TextInput;
+	input: typeof Input;
+	nullabilityCheckbox: typeof NullabilityCheckbox;
+	wrapper: typeof Wrapper;
+	a11yNotice?: typeof A11yNotice;
+	a11ySingleNotice?: typeof A11ySingleNotice;
 };
 export type A11yColor = {
-    placeholder?: string;
-    size?: 'normal' | 'large';
-} & ({
-    textHex: string;
-    bgHex?: string;
-    reverse: true;
-} | {
-    bgHex?: string;
-    reverse?: false;
-});
+	placeholder?: string;
+	size?: 'normal' | 'large';
+} & (
+	| {
+			textHex: string;
+			bgHex?: string;
+			reverse: true;
+	  }
+	| {
+			bgHex?: string;
+			reverse?: false;
+	  }
+);
 export type A11yColorContract = A11yColor & {
-    contrast?: number;
+	contrast?: number;
 };

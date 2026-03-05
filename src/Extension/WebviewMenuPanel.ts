@@ -1,19 +1,18 @@
-import * as vscode from "vscode";
-import { type Disposable, Uri, ViewColumn } from "vscode";
-import type { VSBloomBridgeServer } from "../ExtensionBridge/Server";
-import * as ClientPatcher from "../Patcher/ClientPatcher";
-import type { BloomToSveltePayload, SvelteToBloomPayload } from "../Webview/WebviewNetworking";
-import * as ExtensionReflection from "./ExtensionReflection";
-import * as VersionTracking from "./VersionTracking";
+import * as vscode from 'vscode';
+import { type Disposable, Uri, ViewColumn } from 'vscode';
+import type { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+import * as ClientPatcher from '../Patcher/ClientPatcher';
+import type { BloomToSveltePayload, SvelteToBloomPayload } from '../Webview/WebviewNetworking';
+import * as ExtensionReflection from './ExtensionReflection';
+import * as VersionTracking from './VersionTracking';
 
 function GetWebviewURI(webview: vscode.Webview, extensionUri: Uri, pathList: string[]) {
 	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
 }
 
 export function GetScriptNOnce() {
-	let text = "";
-	const possible =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 	for (let i = 0; i < 32; i++) {
 		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
@@ -28,47 +27,70 @@ export class MenuPanel {
 	public static currentPanel: MenuPanel | undefined;
 	public visible: boolean = false;
 
-	private constructor(panel: vscode.WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
+	private constructor(
+		panel: vscode.WebviewPanel,
+		uri: Uri,
+		context: vscode.ExtensionContext,
+		server: VSBloomBridgeServer,
+		pageNameOpenTo?: string,
+	) {
 		this.panel = panel;
 		this.context = context;
 		this.server = server;
-		this.panel.onDidDispose(() => {
-			this.visible = false;
-			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', false);
-			this.dispose();
-		}, null, this.disposables);
+		this.panel.onDidDispose(
+			() => {
+				this.visible = false;
+				vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', false);
+				this.dispose();
+			},
+			null,
+			this.disposables,
+		);
 		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri, pageNameOpenTo);
-		this.panel.iconPath = Uri.joinPath(uri, "imagery", "logo.png");
+		this.panel.iconPath = Uri.joinPath(uri, 'imagery', 'logo.png');
 		this.SetWebviewMessageListener(this.panel.webview);
 		this.SetupPanelChangeListeners();
 	}
 
-	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
+	public static ShowPanel(
+		view: string,
+		name: string,
+		webviewURI: Uri,
+		context: vscode.ExtensionContext,
+		server: VSBloomBridgeServer,
+		pageNameOpenTo?: string,
+	) {
 		if (MenuPanel.currentPanel) {
 			MenuPanel.currentPanel.panel.reveal(ViewColumn.One);
 			MenuPanel.currentPanel.visible = true;
 			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
-			console.debug(`Webview menu panel visibility changed to true (existing panel revealed)`);
+			console.debug(
+				`Webview menu panel visibility changed to true (existing panel revealed)`,
+			);
 			if (pageNameOpenTo) {
 				MenuPanel.currentPanel.PostToSvelte({
 					type: 'swap-page',
 					data: {
-						newPage: pageNameOpenTo
-					}
+						newPage: pageNameOpenTo,
+					},
 				});
 			}
 		} else {
-			const panel = vscode.window.createWebviewPanel(
-				view,
-				name,
-				ViewColumn.One,
-				{
-					enableScripts: true,
-					localResourceRoots: [Uri.joinPath(webviewURI, "build"), Uri.joinPath(webviewURI, "imagery")]
-				}
-			);
+			const panel = vscode.window.createWebviewPanel(view, name, ViewColumn.One, {
+				enableScripts: true,
+				localResourceRoots: [
+					Uri.joinPath(webviewURI, 'build'),
+					Uri.joinPath(webviewURI, 'imagery'),
+				],
+			});
 
-			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context, server, pageNameOpenTo);
+			MenuPanel.currentPanel = new MenuPanel(
+				panel,
+				webviewURI,
+				context,
+				server,
+				pageNameOpenTo,
+			);
 			MenuPanel.currentPanel.visible = true;
 			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
 			console.debug(`Webview menu panel visibility changed to true (new panel created)`);
@@ -92,9 +114,9 @@ export class MenuPanel {
 	}
 
 	public GetWebviewContent(webview: vscode.Webview, uri: Uri, initialPageName?: string) {
-		const scriptUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.js"]);
-		const styleUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.css"]);
-		const iconUri = GetWebviewURI(webview, uri, ["imagery", "logo.png"]);
+		const scriptUri = GetWebviewURI(webview, uri, ['build', 'Webview', 'view.js']);
+		const styleUri = GetWebviewURI(webview, uri, ['build', 'Webview', 'view.css']);
+		const iconUri = GetWebviewURI(webview, uri, ['imagery', 'logo.png']);
 		const nonce = GetScriptNOnce();
 
 		/**
@@ -115,7 +137,7 @@ export class MenuPanel {
 					<link href="${styleUri}" rel="stylesheet" />
                 </head>
 
-                <body id="mount-sentinel-element" ${initialPageName ? `data-initial-page-name="${initialPageName}"` : ""} webview-imagery-uri="${GetWebviewURI(webview, uri, ["imagery"])}">
+                <body id="mount-sentinel-element" ${initialPageName ? `data-initial-page-name="${initialPageName}"` : ''} webview-imagery-uri="${GetWebviewURI(webview, uri, ['imagery'])}">
                 	<script nonce="${nonce}" src="${scriptUri}"></script>
                 </body>
             </html>
@@ -123,60 +145,71 @@ export class MenuPanel {
 	}
 
 	private SetupPanelChangeListeners() {
-		vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration('vsbloom')) {
-				this.SendSettingsListToSvelte();
-			}
-		}, undefined, this.disposables);
+		vscode.workspace.onDidChangeConfiguration(
+			(e) => {
+				if (e.affectsConfiguration('vsbloom')) {
+					this.SendSettingsListToSvelte();
+				}
+			},
+			undefined,
+			this.disposables,
+		);
 
-		this.panel.onDidChangeViewState((_e) => {
-			if (this.panel.visible) {
-				this.visible = true;
-				console.debug(`Webview menu panel visibility changed to true`);
-				vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
-			} else {
-				this.visible = false;
-				console.debug(`Webview menu panel visibility changed to false`);
-				vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', false);
-			}
-		}, undefined, this.disposables);
+		this.panel.onDidChangeViewState(
+			(_e) => {
+				if (this.panel.visible) {
+					this.visible = true;
+					console.debug(`Webview menu panel visibility changed to true`);
+					vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
+				} else {
+					this.visible = false;
+					console.debug(`Webview menu panel visibility changed to false`);
+					vscode.commands.executeCommand(
+						'setContext',
+						'vsbloom.menuPanel.visible',
+						false,
+					);
+				}
+			},
+			undefined,
+			this.disposables,
+		);
 	}
 
 	private SetWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
-
 				switch (message.type) {
-					case "send-notification":
+					case 'send-notification':
 						switch (message.data.type) {
-							case "info":
+							case 'info':
 								vscode.window.showInformationMessage(message.data.message);
 								break;
-							case "warning":
+							case 'warning':
 								vscode.window.showWarningMessage(message.data.message);
 								break;
-							case "error":
+							case 'error':
 								vscode.window.showErrorMessage(message.data.message);
 								break;
 						}
 						return;
-					case "change-title":
-						this.panel.title = message.data.newTitle ?? "VS: Bloom";
+					case 'change-title':
+						this.panel.title = message.data.newTitle ?? 'VS: Bloom';
 						break;
-					case "webview-ready":
+					case 'webview-ready':
 						this.SendMetadataUpdateToSvelte();
 						this.SendSettingsListToSvelte();
 						break;
-					case "request-settings-sync":
+					case 'request-settings-sync':
 						this.SendSettingsListToSvelte();
 						break;
-					case "update-setting":
+					case 'update-setting':
 						this.UpdateSetting(message.data.internalSettingPath, message.data.newValue);
 						break;
 				}
 			},
 			undefined,
-			this.disposables
+			this.disposables,
 		);
 	}
 
@@ -187,9 +220,12 @@ export class MenuPanel {
 			data: {
 				extensionVersion: VersionTracking.GetCurrentExtensionVersion(),
 				isClientPatched: await ClientPatcher.IsClientPatched(appProductFilePath),
-				clientPatchVersion: this.context.globalState.get<string>("vsbloom.patcher.lastKnownClientPatchVersion") ?? "unknown",
-				isDevEnvironment: ExtensionReflection.IsDevelopmentEnvironment()
-			}
+				clientPatchVersion:
+					this.context.globalState.get<string>(
+						'vsbloom.patcher.lastKnownClientPatchVersion',
+					) ?? 'unknown',
+				isDevEnvironment: ExtensionReflection.IsDevelopmentEnvironment(),
+			},
 		});
 	}
 
@@ -197,16 +233,20 @@ export class MenuPanel {
 		const settings = this.server.GetCurrentExtensionConfig();
 		this.PostToSvelte({
 			type: 'sync-settings-list',
-			data: settings
+			data: settings,
 		});
 	}
 
 	private async UpdateSetting(internalSettingPath: string, newValue: unknown) {
 		if (!internalSettingPath.startsWith('vsbloom.')) {
-			throw new Error(`Attempted to update a setting that is not a valid VS: Bloom setting path: ${internalSettingPath}`);
+			throw new Error(
+				`Attempted to update a setting that is not a valid VS: Bloom setting path: ${internalSettingPath}`,
+			);
 		}
 
 		//TODO: Add support for other configuration targets
-		vscode.workspace.getConfiguration().update(internalSettingPath, newValue, vscode.ConfigurationTarget.Global);
+		vscode.workspace
+			.getConfiguration()
+			.update(internalSettingPath, newValue, vscode.ConfigurationTarget.Global);
 	}
 }

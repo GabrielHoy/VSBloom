@@ -47,7 +47,11 @@ import * as pixi from './PixiJS/index';
 //Initialize __VSBLOOM__ if not present,
 //this should always be the case since SharedLibs loads before Client.
 if (!(window as Window).__VSBLOOM__) {
-	(window as Window).__VSBLOOM__ = {} as unknown as { Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => void, extensionConfig: undefined, client: undefined };
+	(window as Window).__VSBLOOM__ = {} as unknown as {
+		Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => void;
+		extensionConfig: undefined;
+		client: undefined;
+	};
 }
 gsap.registerPlugin(
 	Draggable,
@@ -112,7 +116,10 @@ gsap.registerPlugin(
 
 console.log(
 	'[VSBloom]: Successfully Pre-loaded the following Client Effect Libraries:',
-	Object.keys((window as unknown as { __VSBLOOM__: { libs: { [key: string]: unknown } } }).__VSBLOOM__.libs)
+	Object.keys(
+		(window as unknown as { __VSBLOOM__: { libs: { [key: string]: unknown } } }).__VSBLOOM__
+			.libs,
+	)
 		.filter((key) => !key.startsWith('GSAP_'))
 		.map((key) => (key === 'gsap' ? 'gsap/all' : key)),
 ); //no need to spam all the gsap plugins in the console

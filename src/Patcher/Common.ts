@@ -66,7 +66,12 @@ export async function DoesFileRequireElevation(filePath: string): Promise<boolea
 		await handle.close();
 		return false;
 	} catch (err: unknown) {
-		if (typeof err === 'object' && err !== null && 'code' in err && (err.code === 'EACCES' || err.code === 'EPERM')) {
+		if (
+			typeof err === 'object' &&
+			err !== null &&
+			'code' in err &&
+			(err.code === 'EACCES' || err.code === 'EPERM')
+		) {
 			return true;
 		}
 		return false;

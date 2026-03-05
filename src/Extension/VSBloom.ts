@@ -38,9 +38,11 @@ function GetBridgeServer(context: vscode.ExtensionContext): VSBloomBridgeServer 
  */
 function GetEffectManager(): EffectManager {
 	if (!effectManager) {
-    if (!server) {
-      throw new Error('Server is not initialized, but effect manager is attempted to be created');
-    }
+		if (!server) {
+			throw new Error(
+				'Server is not initialized, but effect manager is attempted to be created',
+			);
+		}
 
 		effectManager = new EffectManager(server);
 	}

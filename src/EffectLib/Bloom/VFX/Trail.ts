@@ -15,10 +15,7 @@ import {
 	Point,
 	type RopeGeometry,
 } from 'pixi.js';
-import {
-	Deg2Rad,
-	GetAngleOfVectorRad,
-} from '../Geometry/Geometry';
+import { Deg2Rad, GetAngleOfVectorRad } from '../Geometry/Geometry';
 
 export class Trail {
 	public readonly rope: MeshRope;

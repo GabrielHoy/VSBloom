@@ -1,141 +1,159 @@
 /**
  * Janitors - VSBloom's Cleanup Utility Library
- * 
+ *
  * Handles management and cleanup of general resources
  * that may need to be cleaned up at various points in the
  * lifecycle of VSBloom Client Effects.
  */
 
 function Log(type: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-    if (window.__VSBLOOM__) {
-        window.__VSBLOOM__.Log(type, message, data);
-    } else {
-        console[type](`[VSBloom]: ${message}`, data ?? '');
-    }
+	if (window.__VSBLOOM__) {
+		window.__VSBLOOM__.Log(type, message, data);
+	} else {
+		console[type](`[VSBloom]: ${message}`, data ?? '');
+	}
 }
 
 export interface CleanupTask {
-    readonly name?: string;
-    CleanNow: () => Promise<void>;
+	readonly name?: string;
+	CleanNow: () => Promise<void>;
 }
 
 export class Janitor {
-    private cleanupTasks: Set<CleanupTask> = new Set();
-    /**
-     * Named cleanup tasks are proxies for unnamed cleanup tasks,
-     * and are used to allow 'identifying' cleanup tasks by name,
-     * for example to allow for retrieving whether a certain task
-     * exists in the cleanup task set, or to retrieve a cleanup
-     * task that may have been registered elsewhere in code without
-     * needing to extract and maintain a reference to the cleanup task
-     * itself.
-     */
-    private namedCleanupTasks: Map<string, CleanupTask> = new Map();
-    private alive = true;
+	private cleanupTasks: Set<CleanupTask> = new Set();
+	/**
+	 * Named cleanup tasks are proxies for unnamed cleanup tasks,
+	 * and are used to allow 'identifying' cleanup tasks by name,
+	 * for example to allow for retrieving whether a certain task
+	 * exists in the cleanup task set, or to retrieve a cleanup
+	 * task that may have been registered elsewhere in code without
+	 * needing to extract and maintain a reference to the cleanup task
+	 * itself.
+	 */
+	private namedCleanupTasks: Map<string, CleanupTask> = new Map();
+	private alive = true;
 
-    private _CreateCleanupTask(cleanupFn: () => void | Promise<void>, name?: string): CleanupTask {
-        if (!this.alive) {
-            throw new Error('Attempt to add a cleanup task to a Janitor that is no longer alive');
-        }
+	private _CreateCleanupTask(cleanupFn: () => void | Promise<void>, name?: string): CleanupTask {
+		if (!this.alive) {
+			throw new Error('Attempt to add a cleanup task to a Janitor that is no longer alive');
+		}
 
-        const newCleanupTask: CleanupTask = {
-            name,
-            CleanNow: async () => {
-                if (!this.cleanupTasks.has(newCleanupTask)) {
-                    Log('warn', 'CleanNow was called on a CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake');
-                    return;
-                }
+		const newCleanupTask: CleanupTask = {
+			name,
+			CleanNow: async () => {
+				if (!this.cleanupTasks.has(newCleanupTask)) {
+					Log(
+						'warn',
+						'CleanNow was called on a CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake',
+					);
+					return;
+				}
 
-                this.cleanupTasks.delete(newCleanupTask);
-                const res = cleanupFn();
-                if (res instanceof Promise) {
-                    await res;
-                }
-            }
-        };
+				this.cleanupTasks.delete(newCleanupTask);
+				const res = cleanupFn();
+				if (res instanceof Promise) {
+					await res;
+				}
+			},
+		};
 
-        this.cleanupTasks.add(newCleanupTask);
-        return newCleanupTask;
-    }
+		this.cleanupTasks.add(newCleanupTask);
+		return newCleanupTask;
+	}
 
-    public Add(cleanupFn: () => void | Promise<void>): CleanupTask {
-        return this._CreateCleanupTask(cleanupFn);
-    }
+	public Add(cleanupFn: () => void | Promise<void>): CleanupTask {
+		return this._CreateCleanupTask(cleanupFn);
+	}
 
-    public AddNamed(name: string, cleanupFn: () => void | Promise<void>): CleanupTask {
-        if (!this.alive) {
-            throw new Error('Attempt to add a named cleanup task to a Janitor that is no longer alive');
-        }
-        const existingNamedCleanupTask = this.namedCleanupTasks.get(name);
-        if (existingNamedCleanupTask) {
-            throw new Error(`Attempt to add a named cleanup task to a Janitor with a name that is already registered to said Janitor: ${name}`);
-        }
+	public AddNamed(name: string, cleanupFn: () => void | Promise<void>): CleanupTask {
+		if (!this.alive) {
+			throw new Error(
+				'Attempt to add a named cleanup task to a Janitor that is no longer alive',
+			);
+		}
+		const existingNamedCleanupTask = this.namedCleanupTasks.get(name);
+		if (existingNamedCleanupTask) {
+			throw new Error(
+				`Attempt to add a named cleanup task to a Janitor with a name that is already registered to said Janitor: ${name}`,
+			);
+		}
 
-        const unnamedCleanupTask: CleanupTask = this._CreateCleanupTask(async () => {
-            if (this.namedCleanupTasks.get(name) !== unnamedCleanupTask) {
-                Log('warn', 'CleanNow was called on a (name-registered) CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake');
-                return;
-            }
+		const unnamedCleanupTask: CleanupTask = this._CreateCleanupTask(async () => {
+			if (this.namedCleanupTasks.get(name) !== unnamedCleanupTask) {
+				Log(
+					'warn',
+					'CleanNow was called on a (name-registered) CleanupTask that has already been cleaned or is no longer registered with its Janitor(...or does not belong to this Janitor); this is a no-op and should be avoided for performance sake',
+				);
+				return;
+			}
 
-            this.namedCleanupTasks.delete(name);
-            const res = cleanupFn();
-            if (res instanceof Promise) {
-                await res;
-            }
-        }, name);
+			this.namedCleanupTasks.delete(name);
+			const res = cleanupFn();
+			if (res instanceof Promise) {
+				await res;
+			}
+		}, name);
 
-        this.namedCleanupTasks.set(name, unnamedCleanupTask);
-        return unnamedCleanupTask;
-    }
+		this.namedCleanupTasks.set(name, unnamedCleanupTask);
+		return unnamedCleanupTask;
+	}
 
-    public GetNamedCleanupTask(name: string): CleanupTask | undefined {
-        return this.namedCleanupTasks.get(name);
-    }
-    
-    public async CleanItem(cleanupTask: CleanupTask): Promise<void> {
-        if (!this.cleanupTasks.has(cleanupTask)) {
-            throw new Error('Attempt to call CleanItem on a Janitor with a CleanupTask that is not registered to said Janitor');
-        }
+	public GetNamedCleanupTask(name: string): CleanupTask | undefined {
+		return this.namedCleanupTasks.get(name);
+	}
 
-        await cleanupTask.CleanNow();
-    }
+	public async CleanItem(cleanupTask: CleanupTask): Promise<void> {
+		if (!this.cleanupTasks.has(cleanupTask)) {
+			throw new Error(
+				'Attempt to call CleanItem on a Janitor with a CleanupTask that is not registered to said Janitor',
+			);
+		}
 
-    public RemoveItemWithoutCleanup(cleanupTask: CleanupTask): void {
-        if (!this.cleanupTasks.has(cleanupTask)) {
-            throw new Error('Attempt to call RemoveItemWithoutCleanup on a Janitor with a CleanupTask that is not registered to said Janitor');
-        }
+		await cleanupTask.CleanNow();
+	}
 
-        if (cleanupTask.name) {
-            this.namedCleanupTasks.delete(cleanupTask.name);
-        }
+	public RemoveItemWithoutCleanup(cleanupTask: CleanupTask): void {
+		if (!this.cleanupTasks.has(cleanupTask)) {
+			throw new Error(
+				'Attempt to call RemoveItemWithoutCleanup on a Janitor with a CleanupTask that is not registered to said Janitor',
+			);
+		}
 
-        this.cleanupTasks.delete(cleanupTask);
-    }
+		if (cleanupTask.name) {
+			this.namedCleanupTasks.delete(cleanupTask.name);
+		}
 
-    public async CleanAll(): Promise<void> {
-        if (!this.alive) {
-            throw new Error('Attempt to call CleanAll on a Janitor that is no longer alive');
-        }
+		this.cleanupTasks.delete(cleanupTask);
+	}
 
-        // LIFO order: reverse the tasks so last-added is cleaned first
-        const tasksInReverse = [...this.cleanupTasks].reverse();
-        for (const cleanupTask of tasksInReverse) {
-            try {
-                await cleanupTask.CleanNow();
-            } catch (error) {
-                Log('error', `An error occurred while invoking a CleanupTask inside of a Janitor's CleanAll method: ${String(error)}`, { cleanupTask, error });
-            }
-        }
-    }
+	public async CleanAll(): Promise<void> {
+		if (!this.alive) {
+			throw new Error('Attempt to call CleanAll on a Janitor that is no longer alive');
+		}
 
-    public async Destroy(): Promise<void> {
-        if (!this.alive) {
-            throw new Error('Attempt to call Destroy on a Janitor that is already destroyed');
-        }
+		// LIFO order: reverse the tasks so last-added is cleaned first
+		const tasksInReverse = [...this.cleanupTasks].reverse();
+		for (const cleanupTask of tasksInReverse) {
+			try {
+				await cleanupTask.CleanNow();
+			} catch (error) {
+				Log(
+					'error',
+					`An error occurred while invoking a CleanupTask inside of a Janitor's CleanAll method: ${String(error)}`,
+					{ cleanupTask, error },
+				);
+			}
+		}
+	}
 
-        await this.CleanAll();
-        this.alive = false;
-    }
+	public async Destroy(): Promise<void> {
+		if (!this.alive) {
+			throw new Error('Attempt to call Destroy on a Janitor that is already destroyed');
+		}
+
+		await this.CleanAll();
+		this.alive = false;
+	}
 }
 
 export default Janitor;

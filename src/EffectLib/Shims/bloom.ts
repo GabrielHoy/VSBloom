@@ -7,16 +7,12 @@
 const libs = (window as Window).__VSBLOOM__?.libs;
 
 if (!libs?.bloom) {
-    throw new Error("[VSBloom]: Bloom library not available, VSBloom's SharedLibraries may not have loaded correctly.");
+	throw new Error(
+		"[VSBloom]: Bloom library not available, VSBloom's SharedLibraries may not have loaded correctly.",
+	);
 }
 
 const bloom = libs.bloom;
 export default bloom;
 
-export const {
-    dom,
-    configs,
-    janitors,
-    geometry,
-    vfx,
-} = bloom;
+export const { dom, configs, janitors, geometry, vfx } = bloom;

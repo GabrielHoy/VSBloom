@@ -4,8 +4,8 @@
  * extension itself.
  */
 
-import * as ExtensionReflection from "./ExtensionReflection";
+import * as ExtensionReflection from './ExtensionReflection';
 
 export function GetCurrentExtensionVersion() {
-    return ExtensionReflection.GetExtensionPackageJSON()?.version;
+	return ExtensionReflection.GetExtensionPackageJSON()?.version;
 }

@@ -2,59 +2,61 @@ import type { A11yColor, Components } from '../type/types.js';
 import { type A11yTextsPartial, type TextsPartial } from '../utils/texts.js';
 import { type Colord, type HsvaColor, type RgbaColor } from 'colord';
 interface Props {
-    /** customize the ColorPicker component parts. Can be used to display a Chrome variant or an Accessibility Notice */
-    components?: Partial<Components>;
-    /** input label, hidden when the ColorPicker is always shown (prop `isDialog={false}`) */
-    label?: string;
-    /** input name, useful in a native form */
-    name?: string | undefined;
-    /** if set to true, the color picker becomes nullable (rgb, hsv and hex set to undefined) */
-    nullable?: boolean;
-    /** rgb color */
-    rgb?: RgbaColor | null;
-    /** hsv color */
-    hsv?: HsvaColor | null;
-    /** hex color */
-    hex?: string | null;
-    /** Colord color */
-    color?: Colord | null;
-    /** indicator whether the selected color is light or dark */
-    isDark?: boolean;
-    /** if set to false, disables the alpha channel */
-    isAlpha?: boolean;
-    /** if set to false, the input and the label will not be displayed and the ColorPicker will always be visible */
-    isDialog?: boolean;
-    /** indicator of the popup state */
-    isOpen?: boolean;
-    /** if set to "responsive", the popup will adjust its x and y position depending on the available window space, "responsive-x" and "responsive-y" limit the behavior to either the x or y axis */
-    position?: 'fixed' | 'responsive' | 'responsive-x' | 'responsive-y';
-    /** directionality left to right, or right to left*/
-    dir?: 'ltr' | 'rtl';
-    /** if set to false, hide the hex, rgb and hsv text inputs */
-    isTextInput?: boolean;
-    /** configure which hex, rgb and hsv inputs will be visible and in which order. If overridden, it is necessary to provide at least one value */
-    textInputModes?: Array<'hex' | 'rgb' | 'hsv'>;
-    /** If set to "horizontal", the hue and alpha sliders will be displayed horizontally. It is necessary to set this props to "horizontal" for the ChromeVariant */
-    sliderDirection?: 'horizontal' | 'vertical';
-    /** If set to true, it will not be possible to close the color picker by clicking outside */
-    disableCloseClickOutside?: boolean;
-    /** used with the A11yVariant. Define the accessibility examples in the color picker */
-    a11yColors?: Array<A11yColor>;
-    /** required WCAG contrast level */
-    a11yLevel?: 'AA' | 'AAA';
-    /** all translation tokens used in the library; can be partially overridden; see [full object type](https://github.com/Ennoriel/svelte-awesome-color-picker/blob/master/src/lib/utils/texts.ts) */
-    texts?: TextsPartial | undefined;
-    /** all a11y translation tokens used in the library; override with translations if necessary; see [full object type](https://github.com/Ennoriel/svelte-awesome-color-picker/blob/master/src/lib/utils/texts.ts) */
-    a11yTexts?: A11yTextsPartial | undefined;
-    /** listener, dispatch an event when the color changes */
-    onInput?: ((color: {
-        hsv: HsvaColor | null;
-        rgb: RgbaColor | null;
-        hex: string | null;
-        color: Colord | null;
-    }) => void) | undefined;
-    /** Optional array of color swatches to display below the picker */
-    swatches?: string[];
+	/** customize the ColorPicker component parts. Can be used to display a Chrome variant or an Accessibility Notice */
+	components?: Partial<Components>;
+	/** input label, hidden when the ColorPicker is always shown (prop `isDialog={false}`) */
+	label?: string;
+	/** input name, useful in a native form */
+	name?: string | undefined;
+	/** if set to true, the color picker becomes nullable (rgb, hsv and hex set to undefined) */
+	nullable?: boolean;
+	/** rgb color */
+	rgb?: RgbaColor | null;
+	/** hsv color */
+	hsv?: HsvaColor | null;
+	/** hex color */
+	hex?: string | null;
+	/** Colord color */
+	color?: Colord | null;
+	/** indicator whether the selected color is light or dark */
+	isDark?: boolean;
+	/** if set to false, disables the alpha channel */
+	isAlpha?: boolean;
+	/** if set to false, the input and the label will not be displayed and the ColorPicker will always be visible */
+	isDialog?: boolean;
+	/** indicator of the popup state */
+	isOpen?: boolean;
+	/** if set to "responsive", the popup will adjust its x and y position depending on the available window space, "responsive-x" and "responsive-y" limit the behavior to either the x or y axis */
+	position?: 'fixed' | 'responsive' | 'responsive-x' | 'responsive-y';
+	/** directionality left to right, or right to left*/
+	dir?: 'ltr' | 'rtl';
+	/** if set to false, hide the hex, rgb and hsv text inputs */
+	isTextInput?: boolean;
+	/** configure which hex, rgb and hsv inputs will be visible and in which order. If overridden, it is necessary to provide at least one value */
+	textInputModes?: Array<'hex' | 'rgb' | 'hsv'>;
+	/** If set to "horizontal", the hue and alpha sliders will be displayed horizontally. It is necessary to set this props to "horizontal" for the ChromeVariant */
+	sliderDirection?: 'horizontal' | 'vertical';
+	/** If set to true, it will not be possible to close the color picker by clicking outside */
+	disableCloseClickOutside?: boolean;
+	/** used with the A11yVariant. Define the accessibility examples in the color picker */
+	a11yColors?: Array<A11yColor>;
+	/** required WCAG contrast level */
+	a11yLevel?: 'AA' | 'AAA';
+	/** all translation tokens used in the library; can be partially overridden; see [full object type](https://github.com/Ennoriel/svelte-awesome-color-picker/blob/master/src/lib/utils/texts.ts) */
+	texts?: TextsPartial | undefined;
+	/** all a11y translation tokens used in the library; override with translations if necessary; see [full object type](https://github.com/Ennoriel/svelte-awesome-color-picker/blob/master/src/lib/utils/texts.ts) */
+	a11yTexts?: A11yTextsPartial | undefined;
+	/** listener, dispatch an event when the color changes */
+	onInput?:
+		| ((color: {
+				hsv: HsvaColor | null;
+				rgb: RgbaColor | null;
+				hex: string | null;
+				color: Colord | null;
+		  }) => void)
+		| undefined;
+	/** Optional array of color swatches to display below the picker */
+	swatches?: string[];
 }
 /**
  * Color Picker Component — default export of the library
@@ -95,6 +97,10 @@ interface Props {
  * @prop onInput: ((color: { hsv: HsvaColor | null; rgb: RgbaColor | null; hex: string | null; color: Colord | null }) =&gt; void) | undefined — listener, dispatch an event when the color changes
  * @prop swatches: string[] — Optional array of color swatches to display below the picker
  */
-declare const ColorPicker: import("svelte").Component<Props, {}, "rgb" | "hsv" | "hex" | "color" | "isOpen" | "isDark">;
+declare const ColorPicker: import('svelte').Component<
+	Props,
+	{},
+	'rgb' | 'hsv' | 'hex' | 'color' | 'isOpen' | 'isDark'
+>;
 type ColorPicker = ReturnType<typeof ColorPicker>;
 export default ColorPicker;

@@ -1,9 +1,9 @@
-import { XyzaColor } from "../types";
-import { Plugin } from "../extend";
-declare module "../colord" {
-    interface Colord {
-        toXyz(): XyzaColor;
-    }
+import { XyzaColor } from '../types';
+import { Plugin } from '../extend';
+declare module '../colord' {
+	interface Colord {
+		toXyz(): XyzaColor;
+	}
 }
 /**
  * A plugin adding support for CIE XYZ colorspace.

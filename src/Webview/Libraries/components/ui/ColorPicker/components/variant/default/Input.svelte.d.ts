@@ -1,14 +1,14 @@
 interface Props {
-    /** DOM element of the label wrapper */
-    labelElement: HTMLLabelElement | undefined;
-    /** hex color */
-    hex: string | null;
-    /** input label */
-    label: string;
-    /** input name, useful in a native form */
-    name?: string | undefined;
-    /** directionality left to right, or right to left*/
-    dir: 'ltr' | 'rtl';
+	/** DOM element of the label wrapper */
+	labelElement: HTMLLabelElement | undefined;
+	/** hex color */
+	hex: string | null;
+	/** input label */
+	label: string;
+	/** input name, useful in a native form */
+	name?: string | undefined;
+	/** directionality left to right, or right to left*/
+	dir: 'ltr' | 'rtl';
 }
 /**
  * button to open the color picker. Also provides a hidden input with the hex value selected by the user
@@ -28,6 +28,6 @@ interface Props {
  * @prop name: string | undefined = undefined — input name, useful in a native form
  * @prop dir: 'ltr' | 'rtl' — directionality left to right, or right to left
  */
-declare const Input: import("svelte").Component<Props, {}, "labelElement">;
+declare const Input: import('svelte').Component<Props, {}, 'labelElement'>;
 type Input = ReturnType<typeof Input>;
 export default Input;

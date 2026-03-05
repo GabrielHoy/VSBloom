@@ -7,7 +7,9 @@
 			"src/**/*.js",
 			"!src/**/*.svelte",
 			"src/**/*.json",
-			"!src/EffectLib/PixiJS/*.js"
+			"!src/EffectLib/PixiJS/*.js",
+			"!src/Webview/Libraries/**/*.js",
+			"!src/Webview/Libraries/**/*.d.ts"
 		]
 	},
 	"formatter": {

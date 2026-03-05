@@ -1,38 +1,38 @@
 interface Props {
-    /** min value of the slider */
-    min?: string | number;
-    /** max value of the slider */
-    max?: string | number;
-    /** step value of the slider */
-    step?: string | number;
-    /** value of the slider */
-    value?: number;
-    /**
-     * method to convert the current value to a string representation of the value for the `aria-valuetext` attribute.
-     * For example, a battery meter value might be conveyed as aria-valuetext="8% (34 minutes) remaining".
-     * See [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-valuetext)
-     */
-    ariaValueText?: (current: number) => string;
-    /** input name of the slider */
-    name?: string | undefined;
-    /** direction of the slider */
-    direction?: 'horizontal' | 'vertical';
-    /** if true, the min and max values will be reversed */
-    reverse?: boolean;
-    /** disables mouse events */
-    keyboardOnly?: boolean;
-    /** div element representing the slider */
-    slider?: HTMLDivElement | undefined;
-    /** aria-label props */
-    ariaLabel?: string | undefined;
-    /** aria-labelledby props */
-    ariaLabelledBy?: string | undefined;
-    /** aria-controls props */
-    ariaControls?: string | undefined;
-    /** indicate if the slider is being dragged */
-    isDragging?: boolean;
-    /** listener, dispatch an event when the user drags, clicks or tabs at the slider */
-    onInput?: (value: number) => void;
+	/** min value of the slider */
+	min?: string | number;
+	/** max value of the slider */
+	max?: string | number;
+	/** step value of the slider */
+	step?: string | number;
+	/** value of the slider */
+	value?: number;
+	/**
+	 * method to convert the current value to a string representation of the value for the `aria-valuetext` attribute.
+	 * For example, a battery meter value might be conveyed as aria-valuetext="8% (34 minutes) remaining".
+	 * See [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-valuetext)
+	 */
+	ariaValueText?: (current: number) => string;
+	/** input name of the slider */
+	name?: string | undefined;
+	/** direction of the slider */
+	direction?: 'horizontal' | 'vertical';
+	/** if true, the min and max values will be reversed */
+	reverse?: boolean;
+	/** disables mouse events */
+	keyboardOnly?: boolean;
+	/** div element representing the slider */
+	slider?: HTMLDivElement | undefined;
+	/** aria-label props */
+	ariaLabel?: string | undefined;
+	/** aria-labelledby props */
+	ariaLabelledBy?: string | undefined;
+	/** aria-controls props */
+	ariaControls?: string | undefined;
+	/** indicate if the slider is being dragged */
+	isDragging?: boolean;
+	/** listener, dispatch an event when the user drags, clicks or tabs at the slider */
+	onInput?: (value: number) => void;
 }
 /**
  * **Props**
@@ -52,6 +52,6 @@ interface Props {
  * @prop isDragging: boolean = false — indicate if the slider is being dragged
  * @prop onInput: (value: number) =&gt; void — listener, dispatch an event when the user drags, clicks or tabs at the slider
  */
-declare const Slider: import("svelte").Component<Props, {}, "value">;
+declare const Slider: import('svelte').Component<Props, {}, 'value'>;
 type Slider = ReturnType<typeof Slider>;
 export default Slider;

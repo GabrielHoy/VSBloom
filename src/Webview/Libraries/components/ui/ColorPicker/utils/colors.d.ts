@@ -6,25 +6,31 @@ import type { A11yColor } from '../type/types.js';
  * @returns
  */
 export declare function mix(hexA: string, hexB?: string): string;
-export declare function getContrast(a11yColor: A11yColor, hex: string | undefined): {
-    trueColors: {
-        textColor: string;
-        bgColor: string;
-    };
-    contrast: number;
-    placeholder?: string;
-    size?: "normal" | "large";
-    textHex: string;
-    bgHex?: string;
-    reverse: true;
-} | {
-    trueColors: {
-        textColor: string;
-        bgColor: string;
-    };
-    contrast: number;
-    placeholder?: string;
-    size?: "normal" | "large";
-    bgHex?: string;
-    reverse?: false;
-} | undefined;
+export declare function getContrast(
+	a11yColor: A11yColor,
+	hex: string | undefined,
+):
+	| {
+			trueColors: {
+				textColor: string;
+				bgColor: string;
+			};
+			contrast: number;
+			placeholder?: string;
+			size?: 'normal' | 'large';
+			textHex: string;
+			bgHex?: string;
+			reverse: true;
+	  }
+	| {
+			trueColors: {
+				textColor: string;
+				bgColor: string;
+			};
+			contrast: number;
+			placeholder?: string;
+			size?: 'normal' | 'large';
+			bgHex?: string;
+			reverse?: false;
+	  }
+	| undefined;
