@@ -64,9 +64,6 @@ export class MenuPanel {
 			MenuPanel.currentPanel.panel.reveal(ViewColumn.One);
 			MenuPanel.currentPanel.visible = true;
 			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
-			console.debug(
-				`Webview menu panel visibility changed to true (existing panel revealed)`,
-			);
 			if (pageNameOpenTo) {
 				MenuPanel.currentPanel.PostToSvelte({
 					type: 'swap-page',
@@ -93,7 +90,6 @@ export class MenuPanel {
 			);
 			MenuPanel.currentPanel.visible = true;
 			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
-			console.debug(`Webview menu panel visibility changed to true (new panel created)`);
 		}
 	}
 
@@ -159,11 +155,9 @@ export class MenuPanel {
 			(_e) => {
 				if (this.panel.visible) {
 					this.visible = true;
-					console.debug(`Webview menu panel visibility changed to true`);
 					vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
 				} else {
 					this.visible = false;
-					console.debug(`Webview menu panel visibility changed to false`);
 					vscode.commands.executeCommand(
 						'setContext',
 						'vsbloom.menuPanel.visible',

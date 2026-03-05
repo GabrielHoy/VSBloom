@@ -56,13 +56,12 @@ function OnWindowBlurred(_event: Event) {
 	}
 }
 
-function OnWindowFocused(event: Event) {
+function OnWindowFocused(_event: Event) {
 	if (!document.hasFocus()) {
 		//If the window got 'focused' but we
 		//don't have focus on the document...
 		//im not sure what exactly this is,
 		//but it's probably not an 'actual' focus event!
-		console.debug('OnWindowFocused but hasFocus=false...?', event);
 		return;
 	}
 	if (currentUnfocusUUID) {
