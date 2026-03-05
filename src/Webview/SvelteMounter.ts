@@ -15,7 +15,7 @@ vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
     AssignCurrentEffectSettings(data);
 });
 
-const webviewPage = mount(WebviewPage, { target: document.getElementById("page")! });
+const webviewPage = mount(WebviewPage, { target: document.getElementById("mount-sentinel-element")! });
 
 //Once we've mounted the webview Svelte page,
 //let's let the extension know that we're ready

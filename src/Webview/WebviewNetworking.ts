@@ -1,4 +1,5 @@
 import type { VSBloomClientConfig } from "../ExtensionBridge/Bridge";
+import type { PageDescriptor } from "./Global/Pages.svelte";
 
 //Bloom Extension -> Svelte
 export interface SyncSettingsListMessage {
@@ -14,7 +15,13 @@ export interface UpdateMetadataMessage {
         clientPatchVersion: string;
     }
 }
-export type BloomToSveltePayload = SyncSettingsListMessage | UpdateMetadataMessage;
+export interface ExternalPageSwapMessage {
+    type: 'swap-page',
+    data: {
+        newPage: PageDescriptor["name"];
+    }
+}
+export type BloomToSveltePayload = SyncSettingsListMessage | UpdateMetadataMessage | ExternalPageSwapMessage;
 
 
 //Svelte -> Bloom Extension

@@ -27,6 +27,6 @@
 		}
 	},
   
-	"include": ["**/*", "SvelteMounter.ts.ts"],
+	"include": ["**/*", "SvelteMounter.ts.ts", "../Extension/WebviewMenuPanel.ts"],
 	"exclude": ["node_modules/*", "__sapper__/*", "public/*"]
 }

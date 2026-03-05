@@ -8,7 +8,7 @@ import * as VersionTracking from "./VersionTracking";
 import { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import { EffectManager } from "../Effects/EffectManager";
 import { ConstructVSBloomLogPrefix } from "../Debug/Colorful";
-import { MenuPanel } from "../Webview/MenuPanel";
+import { MenuPanel } from "./WebviewMenuPanel";
 import { StatusBarIconManager } from "./StatusBarIconManager";
 
 enum ClientPatchingStatus {
@@ -229,7 +229,7 @@ async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): P
   return false;
 }
 
-async function AttemptOpenMenu(context: vscode.ExtensionContext) {
+async function AttemptOpenMenu(context: vscode.ExtensionContext, pageNameOpenTo?: string) {
   if (!effectManager) {
     vscode.window.showErrorMessage("Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!");
     return;
@@ -239,7 +239,7 @@ async function AttemptOpenMenu(context: vscode.ExtensionContext) {
     return;
   }
 
-  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri, context, server);
+  MenuPanel.ShowPanel("vsbloom", "VS: Bloom", context.extensionUri, context, server, pageNameOpenTo);
 }
 
 /**
@@ -250,6 +250,8 @@ async function AttemptOpenMenu(context: vscode.ExtensionContext) {
  */
 async function ExtensionActivatedAndClientPatchingVerified(context: vscode.ExtensionContext) {
   try {
+    vscode.commands.executeCommand('setContext', 'vsbloom.clientPatched', true);
+
     //initialize and start the WebSocket bridge
     const currentBridge = GetBridgeServer(context);
 
@@ -262,7 +264,7 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
     //initialize the effect manager and do the same for it
     const manager = GetEffectManager(context);
     context.subscriptions.push(manager);
-    
+
 
 
     console.log(`${ConstructVSBloomLogPrefix("Extension", "info")}Extension activation flow completed!`);
@@ -289,8 +291,7 @@ async function OnExtensionConfigChanged(context: vscode.ExtensionContext, e: vsc
     if (config.get<boolean>("vsbloom.extensionConfigurationsNote.README")) {
       // Just checked the readme config
 
-      //TODO: Short-circuit here into the settings page instead of opening to the main menu
-      AttemptOpenMenu(context);
+      AttemptOpenMenu(context, "Extension Settings");
 
       // Un-check the readme config by un-setting the config value
       // We'll try and handle odd cases as well here such as the user
@@ -435,6 +436,11 @@ export function activate(context: vscode.ExtensionContext) {
       await AttemptOpenMenu(context);
     });
     context.subscriptions.push(openWebViewCmdDisp);
+
+    const openSettingsEditorCmdDisp = vscode.commands.registerCommand("vsbloom.openExtensionSettingsEditor", async () => {
+      await AttemptOpenMenu(context, "Extension Settings");
+    });
+    context.subscriptions.push(openSettingsEditorCmdDisp);
 
     // Hookup an event listener for extension config changes
     // We also do this in a few other places, but this is a 'top level'

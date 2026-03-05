@@ -4,15 +4,16 @@
 <script lang="ts">
 	import './CSS/Main.css';
 	import "./CSS/shadcn.css";
-	import { pageData } from "./Global/Pages.svelte";
+	import { pageData, SetCurrentPage } from "./Global/Pages.svelte";
 	import Unknown from "./Components/Pages/Unknown.svelte";
 	import { directories } from "./Global/Directories.svelte";
 	import ScaleReflectionSingleton from "./Components/UX/ScaleReflectionSingleton.svelte";
 	import PersistentMetadataDisplay from "./Components/PersistentMetadataDisplay.svelte";
 	import { LoadPersistentState, persistentState } from './Global/PersistentWebviewState.svelte';
-	import { onDestroy } from "svelte";
+	import { mount, onDestroy } from "svelte";
 	import { vscode } from "./Util/VSCodeAPI";
 	import * as Dialog from "$webview-svelte-lib/components/ui/dialog/index";
+	import type { ExternalPageSwapMessage } from "./WebviewNetworking";
 
 	//Load up any VSCode persistent state for the webview
 	//first so we can restore certain stateful items in
@@ -21,6 +22,15 @@
 	pageData.currentPage = persistentState.currentPage;
 	if (pageData.currentPage !== "Main Menu") {
 		vscode.ChangeTitle(pageData.currentPage);
+	}
+
+	const mountingSentinelElement = document.getElementById("mount-sentinel-element");
+	if (!mountingSentinelElement) {
+		throw new Error("Unable to resolve mount sentinel element within mounted Webview Svelte component; this should never happen.");
+	}
+	const initialPageNameFromExtension = mountingSentinelElement.getAttribute("data-initial-page-name");
+	if (initialPageNameFromExtension) {
+		pageData.currentPage = initialPageNameFromExtension;
 	}
 
 	const colorsToGenerateInversionsFor = [
@@ -150,11 +160,19 @@
 	});
 	bodyClassObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
+
+	//listen for page swap requests from the extension
+	function HandlePageSwapRequest(data: ExternalPageSwapMessage["data"]) {
+		SetCurrentPage(data.newPage);
+	}
+	vscode.ObserveBloomToSvelteMessage('swap-page', HandlePageSwapRequest);
+	
 	//cleanup observer when component is destroyed
 	onDestroy(() => {
+		vscode.RemoveBloomToSvelteMessageObserver('swap-page', HandlePageSwapRequest);
+
 		bodyClassObserver.disconnect();
 	});
-
 </script>
 
 <!--

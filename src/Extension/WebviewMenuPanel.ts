@@ -3,9 +3,9 @@ import type { VSBloomBridgeServer } from "../ExtensionBridge/Server";
 import * as ClientPatcher from "../Patcher/ClientPatcher";
 import { Uri, Disposable, ViewColumn } from "vscode";
 import type { WebviewPanel, Webview } from "vscode";
-import type { BloomToSveltePayload, SvelteToBloomPayload } from "./WebviewNetworking";
-import * as ExtensionReflection from "../Extension/ExtensionReflection";
-import * as VersionTracking from "../Extension/VersionTracking";
+import type { BloomToSveltePayload, SvelteToBloomPayload } from "../Webview/WebviewNetworking";
+import * as ExtensionReflection from "./ExtensionReflection";
+import * as VersionTracking from "./VersionTracking";
 
 function GetWebviewURI(webview: Webview, extensionUri: Uri, pathList: string[]) {
 	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
@@ -24,24 +24,40 @@ export function GetScriptNOnce() {
 export class MenuPanel {
 	private readonly panel: WebviewPanel;
 	private disposables: Disposable[] = [];
-	public static currentPanel: MenuPanel | undefined;
 	private readonly context: vscode.ExtensionContext;
 	private readonly server: VSBloomBridgeServer;
+	public static currentPanel: MenuPanel | undefined;
+	public visible: boolean = false;
 
-	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer) {
+	private constructor(panel: WebviewPanel, uri: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
 		this.panel = panel;
 		this.context = context;
 		this.server = server;
-		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
-		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri);
+		this.panel.onDidDispose(() => {
+			this.visible = false;
+			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', false);
+			this.dispose();
+		}, null, this.disposables);
+		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri, pageNameOpenTo);
 		this.panel.iconPath = Uri.joinPath(uri, "imagery", "logo.png");
 		this.SetWebviewMessageListener(this.panel.webview);
-		this.SetupExtensionConfigChangedListener();
+		this.SetupPanelChangeListeners();
 	}
 
-	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer) {
+	public static ShowPanel(view: string, name: string, webviewURI: Uri, context: vscode.ExtensionContext, server: VSBloomBridgeServer, pageNameOpenTo?: string) {
 		if (MenuPanel.currentPanel) {
 			MenuPanel.currentPanel.panel.reveal(ViewColumn.One);
+			MenuPanel.currentPanel.visible = true;
+			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
+			console.debug(`Webview menu panel visibility changed to true (existing panel revealed)`);
+			if (pageNameOpenTo) {
+				MenuPanel.currentPanel.PostToSvelte({
+					type: 'swap-page',
+					data: {
+						newPage: pageNameOpenTo
+					}
+				});
+			}
 		} else {
 			const panel = vscode.window.createWebviewPanel(
 				view,
@@ -53,7 +69,10 @@ export class MenuPanel {
 				}
 			);
 
-			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context, server);
+			MenuPanel.currentPanel = new MenuPanel(panel, webviewURI, context, server, pageNameOpenTo);
+			MenuPanel.currentPanel.visible = true;
+			vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
+			console.debug(`Webview menu panel visibility changed to true (new panel created)`);
 		}
 	}
 
@@ -73,7 +92,7 @@ export class MenuPanel {
 		}
 	}
 
-	public GetWebviewContent(webview: Webview, uri: Uri) {
+	public GetWebviewContent(webview: Webview, uri: Uri, initialPageName?: string) {
 		const scriptUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.js"]);
 		const styleUri = GetWebviewURI(webview, uri, ["build", "Webview", "view.css"]);
 		const iconUri = GetWebviewURI(webview, uri, ["imagery", "logo.png"]);
@@ -97,17 +116,29 @@ export class MenuPanel {
 					<link href="${styleUri}" rel="stylesheet" />
                 </head>
 
-                <body id="page" webview-imagery-uri="${GetWebviewURI(webview, uri, ["imagery"])}">
+                <body id="mount-sentinel-element" ${initialPageName ? `data-initial-page-name="${initialPageName}"` : ""} webview-imagery-uri="${GetWebviewURI(webview, uri, ["imagery"])}">
                 	<script nonce="${nonce}" src="${scriptUri}"></script>
                 </body>
             </html>
         `;
 	}
 
-	private SetupExtensionConfigChangedListener() {
+	private SetupPanelChangeListeners() {
 		vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration('vsbloom')) {
 				this.SendSettingsListToSvelte();
+			}
+		}, undefined, this.disposables);
+
+		this.panel.onDidChangeViewState((e) => {
+			if (this.panel.visible) {
+				this.visible = true;
+				console.debug(`Webview menu panel visibility changed to true`);
+				vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', true);
+			} else {
+				this.visible = false;
+				console.debug(`Webview menu panel visibility changed to false`);
+				vscode.commands.executeCommand('setContext', 'vsbloom.menuPanel.visible', false);
 			}
 		}, undefined, this.disposables);
 	}

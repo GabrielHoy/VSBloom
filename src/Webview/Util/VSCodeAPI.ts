@@ -14,7 +14,7 @@ class VSCodeAPI {
     }
 
     private InitializeWebviewImageDirectory() {
-        const pageElement = document.getElementById('page');
+        const pageElement = document.getElementById('mount-sentinel-element')!;
         if (!pageElement) {
             this.PostToExtension({
                 type: 'send-notification',
