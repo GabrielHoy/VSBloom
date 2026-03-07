@@ -4,7 +4,7 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
-## [1.4.0] - 2026-03-05
+## [1.4.0] - 2026-03-07
 
 ### Fixed
 - Refactored the "Client Corruption Warning Suppression" setting, some people on the newest VSCode update got softlocked from the way it previously patched the client; this will never happen again now due to the inclusion of a JS parser in the patching process - If the corruption suppression attempts to "patch" the client with invalid JS in the future, it will fail and complain to the user instead of catastrophically crashing VSCode etc.
