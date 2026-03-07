@@ -3,6 +3,8 @@
 .cursor
 .claude
 .github
+.biome.jsonc
+.prettierrc
 
 #Dependencies
 node_modules
