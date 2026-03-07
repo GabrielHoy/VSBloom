@@ -1,3 +1,5 @@
+<!-- markdownlint-disable-file-->
+
 ### 2.9.3
 
 - Fix types export for TypeScript 4.7 ❤️ [@pkishorez](https://github.com/pkishorez)

@@ -1,3 +1,5 @@
+<!-- markdownlint-disable-file-->
+
 MIT License
 
 Copyright (c) 2020 Vlad Shilov omgovich@ya.ru

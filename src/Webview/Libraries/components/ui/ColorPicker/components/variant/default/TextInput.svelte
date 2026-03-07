@@ -34,7 +34,8 @@
 
 	const HEX_COLOR_REGEX = /^#?([A-F0-9]{6}|[A-F0-9]{8})$/i;
 
-	let mode: 'hex' | 'rgb' | 'hsv' = $state(textInputModes[0] || 'hex');
+	// svelte-ignore state_referenced_locally
+let mode: 'hex' | 'rgb' | 'hsv' = $state(textInputModes[0] || 'hex');
 
 	let nextMode = $derived(textInputModes[(textInputModes.indexOf(mode) + 1) % textInputModes.length]);
 
