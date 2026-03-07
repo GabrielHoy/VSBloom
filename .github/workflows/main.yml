@@ -10,6 +10,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.18.0
+      - run: npm install --global npm@11.11.0
+      - run: node --version && npm --version
       - run: npm ci
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
