@@ -9,6 +9,7 @@
 		"url": "https://tamperedreality.net"
 	},
 	"version": "1.4.0",
+	"packageManager": "npm@11.11.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",
 	"pricing": "Free",
