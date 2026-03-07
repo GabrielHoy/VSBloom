@@ -32,6 +32,7 @@ import * as path from 'node:path';
 import { Mutex } from 'async-mutex';
 import * as Common from './Common';
 import * as FileBackups from './FileBackups';
+import { IsJSValid } from './SafeJSPatching';
 
 export const HTML_FILE_PATCH_INDICATOR = `<!--\n\n\tThis file has been modified by the VSBloom Extension.\n\n\tIf you wish to revert the modifications made to this file,\n\tyou can do so at any time by simply disabling the VSBloom\n\textension inside of VSCode.\n\n\tAlternatively in the case that something has gone\n\twrong with VSBloom, you can manually restore the contents\n\tof this file by finding the '.bak${Common.VSBLOOM_FILE_EXTENSION}' file by the same name\n\tas this one inside of the same directory this\n\tfile is located in, deleting this file, and renaming the backup\n\tto this file's name accordingly.\n\n-->\n\n`;
 export const JS_FILE_PATCH_INDICATOR = `/*\n\n\tThis file has been modified by the VSBloom Extension.\n\n\tIf you wish to revert the modifications made to this file,\n\tyou can do so at any time by simply disabling the VSBloom\n\textension inside of VSCode.\n\n\tAlternatively in the case that something has gone\n\twrong with VSBloom, you can manually restore the contents\n\tof this file by finding the '.bak${Common.VSBLOOM_FILE_EXTENSION}' file by the same name\n\tas this one inside of the same directory this\n\tfile is located in, deleting this file, and renaming the backup\n\tto this file's name accordingly.\n\n*/\n\n`;
@@ -547,6 +548,7 @@ export async function PatchElectronHTMLFile(
 export async function SuppressWorkbenchClientModificationWarning(
 	mainAppProductFilePath: string,
 	wbScriptPath: string,
+	vscode?: typeof import('vscode'),
 ): Promise<boolean> {
 	const wbScriptContents = await fs.promises.readFile(wbScriptPath, 'utf8');
 	const purityCheckConditionExtractionRegex =
@@ -561,21 +563,34 @@ export async function SuppressWorkbenchClientModificationWarning(
 		return false; //code was probably updated and this regex is no longer usable
 	}
 
-	const purityCheckConditionalIdx = purityCheckRegexMatch[0].indexOf(purityCheckRegexMatch[1]);
-	if (purityCheckConditionalIdx === -1) {
-		return false; //code was probably updated and this regex is no longer usable
+	//Find the variable position in the original script, not just in the match string
+	const fullMatch = purityCheckRegexMatch[0];
+
+	//Extra layer of validation to make sure the exact pattern we're going to replace is known
+	const ifParenRegex = /if\s?\((\w+)\)/;
+	const ifParenMatch = fullMatch.match(ifParenRegex);
+
+	if (!ifParenMatch || !ifParenMatch[0] || !ifParenMatch[1]) {
+		return false; //shouldn't occur, just being defensive
 	}
 
-	const patchedWbScriptContents =
-		JS_FILE_PATCH_INDICATOR +
-		wbScriptContents.slice(0, purityCheckRegexMatch.index) +
-		purityCheckRegexMatch[0].slice(0, purityCheckConditionalIdx) +
-		purityCheckRegexMatch[1] +
-		'||true' +
-		purityCheckRegexMatch[0].slice(
-			purityCheckConditionalIdx + purityCheckRegexMatch[1].length,
-		) +
-		wbScriptContents.slice(purityCheckRegexMatch.index + purityCheckRegexMatch[0].length);
+	const replacedFullIfExpr = fullMatch.replace(ifParenRegex, `if($1||true)`);
+
+	const patchedWbScriptContents = 
+	JS_FILE_PATCH_INDICATOR +
+	wbScriptContents.replace(fullMatch, replacedFullIfExpr);
+
+
+	const [isPatchedJSValid, patchedJSSyntaxErr] = IsJSValid(patchedWbScriptContents);
+
+	if (!isPatchedJSValid) {
+		vscode?.window.showErrorMessage(`FAILURE in Client Corruption Warning Suppression Patch; VSC's Patched Electron JS file at '${wbScriptPath}' is not valid JavaScript: ${patchedJSSyntaxErr?.message}`);
+		throw new Error(
+			Common.RaiseError(
+				`FAILURE in Client Corruption Warning Suppression Patch; VSC's Patched Electron JS file at '${wbScriptPath}' is not valid JavaScript: ${patchedJSSyntaxErr?.message}`,
+			)
+		);
+	}
 
 	await fs.promises.writeFile(wbScriptPath, patchedWbScriptContents).catch((err) => {
 		throw new Error(
@@ -609,6 +624,7 @@ export async function PerformClientPatching(
 	wantsClientCorruptWarningSupression: boolean,
 	bridgePort: number,
 	authToken: string,
+	vscode?: typeof import('vscode'),
 ) {
 	//handle patching workbench.html to embed the VSBloom Bridge client script
 	await GetPathToAppFile(mainAppProductFilePath, 'workbench.html')
@@ -660,6 +676,7 @@ export async function PerformClientPatching(
 					await SuppressWorkbenchClientModificationWarning(
 						mainAppProductFilePath,
 						wbJsPath,
+						vscode
 					);
 				}
 			})

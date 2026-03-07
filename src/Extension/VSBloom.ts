@@ -149,6 +149,7 @@ async function EnsureClientIsPatched(
 				suppressClientCorruptWarning,
 				bridgePort,
 				authToken,
+				vscode,
 			);
 			return ClientPatchingStatus.NEEDS_RESTART;
 		}
@@ -161,6 +162,7 @@ async function EnsureClientIsPatched(
 			suppressClientCorruptWarning,
 			bridgePort,
 			authToken,
+			vscode,
 		);
 		return ClientPatchingStatus.NEEDS_RESTART;
 	}
@@ -316,6 +318,10 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 		//initialize the effect manager and do the same for it
 		const manager = GetEffectManager();
 		context.subscriptions.push(manager);
+
+		//initialize the status bar icon manager
+		statusBarIconManager = new StatusBarIconManager();
+		context.subscriptions.push(statusBarIconManager);
 
 		console.log(
 			`${ConstructVSBloomLogPrefix('Extension', 'info')}Extension activation flow completed!`,
@@ -602,10 +608,6 @@ export function activate(context: vscode.ExtensionContext) {
 				},
 			);
 			context.subscriptions.push(extensionCfgChangedDisp);
-
-			// Initialize the status bar icon manager
-			statusBarIconManager = new StatusBarIconManager();
-			context.subscriptions.push(statusBarIconManager);
 
 			//ensure that we're working with a patched client
 			//before we continue with the rest of the extension
