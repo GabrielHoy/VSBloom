@@ -9,14 +9,20 @@ import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
 import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
+import { ExtensionAPI, PatchedExtensionAPI, UnpatchedExtensionAPI, VSBloomExtensionExports } from './API/ExtensionAPI';
+import { DeferredResultProvider } from './API/DeferredResults';
 
 /**
  * Called after the extension is activated and the current client is
  * verified to have been correctly patched and ready to go
  *
  * *For practical use this can be thought of as the 'real' extension entry point*
+ * 
+ * This function is responsible for returning a promise which will be resolved
+ * with the patched extension API, once the extension is fully activated and
+ * the client is verified to have been correctly patched&ready to go
  */
-async function ExtensionActivatedAndClientPatchingVerified(context: vscode.ExtensionContext) {
+async function ExtensionActivatedAndClientPatchingVerified(context: vscode.ExtensionContext): Promise<ExtensionAPI> {
 	try {
 		vscode.commands.executeCommand('setContext', 'vsbloom.clientPatched', true);
 
@@ -44,6 +50,13 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 		console.log(
 			`${ConstructVSBloomLogPrefix('Extension', 'info')}Extension activation flow completed!`,
 		);
+
+		return {
+			isClientPatched: true,
+
+			GetEffectManager: () => effectManager,
+			GetBridgeServer: () => currentBridge,
+		} as PatchedExtensionAPI;
 	} catch (error) {
 		console.error(
 			`${ConstructVSBloomLogPrefix('Extension', 'error')}Failed to start bridge server:`,
@@ -53,6 +66,13 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 			'Failed to start the bridge server. Some features may not work correctly. ' +
 				'Another VSCode window may already be hosting the bridge.',
 		);
+
+		// If we failed to bootstrap the extension's bridge server/effect manager,
+		// to external extensions this should be considered as an 'un-patched' client
+		// for all intents and purposes
+		return {
+			isClientPatched: false
+		} as UnpatchedExtensionAPI;
 	}
 }
 
@@ -116,10 +136,23 @@ async function OnExtensionConfigChanged(
 /**
  * VSCode's extension entry point
  */
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): VSBloomExtensionExports {
 	console.log(
 		`${ConstructVSBloomLogPrefix('Extension', 'info')}VSBloom extension activated by VSCode`,
 	);
+
+	// Before we enter this monolithic asynchronous function,
+	// let's get an extension API provider reference that we can resolve
+	// later on when we've determined whether the client is patched or not
+	//
+	// A consumer for this will be exposed to other extensions as a property
+	// on this extension's exports object. We intentionally do not return the
+	// deferred directly from `activate`, because VSCode awaits Thenable
+	// return values during activation - it would be problematic if VSCode
+	// awaited a DeferredResult that may only be resolved/rejected *much* later
+	// down the line.
+	const extensionAPIProvider = new DeferredResultProvider<ExtensionAPI>();
+
 	ClientPatcher.GetMainApplicationProductFile(vscode)
 		.then(async (appProductFilePath) => {
 			console.log(
@@ -328,6 +361,7 @@ export function activate(context: vscode.ExtensionContext) {
 			//logic and initialization
 			const wasClientAlreadyPatchedDuringExtensionActivation =
 				await ClientPatcher.IsClientPatched(appProductFilePath);
+
 			if (!wasClientAlreadyPatchedDuringExtensionActivation) {
 				console.log(
 					`${ConstructVSBloomLogPrefix('Extension', 'warn')}Client is not currently patched`,
@@ -342,7 +376,12 @@ export function activate(context: vscode.ExtensionContext) {
 					);
 					//the user previously said that they don't want us prompting them
 					//to patch the client again in the future at some point, so we'll
-					//assume they're going to patch it when they want and just go dormant
+					//assume they're going to patch it when they want and just go dormant.
+					// This is still a valid "unpatched" state for API consumers.
+					extensionAPIProvider.resolve({
+						isClientPatched: false
+					});
+
 					return;
 				}
 
@@ -356,6 +395,12 @@ export function activate(context: vscode.ExtensionContext) {
 						`${ConstructVSBloomLogPrefix('Extension', 'info')}User agreed to client patching`,
 					);
 					await vscode.commands.executeCommand('vsbloom.enable', true);
+
+					// In this case we've just patched the client but it's not actually "running" yet,
+					// so we'll resolve with an 'un-patched' client API to external consumers
+					extensionAPIProvider.resolve({
+						isClientPatched: false
+					});
 				} else {
 					console.log(
 						`${ConstructVSBloomLogPrefix('Extension', 'warn')}User declined client patching; going dormant`,
@@ -363,26 +408,52 @@ export function activate(context: vscode.ExtensionContext) {
 					vscode.window.showInformationMessage(
 						"Not patching the Electron Client, VSBloom will not be able to function until this patch is performed - you can trigger this patch at any time in the future to enable VSBloom by running the 'VSBloom: Enable and Patch Electron Client' command!",
 					);
+
+					// In this case the user has just declined to patch the client so we'll
+					// naturally resolve with an 'un-patched' client API to external consumers
+					extensionAPIProvider.resolve({
+						isClientPatched: false
+					});
 					return;
 				}
-			}
-
-			//If the client was already patched, let's get chugging along!
-			if (wasClientAlreadyPatchedDuringExtensionActivation) {
+			} else {
+				//If the client was already patched, let's get chugging along!
 				console.log(
 					`${ConstructVSBloomLogPrefix('Extension', 'info')}Client is currently patched; continuing with extension activation`,
 				);
-
-				await ExtensionActivatedAndClientPatchingVerified(context);
+	
+				// This 'activated-and-patched' function is just to break us out
+				// of this huge async chain and give us a clean code block to work with
+				// once we've determined that the client is patched;
+				// It will return a promise to us which is resolved with an
+				// object that fulfills the ExtensionAPI interface, which we
+				// will promptly use to resolve our provider promise and
+				// drill the Extension API over to wherever it needs to go,
+				// assuming other extensions want to utilize the VSBloom API
+				ExtensionActivatedAndClientPatchingVerified(context).then((api) => {
+					extensionAPIProvider.resolve(api);
+				}).catch((err) => {
+					extensionAPIProvider.reject(err);
+				});
 			}
 		})
 		.catch((err) => {
-			throw new Error(
+			// If we fail to find the application's 'product.json' file, we'll
+			// reject the API provider to let any consumers know that something
+			// went rather wrong
+			extensionAPIProvider.reject(new Error(
 				Common.RaiseError(
 					`VSBloom failed to find the application's 'product.json' file, you may need to manually specify an appropriate file path in VS Code's installation directory for this file -- Error: ${err.message}`,
 				),
-			);
+			));
 		});
+
+
+	// Return a plain object so VSCode forwards it immediately as the
+	// extension's public exports without awaiting the deferred API provider.
+	return {
+		extensionAPI: extensionAPIProvider.consumer,
+	} as VSBloomExtensionExports;
 }
 
 export function deactivate() {
