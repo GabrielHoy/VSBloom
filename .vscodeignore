@@ -1,14 +1,12 @@
 #Unused Imagery
-logo20.png
-logo64.png
-svg/
+imagery/svg/
 
 #"Dot" Directories&Files
 .vscode
 .cursor
 .claude
 .github
-.biome.jsonc
+biome.jsonc
 .prettierrc
 
 #Dependencies
