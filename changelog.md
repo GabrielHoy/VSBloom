@@ -4,6 +4,12 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
+## [UNRELEASED] - 2026-03-XX
+
+### Added
+- VS: Bloom now exports its internals for other extensions to utilize to their hearts content, if they'd like to! *Wonder if this makes us a modding platform now...potential rebrand...?"
+
+
 ## [1.4.0] - 2026-03-07
 
 ### Fixed
