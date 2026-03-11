@@ -4,6 +4,7 @@
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"target": "ESNext",
+		"types": [],
 		/**
 		Svelte Preprocess cannot figure out whether we're importing a value/type, so tell TypeScript
 		to enforce using `import type` instead of `import` for types
@@ -27,6 +28,6 @@
 		}
 	},
 
-	"include": ["**/*", "SvelteMounter.ts.ts", "../Extension/WebviewMenuPanel.ts"],
+	"include": ["**/*", "SvelteMounter.ts", "../Extension/WebviewMenuPanel.ts"],
 	"exclude": ["node_modules/*", "__sapper__/*", "public/*"]
 }

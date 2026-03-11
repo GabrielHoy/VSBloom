@@ -21,12 +21,16 @@ function average(a, b, alpha) {
 		.padStart(2, '0');
 }
 export function getContrast(a11yColor, hex) {
-	if (!hex) return;
+	if (!hex) {
+		return;
+	}
 	if (a11yColor.reverse) {
 		const bgOverWhiteBg = mix(a11yColor.bgHex ?? '#FFFFFF');
 		const bg = mix(hex, bgOverWhiteBg);
 		const ft = mix(a11yColor.textHex, bg);
-		if (!ft) return;
+		if (!ft) {
+			return;
+		}
 		const cft = colord(ft);
 		return {
 			...a11yColor,
@@ -37,10 +41,14 @@ export function getContrast(a11yColor, hex) {
 			contrast: cft.contrast(bg),
 		};
 	} else {
-		if (!a11yColor.bgHex) return;
+		if (!a11yColor.bgHex) {
+			return;
+		}
 		const bg = mix(a11yColor.bgHex);
 		const ft = mix(hex, bg);
-		if (!ft) return;
+		if (!ft) {
+			return;
+		}
 		const cft = colord(ft);
 		return {
 			...a11yColor,
