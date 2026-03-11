@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { colord } from './colord';
+	import { colord } from 'colord';
 	import type { Components } from '../type/types.js';
 	import { Slider } from './svelte-awesome-slider';
 	import type { Texts } from '../utils/texts.js';
@@ -21,7 +21,15 @@
 		onInput: (color: { s: number; v: number }) => void;
 	}
 
-	let { components, h, s = $bindable(), v = $bindable(), isDark, texts, onInput }: Props = $props();
+	let {
+		components,
+		h,
+		s = $bindable(),
+		v = $bindable(),
+		isDark,
+		texts,
+		onInput,
+	}: Props = $props();
 
 	let picker: HTMLDivElement | undefined = $state();
 
@@ -40,7 +48,7 @@
 		const { width, left, height, top } = picker.getBoundingClientRect();
 		const mouse = {
 			x: clamp(e.clientX - left, 0, width),
-			y: clamp(e.clientY - top, 0, height)
+			y: clamp(e.clientY - top, 0, height),
 		};
 
 		s = clamp(mouse.x / width, 0, 1) * 100;
@@ -74,7 +82,7 @@
 		if (typeof s === 'number' && typeof v === 'number' && picker)
 			pos = {
 				x: s,
-				y: 100 - v
+				y: 100 - v,
 			};
 	});
 
@@ -95,7 +103,8 @@
 	ontouchend={touch}
 	style:--picker-color-bg={pickerColorBg}
 >
-	<components.pickerIndicator {pos} /> <!-- {isDark} /> -->
+	<components.pickerIndicator {pos} />
+	<!-- {isDark} /> -->
 	<div class="s" style:--pos-y={pos.y}>
 		<Slider
 			value={s}
@@ -142,7 +151,8 @@ N.A.
 		width: calc(var(--spacing) * 50);
 		height: calc(var(--spacing) * 50);
 		background:
-			linear-gradient(#ffffff00, #000000ff), linear-gradient(0.25turn, #ffffffff, #00000000), var(--picker-color-bg);
+			linear-gradient(#ffffff00, #000000ff), linear-gradient(0.25turn, #ffffffff, #00000000),
+			var(--picker-color-bg);
 		border: calc(var(--spacing) * 0.25) solid color-mix(in srgb, var(--border) 50%, transparent);
 		border-radius: calc(var(--spacing) * 1.618);
 		outline: none;
@@ -166,14 +176,20 @@ N.A.
 	}
 
 	.s {
-		top: calc(var(--pos-y) * (calc(var(--spacing) * 50) - var(--picker-indicator-size, 10px) - 4px) / 100 + 2px);
+		top: calc(
+			var(--pos-y) * (calc(var(--spacing) * 50) - var(--picker-indicator-size, 10px) - 4px) /
+				100 + 2px
+		);
 		left: 2px;
 		--track-width: calc(calc(var(--spacing) * 50) - 4px);
 	}
 
 	.v {
 		top: 2px;
-		left: calc(var(--pos-x) * (calc(var(--spacing) * 50) - var(--picker-indicator-size, 10px) - 4px) / 100 + 2px);
+		left: calc(
+			var(--pos-x) * (calc(var(--spacing) * 50) - var(--picker-indicator-size, 10px) - 4px) /
+				100 + 2px
+		);
 		--track-width: calc(calc(var(--spacing) * 50) - 4px);
 	}
 </style>

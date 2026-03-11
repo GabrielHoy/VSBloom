@@ -1,4 +1,4 @@
-import { colord } from '../components/colord';
+import { colord } from 'colord';
 /**
  * compute the resulting color of hexA over hexB. If hexB has transparency, computes it over a white background
  * @param hexA

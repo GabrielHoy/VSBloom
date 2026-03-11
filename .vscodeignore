@@ -1,3 +1,8 @@
+#Unused Imagery
+logo20.png
+logo64.png
+svg/
+
 #"Dot" Directories&Files
 .vscode
 .cursor
@@ -49,3 +54,6 @@ imagery/logoBlackAndWhiteSemiSimple.png
 imagery/logoBlackAndWhiteSimple.png
 imagery/CorruptionSuppressionSetting.png
 imagery/CorruptExample.png
+
+#Notifications
+README_LOGO.md

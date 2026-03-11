@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { defaultA11yTexts, type A11yTextsPartial } from '../../../utils/texts';
 	import type { A11yColor, Components } from '../../../type/types';
-	import { extend } from '../../colord';
-	import a11yPlugin from '../../colord/plugins/a11y';
+	import { extend } from 'colord';
+	import a11yPlugin from 'colord/plugins/a11y';
 	import { getNumberOfGradeFailed } from './grades';
 	import { getContrast } from '../../../utils/colors';
 
@@ -26,7 +26,7 @@
 	function getTexts() {
 		return {
 			...defaultA11yTexts,
-			...a11yTexts
+			...a11yTexts,
 		};
 	}
 
@@ -34,11 +34,13 @@
 		a11yColors
 			.map((a11yColor) => getContrast(a11yColor, hex))
 			.filter(Boolean)
-			.map((x) => x!)
+			.map((x) => x!),
 	);
 
 	let count = $derived(
-		_a11yColors.map((color) => getNumberOfGradeFailed(color, a11yLevel)).reduce((acc, c) => acc + c)
+		_a11yColors
+			.map((color) => getNumberOfGradeFailed(color, a11yLevel))
+			.reduce((acc, c) => acc + c),
 	);
 </script>
 

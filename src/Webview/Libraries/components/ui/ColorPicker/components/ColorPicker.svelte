@@ -2,7 +2,7 @@
 	import type { A11yColor, Components } from '../type/types';
 	import { defaultTexts, type A11yTextsPartial, type TextsPartial } from '../utils/texts';
 	import { trapFocus, type Trap } from '../utils/trapFocus';
-	import { colord, type Colord, type HsvaColor, type RgbaColor } from './colord';
+	import { colord, type Colord, type HsvaColor, type RgbaColor } from 'colord';
 	import { tick } from 'svelte';
 	import { Slider } from './svelte-awesome-slider';
 	import Picker from './Picker.svelte';
@@ -60,7 +60,12 @@
 		a11yTexts?: A11yTextsPartial | undefined;
 		/** listener, dispatch an event when the color changes */
 		onInput?:
-			| ((color: { hsv: HsvaColor | null; rgb: RgbaColor | null; hex: string | null; color: Colord | null }) => void)
+			| ((color: {
+					hsv: HsvaColor | null;
+					rgb: RgbaColor | null;
+					hex: string | null;
+					color: Colord | null;
+			  }) => void)
 			| undefined;
 		/** Optional array of color swatches to display below the picker */
 		swatches?: string[];
@@ -90,7 +95,7 @@
 		texts = undefined,
 		a11yTexts = undefined,
 		onInput,
-		swatches
+		swatches,
 	}: Props = $props();
 
 	/**
@@ -119,13 +124,13 @@
 		textInput: TextInput,
 		input: Input,
 		nullabilityCheckbox: NullabilityCheckbox,
-		wrapper: Wrapper
+		wrapper: Wrapper,
 	};
 
 	function getComponents() {
 		return {
 			...default_components,
-			...components
+			...components,
 		};
 	}
 
@@ -133,23 +138,26 @@
 		return {
 			label: {
 				...defaultTexts.label,
-				...texts?.label
+				...texts?.label,
 			},
 			color: {
 				...defaultTexts.color,
-				...texts?.color
+				...texts?.color,
 			},
 			changeTo: texts?.changeTo ?? defaultTexts.changeTo,
 			swatch: {
 				...texts?.swatch,
-				...defaultTexts.swatch
-			}
+				...defaultTexts.swatch,
+			},
 		};
 	}
 
 	function mousedown({ target }: MouseEvent) {
 		if (isDialog) {
-			if (labelElement?.contains(target as Node) || labelElement?.isSameNode(target as Node)) {
+			if (
+				labelElement?.contains(target as Node) ||
+				labelElement?.isSameNode(target as Node)
+			) {
 				isOpen = !isOpen;
 			} else if (isOpen && !wrapper?.contains(target as Node) && !disableCloseClickOutside) {
 				isOpen = false;
@@ -236,13 +244,24 @@
 		if (_hex?.substring(7) === 'ff') _hex = _hex.substring(0, 7);
 
 		// triggers color computation from the color that changed or if it is the only color defined
-		if (hsv && (hsv.h !== _hsv.h || hsv.s !== _hsv.s || hsv.v !== _hsv.v || hsv.a !== _hsv.a || (!rgb && !hex))) {
+		if (
+			hsv &&
+			(hsv.h !== _hsv.h ||
+				hsv.s !== _hsv.s ||
+				hsv.v !== _hsv.v ||
+				hsv.a !== _hsv.a ||
+				(!rgb && !hex))
+		) {
 			color = colord(hsv);
 			rgb = color.toRgb();
 			hex = color.toHex();
 		} else if (
 			rgb &&
-			(rgb.r !== _rgb.r || rgb.g !== _rgb.g || rgb.b !== _rgb.b || rgb.a !== _rgb.a || (!hsv && !hex))
+			(rgb.r !== _rgb.r ||
+				rgb.g !== _rgb.g ||
+				rgb.b !== _rgb.b ||
+				rgb.a !== _rgb.a ||
+				(!hsv && !hex))
 		) {
 			color = colord(rgb);
 			hex = color.toHex();
@@ -286,7 +305,7 @@
 			}
 			hsv = {
 				...hsv,
-				[letter]: letterValue
+				[letter]: letterValue,
 			};
 		};
 	}
@@ -300,7 +319,7 @@
 			}
 			hsv = {
 				...hsv,
-				...Object.fromEntries(letters.map((letter: T[number]) => [letter, color[letter]]))
+				...Object.fromEntries(letters.map((letter: T[number]) => [letter, color[letter]])),
 			};
 		};
 	}
@@ -314,7 +333,8 @@
 		const labelRect = labelElement.getBoundingClientRect();
 
 		if (position === 'responsive' || position === 'responsive-y') {
-			const isWrapperToLow = labelRect.top + wrapperRect.height + wrapperPadding > innerHeight;
+			const isWrapperToLow =
+				labelRect.top + wrapperRect.height + wrapperPadding > innerHeight;
 			if (isWrapperToLow) {
 				wrapper.style.top = `-${wrapperRect.height + wrapperPadding}px`;
 			} else {
@@ -325,7 +345,12 @@
 		if (position === 'responsive' || position === 'responsive-x') {
 			if (dir === 'rtl') {
 				const isWrapperToLeft = labelRect.left + labelRect.width - wrapperRect.width < 0;
-				console.log(isWrapperToLeft, labelRect.left - wrapperRect.width, labelRect.left, wrapperRect.width);
+				console.log(
+					isWrapperToLeft,
+					labelRect.left - wrapperRect.width,
+					labelRect.left,
+					wrapperRect.width,
+				);
 				if (isWrapperToLeft) {
 					wrapper.style.left = `0px`;
 				} else {
@@ -376,7 +401,7 @@
 			{isDark}
 			texts={getTexts()}
 		/>
-		<br/>
+		<br />
 		<div class="h">
 			<Slider
 				min={0}
@@ -390,7 +415,7 @@
 			/>
 		</div>
 		{#if isAlpha}
-			<br/>
+			<br />
 			<div class="a" style:--alphaless-color={(hex ? hex : _hex).substring(0, 7)}>
 				<Slider
 					min={0}
@@ -406,12 +431,12 @@
 		{/if}
 
 		{#if swatches && swatches.length > 0}
-			<br/>
+			<br />
 			<Swatches {swatches} {selectSwatch} texts={getTexts()} />
 		{/if}
 
 		{#if isTextInput}
-			<br/>
+			<br />
 			<CPComponents.textInput
 				hex={hex ?? _hex}
 				rgb={rgb ?? _rgb}
@@ -499,8 +524,11 @@ import ColorPicker from 'svelte-awesome-color-picker';
 		--track-width: var(--picker-height, calc(var(--spacing) * 50));
 		--track-height: calc(var(--spacing) * 3.5);
 		--track-width: calc(var(--spacing) * 55);
-		--track-border: calc(var(--spacing) * 0.25) solid color-mix(in srgb, var(--border) 50%, transparent);
-		--thumb-size: calc(var(--slider-width, calc(var(--spacing) * 3.5)) - calc(var(--spacing) * 0.2));
+		--track-border: calc(var(--spacing) * 0.25) solid
+			color-mix(in srgb, var(--border) 50%, transparent);
+		--thumb-size: calc(
+			var(--slider-width, calc(var(--spacing) * 3.5)) - calc(var(--spacing) * 0.2)
+		);
 		--thumb-background: white;
 		--thumb-border: calc(var(--spacing) * 0.25) solid black;
 		--margin-block: 0;
@@ -509,7 +537,9 @@ import ColorPicker from 'svelte-awesome-color-picker';
 	}
 	.horizontal .h,
 	.horizontal .a {
-		--track-width: calc(var(--picker-width, calc(var(--spacing) * 50)) - calc(var(--spacing) * 2));
+		--track-width: calc(
+			var(--picker-width, calc(var(--spacing) * 50)) - calc(var(--spacing) * 2)
+		);
 
 		--gradient-direction: 0.25turn;
 		margin: calc(var(--spacing) * 0.5) calc(var(--spacing) * 0.75);
@@ -526,8 +556,8 @@ import ColorPicker from 'svelte-awesome-color-picker';
 		grid-area: hue;
 
 		--gradient-hue:
-			#ff1500fb, #ffff00 17.2%, #ffff00 18.2%, #00ff00 33.3%, #00ffff 49.5%, #00ffff 51.5%, #0000ff 67.7%,
-			#ff00ff 83.3%, #ff0000;
+			#ff1500fb, #ffff00 17.2%, #ffff00 18.2%, #00ff00 33.3%, #00ffff 49.5%, #00ffff 51.5%,
+			#0000ff 67.7%, #ff00ff 83.3%, #ff0000;
 		--track-background: linear-gradient(var(--gradient-direction), var(--gradient-hue));
 	}
 
@@ -538,11 +568,15 @@ import ColorPicker from 'svelte-awesome-color-picker';
 		/* redefine css variable as it may not be available in case of a portal */
 		--grid-size-base: calc((0.314em / var(--scale-factor)) * 2);
 		--alpha-grid-bg:
-			linear-gradient(45deg, #eee 25%, #bbb8 25%, #bbb8 75%, #eee 75%) 0 0 / calc(var(--grid-size-base) * 2) calc(var(--grid-size-base) * 2),
-			linear-gradient(45deg, #eee 25%, #bbb8 25%, #bbb8 75%, #eee 75%) var(--grid-size-base) var(--grid-size-base) / calc(var(--grid-size-base) * 2) calc(var(--grid-size-base) * 2);
+			linear-gradient(45deg, #eee 25%, #bbb8 25%, #bbb8 75%, #eee 75%) 0 0 /
+				calc(var(--grid-size-base) * 2) calc(var(--grid-size-base) * 2),
+			linear-gradient(45deg, #eee 25%, #bbb8 25%, #bbb8 75%, #eee 75%) var(--grid-size-base)
+				var(--grid-size-base) / calc(var(--grid-size-base) * 2)
+				calc(var(--grid-size-base) * 2);
 
 		--track-background:
-			linear-gradient(var(--gradient-direction), rgba(0, 0, 0, 0), var(--alphaless-color)), var(--alpha-grid-bg);
+			linear-gradient(var(--gradient-direction), rgba(0, 0, 0, 0), var(--alphaless-color)),
+			var(--alpha-grid-bg);
 	}
 
 	span :global(.sr-only) {
