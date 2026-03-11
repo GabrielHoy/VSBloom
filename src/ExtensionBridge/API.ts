@@ -1,5 +1,5 @@
 /**
- * VSBloom Bridge
+ * VSBloom Bridge API
  *
  * Provides constant definitions as well as
  * message type/interface definitions for

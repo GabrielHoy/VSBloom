@@ -18,11 +18,11 @@
 
 /// <reference lib="dom" />
 
-import type { VSBloomClientConfig, VSBloomConfigValue } from '../../ExtensionBridge/Bridge';
+import type { VSBloomClientConfig, VSBloomConfigValue } from '../../ExtensionBridge/API';
 import {
 	GetEffectConfigValueNoDefault,
 	GetInternalPathForEffectProperty,
-} from '../../ExtensionBridge/Bridge';
+} from '../../ExtensionBridge/API';
 import type { VSBloomConfigUpdateEvent } from '../../ExtensionBridge/ElectronGlobals';
 import type { Janitor } from './Janitors';
 

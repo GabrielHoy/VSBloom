@@ -1,296 +1,14 @@
-import * as path from 'node:path';
-import * as sudo from '@vscode/sudo-prompt';
+
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { EffectManager } from '../Effects/EffectManager';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import * as ClientPatcher from '../Patcher/ClientPatcher';
 import * as Common from '../Patcher/Common';
-import * as Elevation from '../Patcher/Elevation';
 import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
-
-enum ClientPatchingStatus {
-	PATCHED = 0,
-	NEEDS_RESTART = 1,
-	FAILED = 2,
-	UNPATCHED = 3,
-}
-
-//Global references for the bridge and effect manager
-let server: VSBloomBridgeServer | null = null;
-let effectManager: EffectManager | null = null;
-let statusBarIconManager: StatusBarIconManager | null = null;
-
-/**
- * Get(or create) the bridge server singleton
- */
-function GetBridgeServer(context: vscode.ExtensionContext): VSBloomBridgeServer {
-	if (!server) {
-		server = new VSBloomBridgeServer(context);
-	}
-	return server;
-}
-
-/**
- * Get(or create) the effect manager singleton
- */
-function GetEffectManager(): EffectManager {
-	if (!effectManager) {
-		if (!server) {
-			throw new Error(
-				'Server is not initialized, but effect manager is attempted to be created',
-			);
-		}
-
-		effectManager = new EffectManager(server);
-	}
-	return effectManager;
-}
-
-/**
- * Ensure that the current client is correctly patched and ready
- * to go - and patches it if it's not
- */
-async function EnsureClientIsPatched(
-	context: vscode.ExtensionContext,
-	appProductFilePath: string,
-): Promise<ClientPatchingStatus> {
-	const isClientPatched = await ClientPatcher.IsClientPatched(appProductFilePath);
-
-	if (isClientPatched) {
-		return ClientPatchingStatus.PATCHED;
-	}
-
-	const config = vscode.workspace.getConfiguration();
-	const suppressClientCorruptWarning =
-		config.get<boolean>('vsbloom.patcher.suppressCorruptionWarning') === true;
-
-	//get the bridge server's parameters for patching
-	const currentBridge = GetBridgeServer(context);
-	const bridgePort = currentBridge.GetServerPort();
-	const authToken = currentBridge.GetAuthToken();
-
-	//the client isn't patched, we need to patch it
-	const amIElevated = await Elevation.HasElevation();
-	if (!amIElevated) {
-		//not a big deal as long as we can still patch app files,
-		//but we'll need to elevate if the VSC installation is
-		//installed system-wide instead of being user-local
-		const needsElevationToPatch =
-			await ClientPatcher.WouldClientPatchingRequireElevation(appProductFilePath);
-
-		if (needsElevationToPatch) {
-			//we'll have to prompt the user for elevation if we want
-			//to apply the patches we need to in order for VSBloom's
-			//launcher to function properly
-			const elevatedPatcherScriptPath = path.join(__dirname, 'ElevatedClientPatcher.js');
-
-			return new Promise<ClientPatchingStatus>((resolve, reject) => {
-				//pass all required arguments to the elevated patcher
-				const args = [
-					`"${elevatedPatcherScriptPath}"`,
-					`"patch"`,
-					`"${appProductFilePath}"`,
-					`"${suppressClientCorruptWarning.toString()}"`,
-					`"${bridgePort}"`,
-					`"${authToken}"`,
-				].join(' ');
-
-				sudo.exec(
-					`node ${args}`,
-					{
-						name: 'VSBloom',
-					},
-					(error, stdout, stderr) => {
-						if (error) {
-							//error might just be that the user disallowed our elevation request
-							if (error.message.includes('User did not grant permission')) {
-								//fair enough
-								vscode.window.showErrorMessage(
-									"VSBloom's client patcher was denied process elevation, the VSBloom extension cannot correctly function without this.",
-								);
-								resolve(ClientPatchingStatus.FAILED);
-								return;
-							} else {
-								reject(
-									new Error(
-										Common.RaiseError(
-											`Elevation handoff encountered an error: ${error.message}`,
-										),
-									),
-								);
-								return;
-							}
-						}
-
-						console.log(
-							`${ConstructVSBloomLogPrefix('Extension', 'debug')}Elevated Client Patch - stdout:`,
-							stdout,
-						);
-						console.log(
-							`${ConstructVSBloomLogPrefix('Extension', 'debug')}Elevated Client Patch - stderr:`,
-							stderr,
-						);
-
-						//if there's no error from the elevated script's process,
-						//we can assume that the patching was successful
-						resolve(ClientPatchingStatus.NEEDS_RESTART);
-						return;
-					},
-				);
-			});
-		} else {
-			//we don't need elevation to patch the client,
-			//so we can do so without further ado
-			await ClientPatcher.PerformClientPatching(
-				appProductFilePath,
-				suppressClientCorruptWarning,
-				bridgePort,
-				authToken,
-				vscode,
-			);
-			return ClientPatchingStatus.NEEDS_RESTART;
-		}
-	} else {
-		//if we're already elevated as is, we can
-		//still perform our patching even with VSC
-		//being installed system-wide
-		await ClientPatcher.PerformClientPatching(
-			appProductFilePath,
-			suppressClientCorruptWarning,
-			bridgePort,
-			authToken,
-			vscode,
-		);
-		return ClientPatchingStatus.NEEDS_RESTART;
-	}
-}
-
-async function EnsureClientIsUnpatched(appProductFilePath: string): Promise<ClientPatchingStatus> {
-	const isClientPatched = await ClientPatcher.IsClientPatched(appProductFilePath);
-
-	if (!isClientPatched) {
-		return ClientPatchingStatus.UNPATCHED;
-	}
-
-	//client is patched, we need to un-patch it
-	const amIElevated = await Elevation.HasElevation();
-	if (!amIElevated) {
-		//not a big deal as long as we can still modify app files,
-		//but we'll need to elevate if the VSC installation is
-		//installed system-wide instead of being user-local
-		const needsElevationToUnPatch =
-			await ClientPatcher.WouldClientPatchingRequireElevation(appProductFilePath);
-
-		if (needsElevationToUnPatch) {
-			//we'll have to prompt the user for elevation if we want
-			//to remove the patches we applied to the client
-			const elevatedPatcherScriptPath = path.join(__dirname, 'ElevatedClientPatcher.js');
-
-			return new Promise<ClientPatchingStatus>((resolve, reject) => {
-				sudo.exec(
-					`node "${elevatedPatcherScriptPath}" "unPatch" "${appProductFilePath}"`,
-					{
-						name: 'VSBloom',
-					},
-					(error, stdout, stderr) => {
-						if (error) {
-							//error might just be that the user disallowed our elevation request
-							if (error.message.includes('User did not grant permission')) {
-								vscode.window.showErrorMessage(
-									'VSBloom was denied process elevation while trying to remove client patches, the extension cannot undo its changes to the client without this.',
-								);
-								resolve(ClientPatchingStatus.FAILED);
-								return;
-							} else {
-								reject(
-									new Error(
-										Common.RaiseError(
-											`Elevation handoff encountered an error: ${error.message}`,
-										),
-									),
-								);
-								return;
-							}
-						}
-
-						console.log(
-							`${ConstructVSBloomLogPrefix('Extension', 'debug')}Elevated Client Un-patch - stdout:`,
-							stdout,
-						);
-						console.log(
-							`${ConstructVSBloomLogPrefix('Extension', 'debug')}Elevated Client Un-patch - stderr:`,
-							stderr,
-						);
-
-						//if there's no error from the elevated script's process,
-						//we can assume that the un-patching was successful
-						resolve(ClientPatchingStatus.NEEDS_RESTART);
-						return;
-					},
-				);
-			});
-		} else {
-			//we don't need elevation to un-patch the client,
-			//so we can do so without further ado
-			await ClientPatcher.UnPatchClient(appProductFilePath);
-			return ClientPatchingStatus.NEEDS_RESTART;
-		}
-	} else {
-		//if we're already elevated as is, we can
-		//still un-patch the client even with VSCode
-		//being installed system-wide
-		await ClientPatcher.UnPatchClient(appProductFilePath);
-		return ClientPatchingStatus.NEEDS_RESTART;
-	}
-}
-
-/**
- * Show a prompt to the user asking if they're OK with
- * patching the client, then return their response
- */
-async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): Promise<boolean> {
-	const userChoice = await vscode.window.showInformationMessage(
-		"In order for VSBloom to function properly, we need to apply a patch to the Electron Client to make many of the extension's features possible. Are you OK with this?",
-		'Yes',
-		'No',
-		"Don't Show Again",
-	);
-
-	if (userChoice === 'Yes') {
-		return true;
-	} else if (userChoice === "Don't Show Again") {
-		context.globalState.update('vsbloom.patcher.doNotAskToPatchClient', true);
-	}
-
-	return false;
-}
-
-async function AttemptOpenMenu(context: vscode.ExtensionContext, pageNameOpenTo?: string) {
-	if (!effectManager) {
-		vscode.window.showErrorMessage(
-			'Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!',
-		);
-		return;
-	}
-	if (!server) {
-		vscode.window.showErrorMessage(
-			'Could not find the bridge server, try running this command on the window that has the VSBloom: Extension Bridge channel open in the Output panel!',
-		);
-		return;
-	}
-
-	MenuPanel.ShowPanel(
-		'vsbloom',
-		'VS: Bloom',
-		context.extensionUri,
-		context,
-		server,
-		pageNameOpenTo,
-	);
-}
+import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
 
 /**
  * Called after the extension is activated and the current client is
@@ -303,7 +21,7 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 		vscode.commands.executeCommand('setContext', 'vsbloom.clientPatched', true);
 
 		//initialize and start the WebSocket bridge
-		const currentBridge = GetBridgeServer(context);
+		const currentBridge = VSBloomBridgeServer.GetInstance(context);
 
 		console.log(
 			`${ConstructVSBloomLogPrefix('Extension', 'info')}Attempting to fire up the extension bridge server`,
@@ -316,11 +34,11 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 		);
 
 		//initialize the effect manager and do the same for it
-		const manager = GetEffectManager();
-		context.subscriptions.push(manager);
+		const effectManager = EffectManager.GetInstance(context);
+		context.subscriptions.push(effectManager);
 
 		//initialize the status bar icon manager
-		statusBarIconManager = new StatusBarIconManager();
+		const statusBarIconManager = StatusBarIconManager.GetInstance();
 		context.subscriptions.push(statusBarIconManager);
 
 		console.log(
@@ -346,7 +64,8 @@ async function OnExtensionConfigChanged(
 		return; //this config change doesn't affect us
 	}
 
-	statusBarIconManager?.ExtensionConfigurationUpdated(e);
+	const statusBarIconManager = StatusBarIconManager.GetInstance();
+	statusBarIconManager.ExtensionConfigurationUpdated(e);
 
 	if (e.affectsConfiguration('vsbloom.extensionConfigurationsNote.README')) {
 		// If&when the user checks the 'readme' config, we'll attempt to redirect them to the menu
@@ -355,7 +74,7 @@ async function OnExtensionConfigChanged(
 		if (config.get<boolean>('vsbloom.extensionConfigurationsNote.README')) {
 			// Just checked the readme config
 
-			AttemptOpenMenu(context, 'Extension Settings');
+			MenuPanel.ShowPanel(context, 'Extension Settings');
 
 			// Un-check the readme config by un-setting the config value
 			// We'll try and handle odd cases as well here such as the user
@@ -568,12 +287,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const reloadEffectsCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.reloadEffects',
 				async () => {
-					if (!effectManager) {
-						vscode.window.showErrorMessage(
-							'Could not find the effect manager, try running this command on the window that has the Effect Manager channel open in the Output panel!',
-						);
-						return;
-					}
+					const effectManager = EffectManager.GetInstance(context);
 					await effectManager.ReloadAllEffects();
 					vscode.window.showInformationMessage(
 						`Reloaded ${effectManager.GetLoadedEffects().length} effect(s)!`,
@@ -585,8 +299,8 @@ export function activate(context: vscode.ExtensionContext) {
 			//hookup the command to open the webview for vsbloom
 			const openWebViewCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.openMenu',
-				async () => {
-					await AttemptOpenMenu(context);
+				async (pageNameOpenTo?: string) => {
+					return MenuPanel.ShowPanel(context, pageNameOpenTo);
 				},
 			);
 			context.subscriptions.push(openWebViewCmdDisp);
@@ -594,7 +308,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const openSettingsEditorCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.openExtensionSettingsEditor',
 				async () => {
-					await AttemptOpenMenu(context, 'Extension Settings');
+					return MenuPanel.ShowPanel(context, 'Extension Settings');
 				},
 			);
 			context.subscriptions.push(openSettingsEditorCmdDisp);
@@ -675,8 +389,4 @@ export function deactivate() {
 	//cleanup is handled by the subscriptions system via Disposable interface
 	//The bridge and effect manager are added to context.subscriptions
 	//and will be disposed automatically
-
-	//clear global references
-	server = null;
-	effectManager = null;
 }

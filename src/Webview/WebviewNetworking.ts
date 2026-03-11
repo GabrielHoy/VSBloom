@@ -1,4 +1,4 @@
-import type { VSBloomClientConfig } from '../ExtensionBridge/Bridge';
+import type { VSBloomClientConfig } from '../ExtensionBridge/API';
 import type { PageDescriptor } from './Global/Pages.svelte';
 
 //Bloom Extension -> Svelte

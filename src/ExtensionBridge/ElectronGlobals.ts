@@ -12,7 +12,7 @@
 /// <reference lib="dom.iterable" />
 
 import type { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
-import type { VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue } from './Bridge';
+import type { VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue } from './API';
 
 //we'll re-export config types for convenience(laziness) here
 export type { EffectConfigResolver, VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue };

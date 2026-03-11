@@ -14,8 +14,8 @@
 /// <reference lib="dom.iterable" />
 
 import { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
-import type { ClientToExtensionMessage, ExtensionToClientMessage } from './Bridge';
-import { INITIAL_RECONNECT_DELAY_MS, MAX_RECONNECT_DELAY_MS } from './Bridge';
+import type { ClientToExtensionMessage, ExtensionToClientMessage } from './API';
+import { INITIAL_RECONNECT_DELAY_MS, MAX_RECONNECT_DELAY_MS } from './API';
 import './ElectronGlobals'; //side-effect import for global augmentation
 import type {
 	IVSBloomClient,
@@ -102,7 +102,11 @@ class VSBloomClient implements IVSBloomClient {
 		private authToken: string,
 	) {
 		this.windowId = this.GetNewWindowId();
-		this.SyncWindowIDUpdatesWithWindowTitleUpdates();
+
+		// ?With the addition of Pseudo-Sockets this is proably
+		// ?too risky, since we're now dealing with two IPC jumps 
+		// ?and I'm not sure if I'm OK with the data-races this brings on
+		// this.SyncWindowIDUpdatesWithWindowTitleUpdates();
 
 		//create the trusted types policy we need to dynamically run
 		//code in a way that satisfies the CSP directives in vsc's workbench.html
@@ -155,12 +159,10 @@ class VSBloomClient implements IVSBloomClient {
 	 * to which window
 	 */
 	private GetNewWindowId(): string {
-		const timestamp = Date.now().toString(36).slice(-3);
-		const random = Math.random().toString(36).slice(-3);
-		const currentWindowTitle =
-			window.document.title.length > 0 ? window.document.title : 'Untitled';
+		const timestamp = Date.now().toString(36).slice(-7);
+		const random = Math.random().toString(36).slice(-7);
 
-		return `#${random}${timestamp}/${currentWindowTitle}`;
+		return `#${random}${timestamp}`;
 	}
 
 	/**
@@ -701,14 +703,12 @@ class VSBloomClient implements IVSBloomClient {
 	 * inside of the Electron Renderer's DOM
 	 */
 	private SyncWindowIDUpdatesWithWindowTitleUpdates(): void {
-		const getCurrentTitle = (): string => document.title;
-
-		let lastKnownTitle = getCurrentTitle();
+		let lastKnownTitle = document.title;
 
 		let titleObserver: MutationObserver | null = null;
 
 		const onTitleChange = () => {
-			const newTitle = getCurrentTitle();
+			const newTitle = document.title;
 			if (lastKnownTitle !== newTitle) {
 				lastKnownTitle = newTitle;
 				this.windowId = this.GetNewWindowId();

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { type Disposable, Uri, ViewColumn } from 'vscode';
-import type { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import * as ClientPatcher from '../Patcher/ClientPatcher';
 import type { BloomToSveltePayload, SvelteToBloomPayload } from '../Webview/WebviewNetworking';
 import * as ExtensionReflection from './ExtensionReflection';
@@ -23,7 +23,6 @@ export class MenuPanel {
 	private readonly panel: vscode.WebviewPanel;
 	private disposables: Disposable[] = [];
 	private readonly context: vscode.ExtensionContext;
-	private readonly server: VSBloomBridgeServer;
 	public static currentPanel: MenuPanel | undefined;
 	public visible: boolean = false;
 
@@ -31,12 +30,10 @@ export class MenuPanel {
 		panel: vscode.WebviewPanel,
 		uri: Uri,
 		context: vscode.ExtensionContext,
-		server: VSBloomBridgeServer,
 		pageNameOpenTo?: string,
 	) {
 		this.panel = panel;
 		this.context = context;
-		this.server = server;
 		this.panel.onDidDispose(
 			() => {
 				this.visible = false;
@@ -53,11 +50,7 @@ export class MenuPanel {
 	}
 
 	public static ShowPanel(
-		view: string,
-		name: string,
-		webviewURI: Uri,
 		context: vscode.ExtensionContext,
-		server: VSBloomBridgeServer,
 		pageNameOpenTo?: string,
 	) {
 		if (MenuPanel.currentPanel) {
@@ -73,19 +66,18 @@ export class MenuPanel {
 				});
 			}
 		} else {
-			const panel = vscode.window.createWebviewPanel(view, name, ViewColumn.One, {
+			const panel = vscode.window.createWebviewPanel('vsbloom', 'VS: Bloom', ViewColumn.One, {
 				enableScripts: true,
 				localResourceRoots: [
-					Uri.joinPath(webviewURI, 'build'),
-					Uri.joinPath(webviewURI, 'imagery'),
+					Uri.joinPath(context.extensionUri, 'build'),
+					Uri.joinPath(context.extensionUri, 'imagery'),
 				],
 			});
 
 			MenuPanel.currentPanel = new MenuPanel(
 				panel,
-				webviewURI,
+				context.extensionUri,
 				context,
-				server,
 				pageNameOpenTo,
 			);
 			MenuPanel.currentPanel.visible = true;
@@ -224,7 +216,7 @@ export class MenuPanel {
 	}
 
 	private async SendSettingsListToSvelte() {
-		const settings = this.server.GetCurrentExtensionConfig();
+		const settings = VSBloomBridgeServer.GetCurrentExtensionConfig();
 		this.PostToSvelte({
 			type: 'sync-settings-list',
 			data: settings,

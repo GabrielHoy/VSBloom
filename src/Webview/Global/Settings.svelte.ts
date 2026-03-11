@@ -3,7 +3,7 @@ import type {
 	VSBloomClientConfig,
 	VSBloomConfigObject,
 	VSBloomConfigValue,
-} from '../../ExtensionBridge/Bridge';
+} from '../../ExtensionBridge/API';
 import { vscode } from '../Util/VSCodeAPI';
 
 const defaultEffectSettings = extensionPackageJSON.contributes.configuration;

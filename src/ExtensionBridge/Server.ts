@@ -22,7 +22,7 @@ import {
 	type VSBloomConfigObject,
 	type VSBloomConfigValue,
 	WS_CLOSE_CODES,
-} from './Bridge';
+} from './API';
 
 interface ConnectedClient {
 	ws: WebSocket;
@@ -30,7 +30,12 @@ interface ConnectedClient {
 	connectedAt: Date;
 }
 
+/**
+ * A Static/Singleton class that manages the WebSocket server for the VSBloom extension.
+ */
 export class VSBloomBridgeServer implements vscode.Disposable {
+	private static instance: VSBloomBridgeServer | null = null;
+
 	private wss: WebSocketServer | null = null;
 	private clients: Map<string, ConnectedClient> = new Map();
 	private authToken: string;
@@ -61,7 +66,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 */
 	public readonly OnClientDisconnected: vscode.Event<string> = this._onClientDisconnected.event;
 
-	constructor(context: vscode.ExtensionContext) {
+	private constructor(context: vscode.ExtensionContext) {
 		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Extension Bridge');
 
 		//retrieve or generate auth token
@@ -72,6 +77,13 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			this.authToken = crypto.randomBytes(32).toString('hex');
 			context.globalState.update('vsbloom.bridge.authToken', this.authToken);
 		}
+	}
+
+	public static GetInstance(context: vscode.ExtensionContext): VSBloomBridgeServer {
+		if (!VSBloomBridgeServer.instance) {
+			VSBloomBridgeServer.instance = new VSBloomBridgeServer(context);
+		}
+		return VSBloomBridgeServer.instance;
 	}
 
 	/**
@@ -219,7 +231,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Broadcast the current configuration to all clients.
 	 */
 	public ReplicateExtensionConfigToAllClients(): void {
-		const config = this.GetCurrentExtensionConfig();
+		const config = VSBloomBridgeServer.GetCurrentExtensionConfig();
 		this.FireAllClients({
 			type: 'replicate-extension-config',
 			settings: config,
@@ -232,7 +244,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * This extracts all vsbloom.* settings without needing to manually
 	 * specify each one, making it self-maintaining as new settings are added.
 	 */
-	public GetCurrentExtensionConfig(): VSBloomClientConfig {
+	public static GetCurrentExtensionConfig(): VSBloomClientConfig {
 		const rawConfig = vscode.workspace.getConfiguration().get('vsbloom');
 
 		if (!rawConfig || typeof rawConfig !== 'object') {
@@ -246,14 +258,14 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	/**
 	 * Check if a value is a plain object (not an array, null, or other object type).
 	 */
-	private IsPlainJSObject(val: unknown): val is Record<string, unknown> {
+	private static IsPlainJSObject(val: unknown): val is Record<string, unknown> {
 		return typeof val === 'object' && val !== null && !Array.isArray(val);
 	}
 
 	/**
 	 * Check if a value is a valid config primitive that can be serialized.
 	 */
-	private IsSerializableConfigPrimitive(val: unknown): val is VSBloomConfigValue {
+	private static IsSerializableConfigPrimitive(val: unknown): val is VSBloomConfigValue {
 		const type = typeof val;
 		return (
 			type === 'string' ||
@@ -268,7 +280,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Recursively extract configuration values from an object.
 	 * Filters out functions, symbols, and other non-serializable values.
 	 */
-	private ExtractExtensionConfigObject(obj: Record<string, unknown>): VSBloomConfigObject {
+	private static ExtractExtensionConfigObject(obj: Record<string, unknown>): VSBloomConfigObject {
 		const result: VSBloomConfigObject = {};
 
 		for (const key of Object.keys(obj)) {
@@ -399,7 +411,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 
 		//send the current extension configuration over
 		//to this client so they're synchronized appropriately
-		const config = this.GetCurrentExtensionConfig();
+		const config = VSBloomBridgeServer.GetCurrentExtensionConfig();
 		ws.send(
 			JSON.stringify({
 				type: 'replicate-extension-config',
@@ -500,5 +512,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		this._onClientReady.dispose();
 		this._onClientDisconnected.dispose();
 		this.outputChannel.dispose();
+
+		VSBloomBridgeServer.instance = null;
 	}
 }

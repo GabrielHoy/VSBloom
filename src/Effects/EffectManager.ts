@@ -12,13 +12,13 @@ import * as path from 'node:path';
 import * as jsonc from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
-import type { EffectConfiguration } from '../ExtensionBridge/Bridge';
+import type { EffectConfiguration } from '../ExtensionBridge/API';
 import {
 	DoesExtensionConfigValueExist,
 	GetExtensionConfigValue,
 	GetInternalPathForEffectProperty,
-} from '../ExtensionBridge/Bridge';
-import type { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+} from '../ExtensionBridge/API';
+import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 
 interface LoadedEffect {
 	effectName: string;
@@ -29,12 +29,14 @@ interface LoadedEffect {
 }
 
 export class EffectManager implements vscode.Disposable {
+	private static instance: EffectManager | null = null;
+
 	private loadedEffects: Map<string, LoadedEffect> = new Map();
 	private staticEffectConfigs: Map<string, EffectConfiguration> = new Map();
 	private outputChannel: vscode.OutputChannel;
 	private managerDisposables: vscode.Disposable[] = [];
 
-	constructor(private server: VSBloomBridgeServer) {
+	private constructor(private server: VSBloomBridgeServer) {
 		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Effect Manager');
 		this.managerDisposables.push(this.outputChannel);
 
@@ -75,8 +77,20 @@ export class EffectManager implements vscode.Disposable {
 		this.Log('debug', 'Effect manager initialized and ready to go');
 	}
 
+	public static GetInstance(context: vscode.ExtensionContext): EffectManager {
+		if (!EffectManager.instance) {
+			const currentBridge = VSBloomBridgeServer.GetInstance(context);
+			if (!currentBridge) {
+				throw new Error('Server is not initialized, but effect manager is attempted to be created');
+			}
+			EffectManager.instance = new EffectManager(currentBridge);
+		}
+
+		return EffectManager.instance;
+	}
+
 	private HandleExtensionConfigsChanged(): void {
-		const currentCfg = this.server.GetCurrentExtensionConfig();
+		const currentCfg = VSBloomBridgeServer.GetCurrentExtensionConfig();
 		//Handle loading/unloading of effects based on
 		//current config values
 		for (const [effectName, effectConfig] of this.staticEffectConfigs.entries()) {
@@ -390,5 +404,7 @@ export class EffectManager implements vscode.Disposable {
 		this.managerDisposables.forEach((disposable) => {
 			disposable.dispose();
 		});
+
+		EffectManager.instance = null;
 	}
 }

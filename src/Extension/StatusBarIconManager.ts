@@ -1,10 +1,19 @@
 import * as vscode from 'vscode';
 
 export class StatusBarIconManager {
+	private static instance: StatusBarIconManager | null = null;
+
 	private statusBarItem: vscode.StatusBarItem | undefined;
 
-	constructor() {
+	private constructor() {
 		this.UpdateStatusBarIconEnabledState();
+	}
+
+	public static GetInstance(): StatusBarIconManager {
+		if (!StatusBarIconManager.instance) {
+			StatusBarIconManager.instance = new StatusBarIconManager();
+		}
+		return StatusBarIconManager.instance;
 	}
 
 	private async CreateStatusBarIcon() {
@@ -40,8 +49,10 @@ export class StatusBarIconManager {
 		}
 	}
 
-	dispose() {
+	public dispose() {
 		this.statusBarItem?.dispose();
 		this.statusBarItem = undefined;
+
+		StatusBarIconManager.instance = null;
 	}
 }
