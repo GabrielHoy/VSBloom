@@ -2,8 +2,39 @@ import { EffectManager } from '../../Effects/EffectManager';
 import { type DeferredResultConsumer } from './DeferredResults';
 import { VSBloomBridgeServer } from '../../ExtensionBridge/Server';
 
+export enum UnpatchedClientState {
+    /**
+     * The client is simply not patched right now.
+     */
+    NOT_PATCHED = 'NOT_PATCHED',
+
+    /**
+     * The user previously told VSBloom not to keep prompting
+     * them about patching the client, so the extension is dormant.
+     */
+    PATCH_PROMPT_SUPPRESSED = 'PATCH_PROMPT_SUPPRESSED',
+
+    /**
+     * The user declined the patch prompt during this activation.
+     */
+    PATCH_PROMPT_DECLINED = 'PATCH_PROMPT_DECLINED',
+
+    /**
+     * The client was patched during this activation, but the window
+     * has not yet been reloaded so the patch is not running yet.
+     */
+    PATCHED_RELOAD_REQUIRED = 'PATCHED_RELOAD_REQUIRED',
+
+    /**
+     * The client appears patched, but VSBloom failed to finish
+     * bootstrapping its runtime services for this window.
+     */
+    ACTIVATION_FAILED = 'ACTIVATION_FAILED',
+}
+
 export interface UnpatchedExtensionAPI {
     isClientPatched: false;
+    unpatchedClientState: UnpatchedClientState;
 }
 
 export interface PatchedExtensionAPI {

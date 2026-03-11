@@ -9,8 +9,17 @@ import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
 import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
-import { ExtensionAPI, PatchedExtensionAPI, UnpatchedExtensionAPI, VSBloomExtensionExports } from './API/ExtensionAPI';
+import { ExtensionAPI, PatchedExtensionAPI, UnpatchedClientState, UnpatchedExtensionAPI, VSBloomExtensionExports } from './API/ExtensionAPI';
 import { DeferredResultProvider } from './API/DeferredResults';
+
+function UnpatchedExtensionAPIFactory(
+	unpatchedClientState: UnpatchedClientState,
+): UnpatchedExtensionAPI {
+	return {
+		isClientPatched: false,
+		unpatchedClientState,
+	};
+};
 
 /**
  * Called after the extension is activated and the current client is
@@ -70,9 +79,7 @@ async function ExtensionActivatedAndClientPatchingVerified(context: vscode.Exten
 		// If we failed to bootstrap the extension's bridge server/effect manager,
 		// to external extensions this should be considered as an 'un-patched' client
 		// for all intents and purposes
-		return {
-			isClientPatched: false
-		} as UnpatchedExtensionAPI;
+		return UnpatchedExtensionAPIFactory(UnpatchedClientState.ACTIVATION_FAILED);
 	}
 }
 
@@ -378,9 +385,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 					//to patch the client again in the future at some point, so we'll
 					//assume they're going to patch it when they want and just go dormant.
 					// This is still a valid "unpatched" state for API consumers.
-					extensionAPIProvider.resolve({
-						isClientPatched: false
-					});
+					extensionAPIProvider.resolve(
+						UnpatchedExtensionAPIFactory(UnpatchedClientState.PATCH_PROMPT_SUPPRESSED),
+					);
 
 					return;
 				}
@@ -398,9 +405,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 
 					// In this case we've just patched the client but it's not actually "running" yet,
 					// so we'll resolve with an 'un-patched' client API to external consumers
-					extensionAPIProvider.resolve({
-						isClientPatched: false
-					});
+					extensionAPIProvider.resolve(
+						UnpatchedExtensionAPIFactory(UnpatchedClientState.PATCHED_RELOAD_REQUIRED),
+					);
 				} else {
 					console.log(
 						`${ConstructVSBloomLogPrefix('Extension', 'warn')}User declined client patching; going dormant`,
@@ -411,9 +418,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 
 					// In this case the user has just declined to patch the client so we'll
 					// naturally resolve with an 'un-patched' client API to external consumers
-					extensionAPIProvider.resolve({
-						isClientPatched: false
-					});
+					extensionAPIProvider.resolve(
+						UnpatchedExtensionAPIFactory(UnpatchedClientState.PATCH_PROMPT_DECLINED),
+					);
 					return;
 				}
 			} else {
