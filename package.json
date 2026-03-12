@@ -8,7 +8,7 @@
 		"email": "tampered@tamperedreality.net",
 		"url": "https://tamperedreality.net"
 	},
-	"version": "1.5.0",
+	"version": "1.4.1",
 	"packageManager": "npm@11.11.0",
 	"publisher": "tamperedreality",
 	"license": "MIT",

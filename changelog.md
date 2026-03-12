@@ -4,11 +4,13 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
-## [UNRELEASED] - 2026-03-XX
+## [1.4.1] - 2026-03-11
 
 ### Added
-- VS: Bloom now exports its internals for other extensions to utilize to their hearts content, if they'd like to! *Wonder if this makes us a modding platform now...potential rebrand...?"
+- VS: Bloom now exports its internals for other extensions to utilize to their hearts content, if they'd like to! *Wonder if this makes us a modding platform now...potential rebrand...?*
 
+### Fixed
+- Removed some CSS styling that caused overlapping selected items inside of the Quick-Input Menu when the Quick-Input Overhaul effect was enabled inside of a base Visual Studio Code installation.
 
 ## [1.4.0] - 2026-03-07
 
