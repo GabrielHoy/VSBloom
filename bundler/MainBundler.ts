@@ -1,7 +1,9 @@
 import * as esbuild from "esbuild";
 import chokidar from "chokidar";
 import fs from "fs";
+import * as os from "os";
 import path from "path";
+import { Worker } from "node:worker_threads";
 import * as jsonc from "jsonc-parser";
 import * as Colorful from "../src/Debug/Colorful.ts";
 import { IsEffectEnabled } from "./EffectBuildConfigProvider";
@@ -26,6 +28,97 @@ const buildBanners: Record<string, string> = {
     "build/Webview/view.js": `/* VS: Bloom Webview Page */\n//\n//Hi!\n//\n//This is the main entry point for the VS: Bloom Webview, it's responsible for mounting a compiled Svelte application\n//into the webview's DOM.\n//\n//This won't be very readable within a production environment,\n//so if you'd like to know more about what the webview does or how it works\n//you should visit the GitHub repo associated with VSBloom\n//for an un-minified version of this file!\n//\n//Build Date: ${new Date().toISOString()}\n//`,
     "build/Webview/view.css": `/* VS: Bloom Webview Stylesheet */\n/*\n * Hi!\n *\n * This is the compiled stylesheet for the VS: Bloom Webview Page, it contains all of the Tailwind CSS\n * and globally-applied Svelte component styles needed to render the webview UI.\n *\n * This won't be very readable within a production environment,\n * so if you'd like to know more about what the webview does or how it works\n * you should visit the GitHub repo associated with VSBloom\n * for an un-minified version of this file!\n *\n * Build Date: ${new Date().toISOString()}\n */`,
 };
+
+type OneLinerWorkerResponse = {
+    collapsed?: string;
+    error?: string;
+};
+
+const PARALLEL_WORKER_LIMIT = Math.max(1, Math.min(os.availableParallelism(), 8));
+let activeOneLinerWorkers = 0;
+const oneLinerWorkerQueue: Array<() => void> = [];
+
+async function AcquireOneLinerWorkerSlot(): Promise<void> {
+    if (activeOneLinerWorkers < PARALLEL_WORKER_LIMIT) {
+        activeOneLinerWorkers++;
+        return;
+    }
+
+    await new Promise<void>((resolve) => oneLinerWorkerQueue.push(resolve));
+    activeOneLinerWorkers++;
+}
+
+function ReleaseOneLinerWorkerSlot(): void {
+    activeOneLinerWorkers--;
+    oneLinerWorkerQueue.shift()?.();
+}
+
+async function CollapseJSCode(code: string, banner: string): Promise<string> {
+    await AcquireOneLinerWorkerSlot();
+
+    const worker = new Worker(
+        `
+        const { parentPort } = require("node:worker_threads");
+
+        parentPort.on("message", async ({ code, banner }) => {
+            try {
+                const { minify } = await import("terser");
+                const terserResult = await minify(code, {
+                    mangle: false,
+                    format: {
+                        comments: /^!|@license|@preserve/i,
+                        semicolons: true,
+                        beautify: false,
+                        max_line_len: false,
+                    },
+                });
+
+                if (!terserResult.code) {
+                    throw new Error("Terser returned no output.");
+                }
+
+                const collapsed =
+                    banner +
+                    terserResult.code
+                        .split("\\n")
+                        .map((line) => line.trim())
+                        .filter((line) => line.length > 0)
+                        .join(" ");
+
+                parentPort.postMessage({ collapsed });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                parentPort.postMessage({ error: message });
+            }
+        });
+        `,
+        { eval: true }
+    );
+
+    try {
+        return await new Promise<string>((resolve, reject) => {
+            worker.once("message", (message: OneLinerWorkerResponse) => {
+                if (message.error) {
+                    reject(new Error(message.error));
+                    return;
+                }
+
+                if (!message.collapsed) {
+                    reject(new Error("Worker returned no collapsed output."));
+                    return;
+                }
+
+                resolve(message.collapsed);
+            });
+
+            worker.once("error", reject);
+            worker.postMessage({ code, banner });
+        });
+    } finally {
+        ReleaseOneLinerWorkerSlot();
+        await worker.terminate();
+    }
+}
 
 async function EffectCSSFileChangedDuringWatch(cssFilePath: string): Promise<void> {
     const fileName = path.basename(cssFilePath);
@@ -175,39 +268,17 @@ const oneLinerPlugin: esbuild.Plugin = {
             console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold"])} to single line...`);
 
             try {
-                const { minify } = await import("terser");
-
-                const code = fs.readFileSync(outFile, "utf8");
-
-                const terserResult = await minify(code, {
-                    mangle: false,
-                    format: {
-                        comments: /^!|@license|@preserve/i,
-                        semicolons: true,
-                        beautify: false,
-                        max_line_len: false,
-                    },
-                });
-
-                if (terserResult.code) {
-                    const fileBannerIdentifier = outFile.includes(EFFECTS_BUILD_DIR) ? "__EFFECT_JS__" : outFile;
-                    let fileBanner = buildBanners[fileBannerIdentifier] ? buildBanners[fileBannerIdentifier] + "\n" : "";
-                    if (fileBannerIdentifier === "__EFFECT_JS__") {
-                        const effectName = outFile.split("/").pop()?.split(".")[0] ?? "";
-                        fileBanner = fileBanner.replace(EFFECT_NAME_SENTINEL, effectName);
-                    }
-
-                    const singleLine =
-                        fileBanner +
-                        terserResult.code
-                            .split("\n")
-                            .map((line) => line.trim())
-                            .filter((line) => line.length > 0)
-                            .join(" ");
-
-                    fs.writeFileSync(outFile, singleLine, "utf8");
-                    console.log(`[build]     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold"])} chars`);
+                const code = await fs.promises.readFile(outFile, "utf8");
+                const fileBannerIdentifier = outFile.includes(EFFECTS_BUILD_DIR) ? "__EFFECT_JS__" : outFile;
+                let fileBanner = buildBanners[fileBannerIdentifier] ? buildBanners[fileBannerIdentifier] + "\n" : "";
+                if (fileBannerIdentifier === "__EFFECT_JS__") {
+                    const effectName = outFile.split("/").pop()?.split(".")[0] ?? "";
+                    fileBanner = fileBanner.replace(EFFECT_NAME_SENTINEL, effectName);
                 }
+
+                const singleLine = await CollapseJSCode(code, fileBanner);
+                await fs.promises.writeFile(outFile, singleLine, "utf8");
+                console.log(`[build]     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold"])} chars`);
             } catch (err) {
                 console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to collapse "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
             }
