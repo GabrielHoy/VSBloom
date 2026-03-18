@@ -55,7 +55,6 @@
 	};
 	const blacklistedPathsForWebviewSettingsDisplay: string[] = [
 		'vsbloom.extensionConfigurationsNote', //this just brings the user to the menu when clicked - and they'd already be here if they're on this page
-		'vsbloom.statusBarIcon', //only other setting within "General", so hiding this makes things neater and gets rid of the entire category
 	];
 	const configPropInputTypeSnippets: Record<
 		string,
@@ -89,6 +88,8 @@
 
 	type ProcessedPropertyEntry = PropertyEntry & {
 		settingPath: string;
+		minimum?: number;
+		maximum?: number;
 		step?: number;
 		cssUnit?: string;
 		enum?: (string | number)[];
@@ -216,6 +217,7 @@
 		};
 	}
 
+	let currentEnumOpen = $state('');
 	function IsValidEnum(
 		toCheck: string | number | boolean,
 		enumArray: (string | number | boolean)[],
@@ -262,7 +264,23 @@
 				step={propData.step ?? undefined}
 				placeholder={propData.default.toLocaleString()}
 				onchange={(e) => {
-					if (Number.isNaN(e.currentTarget.valueAsNumber)) {
+					// if the value is a valid number(not NaN) and within the constrained range(if it has one), then it's a valid value
+					let hasValidValue = !Number.isNaN(e.currentTarget.valueAsNumber);
+					if (hasValidValue) {
+						if (
+							propData.minimum !== undefined &&
+							e.currentTarget.valueAsNumber < propData.minimum
+						) {
+							hasValidValue = false;
+						} else if (
+							propData.maximum !== undefined &&
+							e.currentTarget.valueAsNumber > propData.maximum
+						) {
+							hasValidValue = false;
+						}
+					}
+
+					if (!hasValidValue) {
 						e.currentTarget.value =
 							(effectSettings.values[propData.settingPath] as string) ??
 							propData.default.toLocaleString();
@@ -438,128 +456,159 @@
 	</div>
 {/snippet}
 {#snippet EnumInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
-	<div class="inline-flex align-middle px-0.5">
-		<Select.Root
-			type="single"
-			loop={true}
-			value={effectSettings.values[propData.settingPath]?.toString() ??
-				propData.default.toString()}
-			onValueChange={(newVal) => {
-				const isValidEnumValue = IsValidEnum(newVal, propData.enum!);
-				if (!isValidEnumValue) {
-					// invalid enum value that we're changing to - reset to last valid/default value
-					vscode.NotifyUser(
-						'error',
-						`${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(' > ')}: Invalid enum value, resetting to last valid/default value.`,
-					);
-					const isLastValueValidEnum = IsValidEnum(
-						effectSettings.values[propData.settingPath] as any,
-						propData.enum!,
-					);
-					if (isLastValueValidEnum) {
-						UpdateEffectSetting(
-							propData.settingPath,
-							effectSettings.values[propData.settingPath],
-						);
-					} else {
-						// if the last value was also invalid, just clear the setting to reset to its default
-						UpdateEffectSetting(propData.settingPath, undefined);
-					}
-					return;
-				}
-
-				// valid enum value that we're changing to - update the setting or 'clear' it if it's the default value
-				if (
-					typeof propData.default === 'number'
-						? newVal === propData.default.toLocaleString()
-						: newVal === propData.default.toString()
-				) {
-					UpdateEffectSetting(propData.settingPath, undefined);
-				} else {
-					UpdateEffectSetting(propData.settingPath, newVal);
-				}
-			}}
-		>
-			<Select.Trigger
-				class={effectSettings.values[propData.settingPath] !== undefined
-					? !propData.enum!.includes(effectSettings.values[propData.settingPath] as any)
-						? 'invalid-enum-value'
-						: ''
-					: ''}
-			>
-				{propData.enum?.find(
-					(enumVal) => enumVal === effectSettings.values[propData.settingPath],
-				) ??
-					effectSettings.values[propData.settingPath] ??
-					propData.default}
-			</Select.Trigger>
-			<!--
-                quick note, preventScroll *MUST* be false here since bits-ui attempts to utilize
-                inline style application on the `body` element if it is true, causing a CSP
-                violation and the entire webview to break.
-            -->
-			<Select.Content preventScroll={false}>
-				<Select.Group>
-					{#each propData
-						.enum!.slice()
-						.sort((a, b) => {
-							//sort enum values so that the currently selected value is at the top
-							const selected = effectSettings.values[propData.settingPath];
-							const selectedStr = (typeof selected === 'number' ? selected.toLocaleString() : selected?.toString?.()) ?? propData.default.toString();
-							const aStr = typeof a === 'number' ? a.toLocaleString() : a.toString();
-							const bStr = typeof b === 'number' ? b.toLocaleString() : b.toString();
-
-							if (aStr === selectedStr) {
-								return -1;
+	{#key effectSettings.values[propData.settingPath]}
+		{#key currentEnumOpen === propData.settingPath || currentEnumOpen === ''}
+			<div class="inline-flex align-middle px-0.5">
+				<Select.Root
+					type="single"
+					loop={true}
+					value={effectSettings.values[propData.settingPath]?.toString() ??
+						propData.default.toString()}
+					onValueChange={(newVal) => {
+						const isValidEnumValue = IsValidEnum(newVal, propData.enum!);
+						if (!isValidEnumValue) {
+							// invalid enum value that we're changing to - reset to last valid/default value
+							vscode.NotifyUser(
+								'error',
+								`${GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(' > ')}: Invalid enum value, resetting to last valid/default value.`,
+							);
+							const isLastValueValidEnum = IsValidEnum(
+								effectSettings.values[propData.settingPath] as any,
+								propData.enum!,
+							);
+							if (isLastValueValidEnum) {
+								UpdateEffectSetting(
+									propData.settingPath,
+									effectSettings.values[propData.settingPath],
+								);
+							} else {
+								// if the last value was also invalid, just clear the setting to reset to its default
+								UpdateEffectSetting(propData.settingPath, undefined);
 							}
-							if (bStr === selectedStr) {
-								return 1;
-							}
-							return 0;
-						})
-						.filter((enumVal) => {
-							// after some more iteration, let's just remove the currently
-							// selected value from the dropdown enum list entirely since it looks better
-							// though i'll keep the above sort logic for now since it could be useful if i change my mind
-							return enumVal !== (effectSettings.values[propData.settingPath] ?? propData.default);
-						}) as enumVal}
-						{@const stringifiedEnumVal =
-							typeof enumVal === 'number'
-								? enumVal.toLocaleString()
-								: enumVal.toString()}
-						{@const isCurrentlySelected =
-							stringifiedEnumVal ===
-							(typeof effectSettings.values[propData.settingPath] === 'number'
-								? (
-										effectSettings.values[propData.settingPath] as number
-									).toLocaleString()
-								: (
-										effectSettings.values[propData.settingPath] ??
-										propData.default
-									).toString())}
-						<Select.Item
-							value={enumVal.toString()}
-							label={stringifiedEnumVal}
-							class={[
-								'block pe-2 ps-2 text-center',
-								!isCurrentlySelected ? 'text-center' : '',
-							]}
-						>
-							{stringifiedEnumVal}
-						</Select.Item>
-						{#if isCurrentlySelected}
-							<!-- add a separator below the currently selected value -->
-							<Separator
-								orientation="horizontal"
-								class="mt-0.5 mb-3 -px-4 -mx-1"
-								style="width: calc(100% + (var(--spacing) * 2)); /* background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), transparent); */"
-							/>
-						{/if}
-					{/each}
-				</Select.Group>
-			</Select.Content>
-		</Select.Root>
-	</div>
+							return;
+						}
+
+						// valid enum value that we're changing to - update the setting or 'clear' it if it's the default value
+						if (
+							typeof propData.default === 'number'
+								? newVal === propData.default.toLocaleString()
+								: newVal === propData.default.toString()
+						) {
+							UpdateEffectSetting(propData.settingPath, undefined);
+						} else {
+							UpdateEffectSetting(propData.settingPath, newVal);
+						}
+					}}
+					onOpenChange={(isNowOpen: boolean) => {
+						if (!isNowOpen) {
+							currentEnumOpen = '';
+							// This little 'update hack' is to ensure that
+							// simply clicking away from the enum selector
+							// correctly hides the 'portal' dropdown,
+							// there's a bug with the custom animation I apply
+							// that causes the dropdown to remain open if it's not updated
+							// after a short delay
+							setTimeout(() => {
+								if (currentEnumOpen === '') {
+									currentEnumOpen = 'none';
+									setTimeout(() => {
+										if (currentEnumOpen === 'none') {
+											currentEnumOpen = '';
+										}
+									}, 1);
+								}
+							}, 500);
+						} else {
+							currentEnumOpen = propData.settingPath;
+						}
+					}}
+				>
+					<Select.Trigger
+						class={effectSettings.values[propData.settingPath] !== undefined
+							? !propData.enum!.includes(
+									effectSettings.values[propData.settingPath] as any,
+								)
+								? 'invalid-enum-value'
+								: ''
+							: ''}
+					>
+						{propData.enum?.find(
+							(enumVal) => enumVal === effectSettings.values[propData.settingPath],
+						) ??
+							effectSettings.values[propData.settingPath] ??
+							propData.default}
+					</Select.Trigger>
+					<!--
+							quick note, preventScroll *MUST* be false here since bits-ui attempts to utilize
+							inline style application on the `body` element if it is true, causing a CSP
+							violation and the entire webview to break.
+						-->
+					<Select.Content preventScroll={false}>
+						<Select.Group>
+							{#each propData
+								.enum!.slice()
+								.sort((a, b) => {
+									//sort enum values so that the currently selected value is at the top
+									const selected = effectSettings.values[propData.settingPath];
+									const selectedStr = (typeof selected === 'number' ? selected.toLocaleString() : selected?.toString?.()) ?? propData.default.toString();
+									const aStr = typeof a === 'number' ? a.toLocaleString() : a.toString();
+									const bStr = typeof b === 'number' ? b.toLocaleString() : b.toString();
+
+									if (aStr === selectedStr) {
+										return -1;
+									}
+									if (bStr === selectedStr) {
+										return 1;
+									}
+									return 0;
+								})
+								.filter((enumVal) => {
+									// after some more iteration, let's just remove the currently
+									// selected value from the dropdown enum list entirely since it looks better
+									// though i'll keep the above sort logic for now since it could be useful if i change my mind
+									return enumVal !== (effectSettings.values[propData.settingPath] ?? propData.default);
+								}) as enumVal}
+								{@const stringifiedEnumVal =
+									typeof enumVal === 'number'
+										? enumVal.toLocaleString()
+										: enumVal.toString()}
+								{@const isCurrentlySelected =
+									stringifiedEnumVal ===
+									(typeof effectSettings.values[propData.settingPath] === 'number'
+										? (
+												effectSettings.values[
+													propData.settingPath
+												] as number
+											).toLocaleString()
+										: (
+												effectSettings.values[propData.settingPath] ??
+												propData.default
+											).toString())}
+								<Select.Item
+									value={enumVal.toString()}
+									label={stringifiedEnumVal}
+									class={[
+										'block pe-2 ps-2 text-center',
+										!isCurrentlySelected ? 'text-center' : '',
+									]}
+								>
+									{stringifiedEnumVal}
+								</Select.Item>
+								{#if isCurrentlySelected}
+									<!-- add a separator below the currently selected value -->
+									<Separator
+										orientation="horizontal"
+										class="mt-0.5 mb-3 -px-4 -mx-1"
+										style="width: calc(100% + (var(--spacing) * 2)); /* background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), transparent); */"
+									/>
+								{/if}
+							{/each}
+						</Select.Group>
+					</Select.Content>
+				</Select.Root>
+			</div>
+		{/key}
+	{/key}
 {/snippet}
 {#snippet UnknownFallbackInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
 	<div

@@ -8,7 +8,7 @@ import * as Common from '../Patcher/Common';
 import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
-import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
+import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, type ClientPatchingResult, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
 import { ExtensionAPI, PatchedExtensionAPI, UnpatchedClientState, UnpatchedExtensionAPI, VSBloomExtensionExports } from './API/ExtensionAPI';
 import { DeferredResultProvider } from './API/DeferredResults';
 
@@ -171,19 +171,24 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 			const enableCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.enable',
 				async (showReloadPromptOnSuccess: boolean = true) => {
-					const clientPatchingStatus = await EnsureClientIsPatched(
+					const clientPatchingResult = await EnsureClientIsPatched(
 						context,
 						appProductFilePath,
 					);
-					if (clientPatchingStatus === ClientPatchingStatus.PATCHED) {
+					if (clientPatchingResult.status === ClientPatchingStatus.PATCHED) {
 						vscode.window.showInformationMessage('The extension is already enabled!');
 						return false;
-					} else if (clientPatchingStatus === ClientPatchingStatus.FAILED) {
+					} else if (clientPatchingResult.status === ClientPatchingStatus.FAILED) {
 						vscode.window.showErrorMessage(
 							"Something went wrong patching the Electron Client while attempting to enable VSBloom, please try again: If this error persists, you may need to manually specify a path to the application's 'product.json' file in VSBloom's extension's settings.",
 						);
 						return false;
-					} else if (clientPatchingStatus === ClientPatchingStatus.NEEDS_RESTART) {
+					} else if (clientPatchingResult.status === ClientPatchingStatus.NEEDS_RESTART) {
+						//update the current patch bridge port in extension state
+						context.globalState.update(
+							'vsbloom.electronBridge.currentClientBridgePort',
+							clientPatchingResult.bridgePort
+						);
 						//update last known client patch version in extension state
 						context.globalState.update(
 							'vsbloom.patcher.lastKnownClientPatchVersion',

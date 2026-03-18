@@ -14,10 +14,10 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import {
 	type ClientToExtensionMessage,
+	DEFAULT_BRIDGE_PORT,
 	type ExtensionToClientMessage,
 	type LogMessage,
 	PING_INTERVAL_MS,
-	VSBLOOM_BRIDGE_PORT,
 	type VSBloomClientConfig,
 	type VSBloomConfigObject,
 	type VSBloomConfigValue,
@@ -66,7 +66,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 */
 	public readonly OnClientDisconnected: vscode.Event<string> = this._onClientDisconnected.event;
 
-	private constructor(context: vscode.ExtensionContext) {
+	private constructor(private context: vscode.ExtensionContext) {
 		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Extension Bridge');
 
 		//retrieve or generate auth token
@@ -98,14 +98,14 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		return new Promise((resolve, reject) => {
 			try {
 				this.wss = new WebSocketServer({
-					port: VSBLOOM_BRIDGE_PORT,
+					port: this.GetServerPort(),
 					host: '127.0.0.1',
 				});
 
 				this.wss.on('listening', () => {
 					this.Log(
 						'info',
-						`Bridge server listening on ws://127.0.0.1:${VSBLOOM_BRIDGE_PORT}`,
+						`Bridge server listening on ws://127.0.0.1:${this.GetServerPort()}`,
 					);
 					this.DispatchKeepAlivePingDaemon();
 					this.SetupExtensionConfigChangedListener();
@@ -120,7 +120,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 					if (error.code === 'EADDRINUSE') {
 						this.Log(
 							'error',
-							`Port ${VSBLOOM_BRIDGE_PORT} is already in use. Another VSCode window may be running VSBloom.`,
+							`Port ${this.GetServerPort()} is already in use. Another VSCode window may be running VSBloom.`,
 						);
 						// This is not necessarily an error - another window may be hosting
 						resolve();
@@ -166,7 +166,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Get the port for which the server is running on.
 	 */
 	public GetServerPort(): number {
-		return VSBLOOM_BRIDGE_PORT;
+		return this.context.globalState.get<number>('vsbloom.electronBridge.currentClientBridgePort', DEFAULT_BRIDGE_PORT);
 	}
 
 	/**
@@ -309,7 +309,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 */
 	private HandleNewClientWebSocketConnection(ws: WebSocket, req: IncomingMessage): void {
 		// Validate auth token from query string
-		const url = new URL(req.url || '', `http://127.0.0.1:${VSBLOOM_BRIDGE_PORT}`);
+		const url = new URL(req.url || '', `http://127.0.0.1:${this.GetServerPort()}`);
 		const token = url.searchParams.get('token');
 
 		if (token !== this.authToken) {

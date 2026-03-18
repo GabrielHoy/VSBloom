@@ -34,9 +34,19 @@
                 "order": 2,
                 "type": "boolean",
                 "default": true,
-                "hideFromCustomEditor": true,
+                // "hideFromCustomEditor": true,
                 "description": "Whether or not to enable an icon in the VS Code Status Bar which opens the VS: Bloom Menu when clicked.",
                 "markdownDescription": "Whether or not to enable an icon in the VS Code [Status Bar](https://code.visualstudio.com/api/ux-guidelines/status-bar) which opens the VS: Bloom Menu when clicked.\nRegardless of this setting, you can still open the VS: Bloom Menu at any time by using the `VSBloom: Open Menu` command!"
+            },
+            "vsbloom.electronBridge.port": {
+                "order": 3,
+                "type": "number",
+                "default": 52847,
+                "description": "The port on which the Electron Bridge server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. A re-patch is required for changes to this setting to take effect!",
+                "markdownDescription": "The port on which the 'Electron Bridge' server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. **A re-patch is required for changes to this setting to take effect!**",
+                "minimum": 1,
+                "maximum": 65535,
+                "step": 1
             }
         }
     },
@@ -46,7 +56,7 @@
         "categoryDescription": "Configurations regarding VS: Bloom's Electron Patcher and its associated functionality.",
         "properties": {
             "vsbloom.patcher.appProductFile": {
-                "order": 3,
+                "order": 4,
                 // "settingsEditorDisplayName": {
                 //     "text": "IDE `product.json` File Path",
                 //     "useMarkdown": true
@@ -57,7 +67,7 @@
                 "markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
             },
             "vsbloom.patcher.suppressCorruptionWarning": {
-                "order": 4,
+                "order": 5,
                 // "settingsEditorDisplayName": "Suppress \"Client Corrupted\" Warning",
                 "type": "boolean",
                 "default": true,
@@ -72,7 +82,7 @@
         "categoryDescription": "Configurations affecting the rendering of effects along with general controls applying to canvas-based rendering.",
         "properties": {
             "vsbloom.effectRendering.enableAntiAliasing": {
-                "order": 5,
+                "order": 6,
                 // "settingsEditorDisplayName": "Enable Canvas Anti-Aliasing",
                 "type": "boolean",
                 "default": true,

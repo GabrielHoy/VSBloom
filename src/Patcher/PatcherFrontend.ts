@@ -21,12 +21,18 @@ import * as ClientPatcher from './ClientPatcher';
 import * as Common from './Common';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
+import { DEFAULT_BRIDGE_PORT } from '../ExtensionBridge/API';
 
 export enum ClientPatchingStatus {
 	PATCHED = 0,
 	NEEDS_RESTART = 1,
 	FAILED = 2,
 	UNPATCHED = 3,
+}
+
+export interface ClientPatchingResult {
+	status: ClientPatchingStatus;
+	bridgePort?: number;
 }
 
 /**
@@ -36,11 +42,13 @@ export enum ClientPatchingStatus {
 export async function EnsureClientIsPatched(
 	context: vscode.ExtensionContext,
 	appProductFilePath: string,
-): Promise<ClientPatchingStatus> {
+): Promise<ClientPatchingResult> {
 	const isClientPatched = await ClientPatcher.IsClientPatched(appProductFilePath);
 
 	if (isClientPatched) {
-		return ClientPatchingStatus.PATCHED;
+		return {
+			status: ClientPatchingStatus.PATCHED,
+		};
 	}
 
 	const config = vscode.workspace.getConfiguration();
@@ -49,7 +57,7 @@ export async function EnsureClientIsPatched(
 
 	//get the bridge server's parameters for patching
 	const currentBridge = VSBloomBridgeServer.GetInstance(context);
-	const bridgePort = currentBridge.GetServerPort();
+	const bridgePort = config.get<number>('vsbloom.electronBridge.port', DEFAULT_BRIDGE_PORT);
 	const authToken = currentBridge.GetAuthToken();
 
 	//the client isn't patched, we need to patch it
@@ -67,7 +75,7 @@ export async function EnsureClientIsPatched(
 			//launcher to function properly
 			const elevatedPatcherScriptPath = path.join(__dirname, 'ElevatedClientPatcher.js');
 
-			return new Promise<ClientPatchingStatus>((resolve, reject) => {
+			return new Promise<ClientPatchingResult>((resolve, reject) => {
 				//pass all required arguments to the elevated patcher
 				const args = [
 					`"${elevatedPatcherScriptPath}"`,
@@ -91,7 +99,7 @@ export async function EnsureClientIsPatched(
 								vscode.window.showErrorMessage(
 									"VSBloom's client patcher was denied process elevation, the VSBloom extension cannot correctly function without this.",
 								);
-								resolve(ClientPatchingStatus.FAILED);
+								resolve({ status: ClientPatchingStatus.FAILED });
 								return;
 							} else {
 								reject(
@@ -116,7 +124,10 @@ export async function EnsureClientIsPatched(
 
 						//if there's no error from the elevated script's process,
 						//we can assume that the patching was successful
-						resolve(ClientPatchingStatus.NEEDS_RESTART);
+						resolve({
+							status: ClientPatchingStatus.NEEDS_RESTART,
+							bridgePort: bridgePort,
+						});
 						return;
 					},
 				);
@@ -131,7 +142,10 @@ export async function EnsureClientIsPatched(
 				authToken,
 				vscode,
 			);
-			return ClientPatchingStatus.NEEDS_RESTART;
+			return {
+				status: ClientPatchingStatus.NEEDS_RESTART,
+				bridgePort: bridgePort,
+			};
 		}
 	} else {
 		//if we're already elevated as is, we can
@@ -144,7 +158,10 @@ export async function EnsureClientIsPatched(
 			authToken,
 			vscode,
 		);
-		return ClientPatchingStatus.NEEDS_RESTART;
+		return {
+			status: ClientPatchingStatus.NEEDS_RESTART,
+			bridgePort: bridgePort,
+		};
 	}
 }
 

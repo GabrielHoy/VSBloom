@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Checkbox as CheckboxPrimitive } from "bits-ui";
-	import CheckIcon from "@lucide/svelte/icons/check";
-	import IndeterminateIcon from "@lucide/svelte/icons/loader-circle"
-	import XIcon from "@lucide/svelte/icons/x";
-	import { cn, type WithoutChildrenOrChild } from "$webview-svelte-lib/utils.js";
-	import { directories } from "../../../../Global/Directories.svelte";
-    import { fade, scale } from "svelte/transition";
-    import { cubicInOut, cubicOut, linear } from "svelte/easing";
+	import { Checkbox as CheckboxPrimitive } from 'bits-ui';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import IndeterminateIcon from '@lucide/svelte/icons/loader-circle';
+	import XIcon from '@lucide/svelte/icons/x';
+	import { cn, type WithoutChildrenOrChild } from '$webview-svelte-lib/utils.js';
+	import { directories } from '../../../../Global/Directories.svelte';
+	import { fade, scale } from 'svelte/transition';
+	import { cubicInOut, cubicOut, linear } from 'svelte/easing';
 
 	let {
 		ref = $bindable(null),
@@ -22,7 +22,7 @@
 	data-slot="checkbox"
 	class={cn(
 		`transition-all duration-300 border-input bg-input/30 hover:bg-input/50 hover:border-foreground hover:scale-[1.25] data-[state=checked]:text-primary-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive peer flex size-4 rounded-xs shrink-0 items-center justify-center border shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50`,
-		className
+		className,
 	)}
 	bind:checked
 	bind:indeterminate
@@ -36,14 +36,19 @@
 		>
 			{#key checked || indeterminate}
 				<div
-					class="checkbox-icon-container icon-{checked ? 'check' : indeterminate ? 'indeterminate' : 'x'}"
-					in:fade={{ duration: 175, easing: cubicInOut, delay: 75 }}
-					out:scale={{ duration: 100, easing: linear }}
+					class="checkbox-icon-container icon-{checked
+						? 'check'
+						: indeterminate
+							? 'indeterminate'
+							: 'x'}"
+					in:fade={{ duration: 175, easing: cubicInOut }}
 				>
 					{#if checked}
-						<CheckIcon class="size-3.5" />
+						<CheckIcon class="size-3.5 stroke-white" />
 					{:else if indeterminate}
-						<span class="w-full h-full absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-xs scale-75">
+						<span
+							class="w-full h-full absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-xs scale-75"
+						>
 							...
 						</span>
 						<IndeterminateIcon class="size-3.5 animate-spin" />
@@ -59,13 +64,13 @@
 <style>
 	.checkbox-indicator {
 		--bg-size-scaled: calc((160px / var(--scale-factor)) * 1.42);
-		
+
 		display: flex;
 		align-items: center;
 		justify-content: center;
 
 		cursor: pointer;
-		
+
 		width: 100%;
 		height: 100%;
 
@@ -74,34 +79,6 @@
 		background-repeat: repeat;
 
 		animation: scrollNoise 16.18s linear infinite;
-	}
-
-	@keyframes checkIconAnim {
-		0% {
-			transform: scale(0);
-			rotate: -45deg;
-		}
-		50% {
-			transform: scale(1.1618);
-		}
-		75% {
-			rotate: 8deg;
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-	@keyframes xIconAnim {
-		0% {
-			transform: scale(0);
-		}
-		50% {
-			transform: scale(1.1);
-		}
-		100% {
-			transform: scale(1);
-			color: currentColor;
-		}
 	}
 	.checkbox-icon-container {
 		position: absolute;
@@ -115,9 +92,8 @@
 		pointer-events: none;
 
 		&.icon-check {
-			transform: scale(0);
-			animation: checkIconAnim 0.5s ease-in-out forwards;
-			animation-delay: 0.1s;
+			color: white;
+			stroke: white;
 		}
 		&.icon-indeterminate {
 			opacity: 1;
@@ -125,9 +101,7 @@
 			background-color: black;
 		}
 		&.icon-x {
-			transform: scale(0);
-			animation: xIconAnim 0.618s var(--vsbloom-bouncy-ease) forwards;
-			animation-delay: 0.1s;
+			color: currentColor;
 		}
 	}
 </style>

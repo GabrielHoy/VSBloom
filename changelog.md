@@ -4,6 +4,14 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
+## [UNRELEASED] - 2026-03-XX
+
+### Added
+- Added an option to change the port that the Extension Bridge Server runs on (*changing this setting only takes effect after a re-patch of the client!*)
+
+### Fixed
+- Fixed some bugs relating to displays and dropdown menus inside of the Extension Settings page in the Webview
+
 ## [1.4.1] - 2026-03-11
 
 ### Added

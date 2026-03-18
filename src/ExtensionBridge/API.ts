@@ -247,17 +247,7 @@ export function GetInternalPathForEffectProperty(
 
 //Bridge Constants
 
-/**
- * Port used for the Websocket server hosted by the extension,
- * this is statically baked into the VSBloom Client script's
- * source code, so it must either remain a constant value like
- * this or be deterministic in such a manner that both the
- * client and server can independently agree on the same port
- * value without needing any kind of prior communication or
- * handshake to do so
- *
- */
-export const VSBLOOM_BRIDGE_PORT = 52847;
+export const DEFAULT_BRIDGE_PORT = 52847;
 
 /**
  * maximum reconnection delay - in milliseconds - for the client
