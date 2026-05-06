@@ -399,7 +399,7 @@ export class Trail {
 	public destroy(
 		destroyRopeOptions: DestroyOptions = { children: true, textureSource: false },
 	): void {
-		if (this.updateCallback && this.app && this.app.ticker) {
+		if (this.updateCallback && this.app?.ticker) {
 			this.app.ticker.remove(this.updateCallback);
 		}
 		if (this.rope) {

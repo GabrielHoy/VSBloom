@@ -2,12 +2,18 @@ import bloom from 'bloom';
 import { Application, Color, Graphics, Point, type Texture } from 'pixi.js';
 import type Janitor from 'src/EffectLib/Bloom/Janitors';
 import type { Trail } from 'src/EffectLib/Bloom/VFX/Trail';
-import type { effectConfig } from '../TrailConfigTypes';
+import type { TrailTarget } from 'src/EffectLib/Bloom/VFX/TrailTarget';
+import { effectConfig } from '../TrailConfigTypes';
 
 const vsbloom = window.__VSBLOOM__;
 
 let configs: typeof effectConfig;
 let janitor: Janitor;
+
+type CursorTrail = {
+	trail: Trail;
+	headTarget: TrailTarget;
+}
 
 function GetAbsolutePosition(element: Element): Point {
 	const rect = element.getBoundingClientRect();
@@ -17,33 +23,26 @@ function GetAbsolutePosition(element: Element): Point {
 	);
 }
 
-const currentCursorTrails = new Map<Element, Trail>();
+const currentCursorTrailArrays = new Map<Element, CursorTrail[]>();
 const currentKnownCursorElements = new Set<Element>();
 let app: Application;
 let curTexture: Texture;
 
 function OnCursorUpdated(cursor: Element): void {
 	const newCursorPos = GetAbsolutePosition(cursor);
-	const cursorTrail = currentCursorTrails.get(cursor);
-	if (!cursorTrail) {
+	const cursorTrailsForThisCursor = currentCursorTrailArrays.get(cursor);
+	if (!cursorTrailsForThisCursor) {
 		vsbloom.Log('error', 'No cursor trail found for cursor');
 		return;
 	}
 
-	const lastPos = cursorTrail.headPosition;
-
-	if (!lastPos) {
-		return;
+	//Each TrailTarget runs its own per-frame physics in its ticker callback,
+	//so all we need to do here is announce the new cursor position to them.
+	//Each Trail's `goal` is aliased to its TrailTarget's `pos`, so the trail
+	//head will glide toward the trail target which itself glides toward the cursor.
+	for (const { headTarget } of cursorTrailsForThisCursor) {
+		headTarget.goal.copyFrom(newCursorPos);
 	}
-	if (newCursorPos.magnitudeSquared() < 1) {
-		return;
-	}
-	if (lastPos.magnitudeSquared() < 1) {
-		cursorTrail.SnapHeadTo(newCursorPos);
-		return;
-	}
-
-	cursorTrail.goal = newCursorPos;
 }
 
 function OnScroll(): void {
@@ -56,29 +55,52 @@ function WatchNewCursorElement(cursor: Element): () => void {
 	currentKnownCursorElements.add(cursor);
 	const initialCursorPos = GetAbsolutePosition(cursor);
 
-	// Initialize trail
-	const newCursorTrail = new bloom.vfx.trails.Trail(app, initialCursorPos, {
-		texture: curTexture,
-		textureScale: 1,
-	});
-	newCursorTrail.maxAngleChangePerFrameDeg = configs.solidTrailSpeed / 2;
-	newCursorTrail.tailShorteningSpeed = configs.solidTrailSpeed / 2;
-	newCursorTrail.headSpeed.set(configs.solidTrailSpeed, configs.solidTrailSpeed);
-	newCursorTrail.proximityToGoalWhenAngularlyConstrainedForSlowdown = 25;
-	newCursorTrail.maxTrailLength = configs.maxSolidTrailLength;
+	// Initialize all of the trails for this cursor
+	const trailsForThisCursor: CursorTrail[] = [];
+	for (let i = 0; i < configs.solidTrailCount; i++) {
+		const newTrail = new bloom.vfx.trails.Trail(app, initialCursorPos, {
+			texture: curTexture,
+			textureScale: 1,
+		});
+		newTrail.maxAngleChangePerFrameDeg = configs.solidTrailSpeed / 2;
+		newTrail.tailShorteningSpeed = configs.solidTrailSpeed / 2;
+		newTrail.headSpeed.set(configs.solidTrailSpeed, configs.solidTrailSpeed);
+		newTrail.proximityToGoalWhenAngularlyConstrainedForSlowdown = 25;
+		newTrail.maxTrailLength = configs.maxSolidTrailLength;
 
-	currentCursorTrails.set(cursor, newCursorTrail);
+		const newHeadTarget = new bloom.vfx.trails.TrailTarget(app, initialCursorPos, {
+			speed: configs.solidTrailSpeed,
+			//First trail tracks the cursor directly; additional trails get a
+			//random initial direction so each one flies off uniquely before
+			//homing back in on the cursor — chaotic, distinct visual paths
+			//even though they all share the same goal.
+			randomInitialVelocity: i > 0,
+		});
+
+		//Alias the trail's `goal` to the head target's `pos` (same Point instance).
+		//Since TrailTarget mutates `pos` in place every frame, the trail's goal
+		//tracks live without any per-frame copy needed in this file.
+		newTrail.goal = newHeadTarget.pos;
+
+		trailsForThisCursor.push({
+			trail: newTrail,
+			headTarget: newHeadTarget,
+		});
+	}
+	currentCursorTrailArrays.set(cursor, trailsForThisCursor);
 
 	// Watch for style changes on the cursor element
 	const observer = new MutationObserver(() => OnCursorUpdated(cursor));
 	observer.observe(cursor, { attributeFilter: ['style'] });
 
-	// const rand = Math.round(Math.random() * 10000);
 	return () => {
 		currentKnownCursorElements.delete(cursor);
 		observer.disconnect();
-		currentCursorTrails.delete(cursor);
-		newCursorTrail.destroy();
+		currentCursorTrailArrays.delete(cursor);
+		for (const { trail, headTarget } of trailsForThisCursor) {
+			trail.destroy();
+			headTarget.destroy();
+		}
 	};
 }
 
@@ -133,6 +155,6 @@ export async function InitTrail(effectCfgRef: typeof configs) {
 
 export async function CleanupTrail() {
 	await janitor.Destroy();
-	currentCursorTrails.clear();
+	currentCursorTrailArrays.clear();
 	currentKnownCursorElements.clear();
 }

@@ -5,9 +5,10 @@
 /// <reference lib="dom" />
 
 import * as Trails from './Trail';
+import * as TrailTargets from './TrailTarget';
 
 const BloomVFX = {
-	trails: Trails,
+	trails: { ...Trails, ...TrailTargets },
 };
 
 export default BloomVFX;

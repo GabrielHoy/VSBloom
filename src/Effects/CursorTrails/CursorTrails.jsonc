@@ -63,6 +63,15 @@
             "cssUnit": "px/s",
             "description": "The speed at which the trail should pursue the cursor, in pixels/second",
             "markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
+        },
+        {
+            "name": "solidTrailCount",
+            "type": "number",
+            "default": 1,
+            "step": 1,
+            "cssUnit": "trails",
+            "description": "The amount of trails that should be created per cursor for the solid trail type.",
+            "markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
         }
     ]
 }

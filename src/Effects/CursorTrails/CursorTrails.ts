@@ -107,6 +107,18 @@ export async function Start(configResolver: EffectConfigResolver) {
 	});
 	janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(solidTrailSpeedMutator));
 
+	const solidTrailCountMutator = await bloom.configs.RegisterEffectConfigMutator({
+		pathResolver: configResolver.GetPropertyPath('solidTrailCount'),
+		internalValueMutator: (changedValue, initial) => {
+			vsbloom.Log('debug', `solid trail count changed to ${changedValue}`);
+			effectConfig.solidTrailCount = changedValue as number;
+			if (!initial) {
+				SwapToTrailType(effectConfig.type);
+			}
+		},
+	});
+	janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(solidTrailCountMutator));
+
 	const aaMutator = await bloom.configs.RegisterEffectConfigMutator({
 		pathResolver: 'effectRendering.enableAntiAliasing',
 		internalValueMutator: (changedValue, initial) => {
