@@ -249,15 +249,24 @@
 						"description": "The amount of trails that should be created per cursor for the solid trail type.",
 						"markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
 					},
-					"vsbloom.lineNumberEffects.enabled": {
+					"vsbloom.cursorTrails.solidTrailMaxAngleChangePerFrame": {
 						"order": 15,
+						"type": "number",
+						"default": 10,
+						"step": 1,
+						"cssUnit": "deg",
+						"description": "The maximum angle - in degrees - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
+						"markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes."
+					},
+					"vsbloom.lineNumberEffects.enabled": {
+						"order": 16,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable line number indicator effects.",
 						"markdownDescription": "Enable or disable line number indicator effects."
 					},
 					"vsbloom.lineNumberEffects.activeLineAnimationDuration": {
-						"order": 16,
+						"order": 17,
 						"type": "number",
 						"default": 0.35,
 						"step": 0.05,
@@ -266,7 +275,7 @@
 						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
 					},
 					"vsbloom.lineNumberEffects.activeLineOffset": {
-						"order": 17,
+						"order": 18,
 						"type": "number",
 						"default": 3,
 						"step": 0.5,
@@ -275,7 +284,7 @@
 						"markdownDescription": "The offset of the active line number to the right, in **pixels**."
 					},
 					"vsbloom.lineNumberEffects.activeLineGlowSize": {
-						"order": 18,
+						"order": 19,
 						"type": "number",
 						"default": 2.5,
 						"step": 0.25,
@@ -284,7 +293,7 @@
 						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
 					},
 					"vsbloom.lineNumberEffects.activeLineSkewAngle": {
-						"order": 19,
+						"order": 20,
 						"type": "number",
 						"default": -7.5,
 						"step": 0.5,
@@ -293,14 +302,14 @@
 						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
 					},
 					"vsbloom.tabOverhaul.enabled": {
-						"order": 20,
+						"order": 21,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable visual revamps applied to code editor tabs.",
 						"markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
 					},
 					"vsbloom.tabOverhaul.tabSeparatorStyle": {
-						"order": 21,
+						"order": 22,
 						"type": "string",
 						"enum": [
 							"dashed",
@@ -313,7 +322,7 @@
 						"markdownDescription": "The style of a separator border that appears between two open tabs."
 					},
 					"vsbloom.tabOverhaul.glowSize": {
-						"order": 22,
+						"order": 23,
 						"type": "number",
 						"default": 1,
 						"cssUnit": "px",
@@ -328,21 +337,21 @@
 				"order": 5,
 				"properties": {
 					"vsbloom.windowFocusEffects.enabled": {
-						"order": 23,
+						"order": 24,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable the effects that occur when the window becomes unfocused.",
 						"markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
-						"order": 24,
+						"order": 25,
 						"type": "string",
 						"default": "blur(0.75px) grayscale(25%)",
 						"description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
 					},
 					"vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
-						"order": 25,
+						"order": 26,
 						"type": "number",
 						"default": 0.5,
 						"step": 0.05,
@@ -351,14 +360,14 @@
 						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
-						"order": 26,
+						"order": 27,
 						"type": "string",
 						"default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
 						"description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
 						"markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
-						"order": 27,
+						"order": 28,
 						"type": "number",
 						"default": 30,
 						"cssUnit": "s",
@@ -366,7 +375,7 @@
 						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
 					},
 					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
-						"order": 28,
+						"order": 29,
 						"type": "number",
 						"default": 0.618,
 						"step": 0.05,
@@ -375,7 +384,7 @@
 						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
-						"order": 29,
+						"order": 30,
 						"type": "number",
 						"default": 120,
 						"step": 5,
@@ -384,14 +393,14 @@
 						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
 					},
 					"vsbloom.quick-InputOverhaul.enabled": {
-						"order": 30,
+						"order": 31,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
 						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
 					},
 					"vsbloom.quick-InputOverhaul.borderWidth": {
-						"order": 31,
+						"order": 32,
 						"type": "number",
 						"default": 5,
 						"cssUnit": "px",
@@ -399,7 +408,7 @@
 						"markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels."
 					},
 					"vsbloom.quick-InputOverhaul.initialWidgetRotation": {
-						"order": 32,
+						"order": 33,
 						"type": "number",
 						"default": 5,
 						"cssUnit": "deg",
@@ -407,7 +416,7 @@
 						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
 					},
 					"vsbloom.dynamicInteractables.enabled": {
-						"order": 33,
+						"order": 34,
 						"type": "boolean",
 						"default": true,
 						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",

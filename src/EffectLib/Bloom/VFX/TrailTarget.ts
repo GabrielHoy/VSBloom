@@ -7,12 +7,6 @@
  * to head directly towards a real-world target like a cursor position
  * but instead towards a position that itself glides towards that target.
  *
- * This is useful for creating trails that "fly off" in random directions
- * when given a new target before homing in on it - several TrailTargets
- * sharing the same goal will diverge before converging, giving each Trail
- * that follows them a unique path even though they're all chasing
- * the same underlying point.
- *
  * Hooks into the application's ticker just like `Trail` does so its
  * physics step runs once per rendered frame regardless of how often
  * the consumer updates `goal`.
@@ -44,6 +38,21 @@ export interface TrailTargetOptions {
 	 * to follow a visually distinct path to it.
 	 */
 	randomInitialVelocity?: boolean;
+	/**
+	 * Distance from the goal at which lateral velocity
+	 * begins to be damped, in pixels. Prevents tangential approaches from
+	 * causing the target to orbit indefinitely around the goal.
+	 *
+	 * *0 disables this feature.*
+	 */
+	lateralDampRadius?: number;
+	/**
+	 * The amount of time to wait after a random initial velocity impulse
+	 * before the target begins to pursue the goal.
+	 *
+	 * *0 disables this feature.*
+	 */
+	postRandomImpulseTargetPursuitDelaySeconds?: number;
 }
 
 export class TrailTarget {
@@ -79,9 +88,26 @@ export class TrailTarget {
 	 * instead of a direct kick toward `goal`.
 	 */
 	public randomInitialVelocity: boolean = false;
+	/**
+	 * Distance from the goal at which lateral velocity
+	 * begins to be damped, in pixels. Prevents tangential approaches from
+	 * causing the target to orbit indefinitely around the goal.
+	 *
+	 * *0 disables this feature.*
+	 */
+	public lateralDampRadius: number = 0;
+	/**
+	 * The amount of time to wait after a random initial velocity impulse
+	 * before the target begins to pursue the goal.
+	 *
+	 * *0 disables this feature.*
+	 */
+	public postRandomImpulseTargetPursuitDelaySeconds: number = 0;
 
 	protected app: Application;
 	protected updateCallback: () => void;
+	protected lastRandomImpulseTimestamp: number = 0;
+	protected isInRandomImpulseDelayPeriod: boolean = false;
 
 	public IsAtRest(): boolean {
 		//"at rest" = sitting on top of the goal with no velocity to speak of
@@ -119,30 +145,45 @@ export class TrailTarget {
 			return;
 		}
 
+		const distToGoal = Math.sqrt(distSq);
+		const toGoalDir = toGoal.normalize();
 		const isAtRest = this.velocity.magnitudeSquared() < 1e-3;
-		if (isAtRest) {
+		const dTFromRandomImpulse = (this.app.ticker.lastTime - this.lastRandomImpulseTimestamp) / 1000;
+		const insidePostRandomImpulseDelayPeriod = this.postRandomImpulseTargetPursuitDelaySeconds > 0 && dTFromRandomImpulse < this.postRandomImpulseTargetPursuitDelaySeconds;
+
+		if (isAtRest && !this.isInRandomImpulseDelayPeriod) {
 			//transitioning rest -> motion; pick a starting velocity
 			if (this.randomInitialVelocity) {
 				//random direction, boosted past the per-frame cap so
 				//the random-ness has a few frames of visual persistence
 				//before acceleration toward the goal pulls it back in line
-				this.velocity.set(
-					(Math.random() - 0.5) * 2,
-					(Math.random() - 0.5) * 2,
-				);
+				this.velocity.set((Math.random() - 0.5) * 1, (Math.random() - 0.5) * 1);
 				this.velocity
 					.normalize(this.velocity)
-					.multiplyScalar(this.speed * 2, this.velocity);
+					.multiplyScalar(this.speed * 1, this.velocity);
+
+				this.lastRandomImpulseTimestamp = this.app.ticker.lastTime;
 			} else {
 				//direct kick toward goal at full speed
 				toGoal.normalize(this.velocity).multiplyScalar(this.speed, this.velocity);
 			}
 		} else {
-			//already in motion; accelerate velocity toward the goal.
-			//this is what reorients a random-direction kick back toward
-			//the goal over the course of several frames
-			const accel = toGoal.normalize().multiplyScalar(this.speed * dt);
-			this.velocity.add(accel, this.velocity);
+			if (this.postRandomImpulseTargetPursuitDelaySeconds > 0 && dTFromRandomImpulse < this.postRandomImpulseTargetPursuitDelaySeconds) {
+				// we're still in the post-random-impulse delay period and we have velocity left; don't accelerate towards the goal yet
+				// instead, scale velocity towards zero so that it reaches (almost) zero in postRandomImpulseTargetPursuitDelaySeconds seconds.
+				const timeLeft = Math.max(this.postRandomImpulseTargetPursuitDelaySeconds - dTFromRandomImpulse, 1e-4);
+				const decayPerFrame = 1e-1 ** (this.app.ticker.deltaMS / (timeLeft * 1000));
+				this.velocity.multiplyScalar(decayPerFrame, this.velocity);
+				this.isInRandomImpulseDelayPeriod = true;
+			} else {
+				//already in motion; accelerate velocity toward the goal.
+				//this is what reorients a random-direction kick back toward
+				//the goal over the course of several frames
+				const accel = toGoal.normalize().multiplyScalar(this.speed * dt);
+				this.velocity.add(accel, this.velocity);
+				this.isInRandomImpulseDelayPeriod = false;
+			}
+
 
 			//cap speed; this also "decays" the random-initial boost
 			//once it's no longer needed for the visual fly-off effect
@@ -151,27 +192,31 @@ export class TrailTarget {
 			}
 		}
 
+		if (this.lateralDampRadius > 0 && distToGoal < this.lateralDampRadius) {
+			const towardComponent = this.velocity.dot(toGoalDir);
+			const lateralX = this.velocity.x - towardComponent * toGoalDir.x;
+			const lateralY = this.velocity.y - towardComponent * toGoalDir.y;
+			const dampStrength = 1 - distToGoal / this.lateralDampRadius;
+			this.velocity.x -= lateralX * dampStrength * dt;
+			this.velocity.y -= lateralY * dampStrength * dt;
+		}
+
 		//apply velocity to position. clamp the goal-aligned component
 		//of the movement so we don't overshoot when homing in -
 		//but allow movement perpendicular/away from the goal to pass through
 		//unmolested (so the random-initial fly-off arc still works)
 		const movement = this.velocity.multiplyScalar(dt);
-		const distToGoal = Math.sqrt(distSq);
-		const toGoalDir = toGoal.normalize();
 		const towardGoalProgress = movement.dot(toGoalDir);
 		if (towardGoalProgress > distToGoal) {
 			//projected motion along the goal direction would overshoot;
 			//collapse the movement onto the goal direction at exactly distToGoal
 			toGoalDir.multiplyScalar(distToGoal, movement);
+			this.velocity.set(0, 0);
 		}
 		this.pos.add(movement, this.pos);
 	}
 
-	constructor(
-		app: Application,
-		startingPosition: Point,
-		options?: TrailTargetOptions,
-	) {
+	constructor(app: Application, startingPosition: Point, options?: TrailTargetOptions) {
 		this.app = app;
 		this.pos = startingPosition.clone();
 		this.goal = startingPosition.clone();
@@ -180,6 +225,13 @@ export class TrailTarget {
 		}
 		if (options?.randomInitialVelocity !== undefined) {
 			this.randomInitialVelocity = options.randomInitialVelocity;
+		}
+		if (options?.lateralDampRadius !== undefined) {
+			this.lateralDampRadius = options.lateralDampRadius;
+		}
+		if (options?.postRandomImpulseTargetPursuitDelaySeconds !== undefined) {
+			this.postRandomImpulseTargetPursuitDelaySeconds =
+				options.postRandomImpulseTargetPursuitDelaySeconds;
 		}
 
 		this.updateCallback = () => this.Update();

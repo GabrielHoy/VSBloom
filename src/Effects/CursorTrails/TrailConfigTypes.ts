@@ -8,5 +8,6 @@ export const effectConfig = {
 	solidTrailWidth: 3,
 	solidTrailSpeed: 20,
 	solidTrailCount: 1,
+	solidTrailMaxAngleChangePerFrame: 10,
 	enableAA: true,
 };

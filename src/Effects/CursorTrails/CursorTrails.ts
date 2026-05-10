@@ -119,6 +119,18 @@ export async function Start(configResolver: EffectConfigResolver) {
 	});
 	janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(solidTrailCountMutator));
 
+	const solidTrailMaxAngleChangePerFrameMutator = await bloom.configs.RegisterEffectConfigMutator({
+		pathResolver: configResolver.GetPropertyPath('solidTrailMaxAngleChangePerFrame'),
+		internalValueMutator: (changedValue, initial) => {
+			vsbloom.Log('debug', `solid trail max angle change per frame changed to ${changedValue}`);
+			effectConfig.solidTrailMaxAngleChangePerFrame = changedValue as number;
+			if (!initial) {
+				SwapToTrailType(effectConfig.type);
+			}
+		},
+	});
+	janitor.Add(() => bloom.configs.UnregisterEffectConfigMutator(solidTrailMaxAngleChangePerFrameMutator));
+
 	const aaMutator = await bloom.configs.RegisterEffectConfigMutator({
 		pathResolver: 'effectRendering.enableAntiAliasing',
 		internalValueMutator: (changedValue, initial) => {

@@ -1,9 +1,10 @@
 import bloom from 'bloom';
 import { Application, Color, Graphics, Point, type Texture } from 'pixi.js';
 import type Janitor from 'src/EffectLib/Bloom/Janitors';
+import type { Dot } from 'src/EffectLib/Bloom/VFX/Dot';
 import type { Trail } from 'src/EffectLib/Bloom/VFX/Trail';
 import type { TrailTarget } from 'src/EffectLib/Bloom/VFX/TrailTarget';
-import { effectConfig } from '../TrailConfigTypes';
+import type { effectConfig } from '../TrailConfigTypes';
 
 const vsbloom = window.__VSBLOOM__;
 
@@ -13,7 +14,8 @@ let janitor: Janitor;
 type CursorTrail = {
 	trail: Trail;
 	headTarget: TrailTarget;
-}
+	headDot?: Dot;
+};
 
 function GetAbsolutePosition(element: Element): Point {
 	const rect = element.getBoundingClientRect();
@@ -62,7 +64,7 @@ function WatchNewCursorElement(cursor: Element): () => void {
 			texture: curTexture,
 			textureScale: 1,
 		});
-		newTrail.maxAngleChangePerFrameDeg = configs.solidTrailSpeed / 2;
+		newTrail.maxAngleChangePerFrameDeg = configs.solidTrailMaxAngleChangePerFrame;
 		newTrail.tailShorteningSpeed = configs.solidTrailSpeed / 2;
 		newTrail.headSpeed.set(configs.solidTrailSpeed, configs.solidTrailSpeed);
 		newTrail.proximityToGoalWhenAngularlyConstrainedForSlowdown = 25;
@@ -75,7 +77,18 @@ function WatchNewCursorElement(cursor: Element): () => void {
 			//homing back in on the cursor — chaotic, distinct visual paths
 			//even though they all share the same goal.
 			randomInitialVelocity: i > 0,
+
+			lateralDampRadius: configs.solidTrailSpeed * Math.PI,
+
+			postRandomImpulseTargetPursuitDelaySeconds: 0
 		});
+
+		// const newHeadDot = new bloom.vfx.dots.Dot(app, initialCursorPos, {
+		// 	color: 0xFFAFAF,
+		// 	radius: configs.solidTrailWidth * 1.5,
+		// 	alpha: 0.01
+		// });
+		// newHeadDot.position = newHeadTarget.pos;
 
 		//Alias the trail's `goal` to the head target's `pos` (same Point instance).
 		//Since TrailTarget mutates `pos` in place every frame, the trail's goal
@@ -85,6 +98,7 @@ function WatchNewCursorElement(cursor: Element): () => void {
 		trailsForThisCursor.push({
 			trail: newTrail,
 			headTarget: newHeadTarget,
+			// headDot: newHeadDot,
 		});
 	}
 	currentCursorTrailArrays.set(cursor, trailsForThisCursor);
@@ -97,9 +111,10 @@ function WatchNewCursorElement(cursor: Element): () => void {
 		currentKnownCursorElements.delete(cursor);
 		observer.disconnect();
 		currentCursorTrailArrays.delete(cursor);
-		for (const { trail, headTarget } of trailsForThisCursor) {
+		for (const { trail, headTarget, headDot } of trailsForThisCursor) {
 			trail.destroy();
 			headTarget.destroy();
+			headDot?.destroy();
 		}
 	};
 }

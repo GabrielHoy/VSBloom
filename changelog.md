@@ -8,6 +8,7 @@ All notable changes to the VS: Bloom project will be documented in this file.
 
 ### Added
 - Added an option to change the port that the Extension Bridge Server runs on (*changing this setting only takes effect after a re-patch of the client!*)
+- Added a "Solid Trail Count" setting to the Cursor Trails effect, this can admittedly get distracting pretty fast but if you like the Cursor Trails this can lead to some - in my opinion - pretty awesome visual effects! *Not for everyone but for example, try doing something like making trails ~2px, mostly transparent, ~13px/s speed - then bumping the count to 250* 🙂
 
 ### Fixed
 - Fixed some bugs relating to displays and dropdown menus inside of the Extension Settings page in the Webview
