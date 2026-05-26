@@ -32,6 +32,11 @@ let curTexture: Texture;
 
 function OnCursorUpdated(cursor: Element): void {
 	const newCursorPos = GetAbsolutePosition(cursor);
+
+	if (newCursorPos.magnitudeSquared() <= 0.01) {
+		return;
+	}
+
 	const cursorTrailsForThisCursor = currentCursorTrailArrays.get(cursor);
 	if (!cursorTrailsForThisCursor) {
 		vsbloom.Log('error', 'No cursor trail found for cursor');
