@@ -1,16 +1,26 @@
-
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { EffectManager } from '../Effects/EffectManager';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import * as ClientPatcher from '../Patcher/ClientPatcher';
 import * as Common from '../Patcher/Common';
+import {
+	ClientPatchingStatus,
+	EnsureClientIsPatched,
+	EnsureClientIsUnpatched,
+	ShowClientPatchRequestPrompt,
+} from '../Patcher/PatcherFrontend';
+import { DeferredResultProvider } from './API/DeferredResults';
+import {
+	type ExtensionAPI,
+	type PatchedExtensionAPI,
+	UnpatchedClientState,
+	type UnpatchedExtensionAPI,
+	type VSBloomExtensionExports,
+} from './API/ExtensionAPI';
 import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
-import { EnsureClientIsPatched, EnsureClientIsUnpatched, ClientPatchingStatus, type ClientPatchingResult, ShowClientPatchRequestPrompt } from '../Patcher/PatcherFrontend';
-import { ExtensionAPI, PatchedExtensionAPI, UnpatchedClientState, UnpatchedExtensionAPI, VSBloomExtensionExports } from './API/ExtensionAPI';
-import { DeferredResultProvider } from './API/DeferredResults';
 
 function UnpatchedExtensionAPIFactory(
 	unpatchedClientState: UnpatchedClientState,
@@ -19,19 +29,21 @@ function UnpatchedExtensionAPIFactory(
 		isClientPatched: false,
 		unpatchedClientState,
 	};
-};
+}
 
 /**
  * Called after the extension is activated and the current client is
  * verified to have been correctly patched and ready to go
  *
  * *For practical use this can be thought of as the 'real' extension entry point*
- * 
+ *
  * This function is responsible for returning a promise which will be resolved
  * with the patched extension API, once the extension is fully activated and
  * the client is verified to have been correctly patched&ready to go
  */
-async function ExtensionActivatedAndClientPatchingVerified(context: vscode.ExtensionContext): Promise<ExtensionAPI> {
+async function ExtensionActivatedAndClientPatchingVerified(
+	context: vscode.ExtensionContext,
+): Promise<ExtensionAPI> {
 	try {
 		vscode.commands.executeCommand('setContext', 'vsbloom.clientPatched', true);
 
@@ -187,7 +199,7 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						//update the current patch bridge port in extension state
 						context.globalState.update(
 							'vsbloom.electronBridge.currentClientBridgePort',
-							clientPatchingResult.bridgePort
+							clientPatchingResult.bridgePort,
 						);
 						//update last known client patch version in extension state
 						context.globalState.update(
@@ -202,8 +214,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 							const reloadChoice = await vscode.window.showInformationMessage(
 								'The application window needs to be reloaded for the extension to begin working, would you like to do so now?',
 								'Reload Window',
+								'Later',
 							);
-							if (reloadChoice !== undefined) {
+							if (reloadChoice === 'Reload Window') {
 								vscode.commands.executeCommand('workbench.action.reloadWindow');
 								return true;
 							}
@@ -228,8 +241,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 							const reloadChoice = await vscode.window.showInformationMessage(
 								"You'll need to reload the window for these changes to take effect, would you like to do so now?",
 								'Reload Window',
+								'Later',
 							);
-							if (reloadChoice !== undefined) {
+							if (reloadChoice === 'Reload Window') {
 								vscode.commands.executeCommand('workbench.action.reloadWindow');
 								return true;
 							}
@@ -296,9 +310,10 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 												.showInformationMessage(
 													'The application window needs to be reloaded for the latest Electron Client patch to take effect, would you like to do so now?',
 													'Reload Window',
+													'Later',
 												)
 												.then((reloadChoice) => {
-													if (reloadChoice !== undefined) {
+													if (reloadChoice === 'Reload Window') {
 														vscode.commands.executeCommand(
 															'workbench.action.reloadWindow',
 														);
@@ -433,7 +448,7 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 				console.log(
 					`${ConstructVSBloomLogPrefix('Extension', 'info')}Client is currently patched; continuing with extension activation`,
 				);
-	
+
 				// This 'activated-and-patched' function is just to break us out
 				// of this huge async chain and give us a clean code block to work with
 				// once we've determined that the client is patched;
@@ -442,24 +457,27 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 				// will promptly use to resolve our provider promise and
 				// drill the Extension API over to wherever it needs to go,
 				// assuming other extensions want to utilize the VSBloom API
-				ExtensionActivatedAndClientPatchingVerified(context).then((api) => {
-					extensionAPIProvider.resolve(api);
-				}).catch((err) => {
-					extensionAPIProvider.reject(err);
-				});
+				ExtensionActivatedAndClientPatchingVerified(context)
+					.then((api) => {
+						extensionAPIProvider.resolve(api);
+					})
+					.catch((err) => {
+						extensionAPIProvider.reject(err);
+					});
 			}
 		})
 		.catch((err) => {
 			// If we fail to find the application's 'product.json' file, we'll
 			// reject the API provider to let any consumers know that something
 			// went rather wrong
-			extensionAPIProvider.reject(new Error(
-				Common.RaiseError(
-					`VSBloom failed to find the application's 'product.json' file, you may need to manually specify an appropriate file path in VS Code's installation directory for this file -- Error: ${err.message}`,
+			extensionAPIProvider.reject(
+				new Error(
+					Common.RaiseError(
+						`VSBloom failed to find the application's 'product.json' file, you may need to manually specify an appropriate file path in VS Code's installation directory for this file -- Error: ${err.message}`,
+					),
 				),
-			));
+			);
 		});
-
 
 	// Return a plain object so VSCode forwards it immediately as the
 	// extension's public exports without awaiting the deferred API provider.
