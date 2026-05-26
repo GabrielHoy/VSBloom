@@ -5,6 +5,11 @@ node_modules/
 
 #Build outputs
 build/
+build-test/
+
+#Test infrastructure, gets written dynamically at test run time
+test/MockWorkspace/**/.vscode/settings.json
+.vscode-test/
 
 #Intermediary glyph generation files
 imagery/glyphs/*.ttf

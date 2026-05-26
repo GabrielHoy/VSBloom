@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"target": "ES2022",
+		"lib": ["ES2022"],
+		"rootDir": ".",
+		"outDir": "build-test",
+		"strict": true,
+		"sourceMap": true,
+		"types": ["node", "mocha"]
+	},
+	"include": [
+		"src/Patcher/**/*.ts",
+		"test/ExtensionHost/**/*.ts",
+		"test/Shared/**/*.ts"
+	]
+}

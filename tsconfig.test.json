@@ -1,0 +1,20 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"rootDir": ".",
+		"noEmit": true
+	},
+	"include": [
+		"src/**/*.ts",
+		"test/Unit/**/*.ts",
+		"test/Helpers/**/*.ts"
+	],
+	"exclude": [
+		"src/Effects/*/",
+		"src/Webview/SvelteMounter.ts",
+		"src/Webview/**/*.svelte",
+		"src/Webview/svelte-shim.d.ts"
+	]
+}

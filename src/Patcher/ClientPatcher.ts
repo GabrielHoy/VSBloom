@@ -307,8 +307,8 @@ export async function UpdateChecksumForTrackedFile(
 export async function GetClientLauncherScriptElementString(
 	port: number,
 	authToken: string,
+	clientScriptPath: string = path.join(__dirname, 'VSBloomClient.js'),
 ): Promise<string> {
-	const clientScriptPath = path.join(__dirname, 'VSBloomClient.js');
 
 	if (!(await Common.IsThereAFileAtPath(clientScriptPath))) {
 		throw new Error(
@@ -345,8 +345,9 @@ export async function GetClientLauncherScriptElementString(
  * their own copies and sending them over a websocket connection
  * because we're not going to do that
  */
-export async function GetSharedLibrariesScriptElementString(): Promise<string> {
-	const sharedLibsPath = path.join(__dirname, 'VSBloomSharedLibs.js');
+export async function GetSharedLibrariesScriptElementString(
+	sharedLibsPath: string = path.join(__dirname, 'VSBloomSharedLibs.js'),
+): Promise<string> {
 
 	if (!(await Common.IsThereAFileAtPath(sharedLibsPath))) {
 		throw new Error(
@@ -438,6 +439,7 @@ export async function PatchElectronHTMLFile(
 	initFilePath: string,
 	bridgePort: number,
 	authToken: string,
+	scriptOverrides?: { clientScriptPath?: string; sharedLibsPath?: string },
 ) {
 	if (!(await Common.IsThereAFileAtPath(initFilePath))) {
 		throw new Error(
@@ -464,11 +466,11 @@ export async function PatchElectronHTMLFile(
 	}
 
 	//get the shared libraries script that loads before the client
-	const sharedLibsPayload = await GetSharedLibrariesScriptElementString();
+	const sharedLibsPayload = await GetSharedLibrariesScriptElementString(scriptOverrides?.sharedLibsPath);
 
 	//get a copy of the actual VSBloom Client script that we'll
 	//be patching into the Electron init file
-	const clientPayload = await GetClientLauncherScriptElementString(bridgePort, authToken);
+	const clientPayload = await GetClientLauncherScriptElementString(bridgePort, authToken, scriptOverrides?.clientScriptPath);
 
 	//prefix the file with the patch indicator to explain to curious users what's up
 	let patchedFileContents = HTML_FILE_PATCH_INDICATOR + fileContents;

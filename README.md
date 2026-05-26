@@ -14,7 +14,7 @@
 
 VSBloom is an extension which visually overhauls the Visual Studio Code experience with dynamic animated effects and fresh approaches to the application's UI, far beyond what traditional VS Code themes can offer.
 
-Unlike standard color themes that only change things like syntax highlighting and window backgrounds, VSBloom's focus is not to present yet another color palette to choose from; instead it renders actual *animations* — trails that follow your cursor as it types, blur effects that respond to window focus, etc.
+Unlike standard color themes that only change things like syntax highlighting and window backgrounds, VSBloom's focus is not to present yet another color palette to choose from; instead it renders actual *animations* - trails that follow your cursor as it types, blur effects that respond to window focus, etc.
 
 ## How It Works
 
@@ -22,9 +22,9 @@ VSBloom works differently from typical VS Code extensions and its effects are ma
 
 1. **Installation**: When you first install the VSBloom extension, you'll see a prompt appear asking for your permission to apply a small patch to VS Code's Electron Renderer, this is required for the extension to interact with the rendered HTML page that VS Code displays to you. After this patch is installed, you'll see one more prompt asking you to reload the VS Code window a single time - this will allow the extension to get going!
 
-2. **Extension Bridge** — The patch that we apply to the Electron Renderer acts as a "client" which connects to the VS Code extension, allowing for real-time communication between the VS Code Extension Host and the Electron DOM to synchronize which effects are enabled as well as updating user configurations for effects without requiring a client restart - something which is usually *impossible* due to [restrictions](https://code.visualstudio.com/api/extension-capabilities/overview#restrictions) that VS Code imposes on Extensions.
+2. **Extension Bridge** - The patch that we apply to the Electron Renderer acts as a "client" which connects to the VS Code extension, allowing for real-time communication between the VS Code Extension Host and the Electron DOM to synchronize which effects are enabled as well as updating user configurations for effects without requiring a client restart - something which is usually *impossible* due to [restrictions](https://code.visualstudio.com/api/extension-capabilities/overview#restrictions) that VS Code imposes on Extensions.
 
-3. **Modular Effect System** — All of the effects that VSBloom provides are are loaded and unloaded dynamically based on your settings, allowing for you to see changes in real-time as you update effect settings without needing to reload the window or restart VS Code; we attempt to ensure that **all effects** in VSBloom are individually toggleable and configurable to the largest extent possible!
+3. **Modular Effect System** - All of the effects that VSBloom provides are are loaded and unloaded dynamically based on your settings, allowing for you to see changes in real-time as you update effect settings without needing to reload the window or restart VS Code; we attempt to ensure that **all effects** in VSBloom are individually toggleable and configurable to the largest extent possible!
 
 ## Current Features
 
