@@ -7,9 +7,6 @@
  * to head directly towards a real-world target like a cursor position
  * but instead towards a position that itself glides towards that target.
  *
- * Hooks into the application's ticker just like `Trail` does so its
- * physics step runs once per rendered frame regardless of how often
- * the consumer updates `goal`.
  */
 
 import { type Application, Point } from 'pixi.js';
@@ -19,7 +16,7 @@ export interface TrailTargetOptions {
 	 * Max speed in pixels/frame that the target's position
 	 * can travel towards `goal`.
 	 *
-	 * Also doubles as the per-frame acceleration magnitude when
+	 * Doubles as the per-frame acceleration magnitude when
 	 * the target is already in motion.
 	 */
 	speed?: number;
@@ -59,8 +56,9 @@ export class TrailTarget {
 	/**
 	 * Current position of the trail target.
 	 *
-	 * Mutated in place every frame, so external consumers (e.g. a `Trail`
-	 * whose `goal` aliases this Point) automatically see live updates.
+	 * Mutated in place every frame such that external consumers
+	 * automatically see live updates (e.g. `Trail` classes whose
+	 * `goal` aliases this Point) .
 	 */
 	public pos: Point;
 	/**
@@ -70,7 +68,7 @@ export class TrailTarget {
 	/**
 	 * Goal position the trail target is moving towards.
 	 *
-	 * Consumers should mutate this (e.g. via `goal.copyFrom(newPos)`)
+	 * Consumers should *mutate* this (e.g. via `goal.copyFrom(newPos)`)
 	 * rather than reassigning it, so that any aliased references
 	 * stay valid.
 	 */
@@ -79,7 +77,7 @@ export class TrailTarget {
 	 * Max speed in pixels/frame the trail target's position
 	 * can travel towards `goal`.
 	 *
-	 * Also doubles as the per-frame acceleration magnitude.
+	 * Doubles as the per-frame acceleration magnitude.
 	 */
 	public speed: number = 20;
 	/**
@@ -149,7 +147,6 @@ export class TrailTarget {
 		const toGoalDir = toGoal.normalize();
 		const isAtRest = this.velocity.magnitudeSquared() < 1e-3;
 		const dTFromRandomImpulse = (this.app.ticker.lastTime - this.lastRandomImpulseTimestamp) / 1000;
-		const insidePostRandomImpulseDelayPeriod = this.postRandomImpulseTargetPursuitDelaySeconds > 0 && dTFromRandomImpulse < this.postRandomImpulseTargetPursuitDelaySeconds;
 
 		if (isAtRest && !this.isInRandomImpulseDelayPeriod) {
 			//transitioning rest -> motion; pick a starting velocity
