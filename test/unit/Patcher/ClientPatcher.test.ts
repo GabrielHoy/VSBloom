@@ -3,6 +3,8 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import {
+	GetClientLauncherScriptElementString,
+	GetSharedLibrariesScriptElementString,
 	HTML_FILE_PATCH_INDICATOR,
 	IsElectronHTMLFilePatched,
 	IsElectronJSFilePatched,
@@ -49,7 +51,7 @@ describe('IsElectronHTMLFilePatched', () => {
 	let tmpDir: string;
 
 	beforeEach(async () => {
-		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-htmlp-'));
+		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-htmlpatching-'));
 	});
 
 	afterEach(async () => {
@@ -79,7 +81,7 @@ describe('IsElectronJSFilePatched', () => {
 	let tmpDir: string;
 
 	beforeEach(async () => {
-		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-jsp-'));
+		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-jspatching-'));
 	});
 
 	afterEach(async () => {
@@ -101,6 +103,84 @@ describe('IsElectronJSFilePatched', () => {
 	test('throws for a non-existent file', async () => {
 		await expect(
 			IsElectronJSFilePatched(path.join(tmpDir, 'ghost.js')),
+		).rejects.toThrow(/\[VSBloom\]/);
+	});
+});
+
+/**
+ * Script element builders, tested via explicit paths so no real
+ * build artifacts required here for now
+*/
+describe('GetClientLauncherScriptElementString', () => {
+	let tmpDir: string;
+	let fakeScript: string;
+
+	beforeEach(async () => {
+		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-fakeclientlauncher-'));
+		fakeScript = path.join(tmpDir, 'FakeVSBloomClient.js');
+		await fs.promises.writeFile(fakeScript, 'console.log("fake client");', 'utf8');
+	});
+
+	afterEach(async () => {
+		await fs.promises.rm(tmpDir, { recursive: true, force: true });
+	});
+
+	test('returns a <script> element string', async () => {
+		const result = await GetClientLauncherScriptElementString(52847, 'token', fakeScript);
+		expect(result).toContain('<script');
+		expect(result).toContain('</script>');
+	});
+
+	test('embeds the port number', async () => {
+		const result = await GetClientLauncherScriptElementString(12345, 'token', fakeScript);
+		expect(result).toContain('12345');
+	});
+
+	test('embeds the auth token', async () => {
+		const result = await GetClientLauncherScriptElementString(52847, 'myToken', fakeScript);
+		expect(result).toContain('myToken');
+	});
+
+	test('includes the script file content', async () => {
+		const result = await GetClientLauncherScriptElementString(52847, 'token', fakeScript);
+		expect(result).toContain('fake client');
+	});
+
+	test('throws when the script file does not exist', async () => {
+		await expect(
+			GetClientLauncherScriptElementString(52847, 'token', path.join(tmpDir, 'missing.js')),
+		).rejects.toThrow(/\[VSBloom\]/);
+	});
+});
+
+describe('GetSharedLibrariesScriptElementString', () => {
+	let tmpDir: string;
+	let fakeLibs: string;
+
+	beforeEach(async () => {
+		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-fakeSharedLibraries-'));
+		fakeLibs = path.join(tmpDir, 'FakeVSBloomSharedLibs.js');
+		await fs.promises.writeFile(fakeLibs, 'window.__VSBLOOM_LIBS__ = {};', 'utf8');
+	});
+
+	afterEach(async () => {
+		await fs.promises.rm(tmpDir, { recursive: true, force: true });
+	});
+
+	test('returns a <script> element string', async () => {
+		const result = await GetSharedLibrariesScriptElementString(fakeLibs);
+		expect(result).toContain('<script');
+		expect(result).toContain('</script>');
+	});
+
+	test('includes the script file content', async () => {
+		const result = await GetSharedLibrariesScriptElementString(fakeLibs);
+		expect(result).toContain('__VSBLOOM_LIBS__');
+	});
+
+	test('throws when the script file does not exist', async () => {
+		await expect(
+			GetSharedLibrariesScriptElementString(path.join(tmpDir, 'missing.js')),
 		).rejects.toThrow(/\[VSBloom\]/);
 	});
 });

@@ -10,7 +10,7 @@ import {
 	Rad2Deg,
 	SlerpVector,
 } from '../../src/EffectLib/Bloom/Geometry/Geometry';
-import { MockPoint } from '../helpers/MockPoint';
+import { MockPoint } from '../Helpers/MockPoint';
 
 /**
  * Geometry.ts uses `import type { Point }` - the type is erased at runtime.

@@ -183,7 +183,7 @@ const effectPlugin: esbuild.Plugin = {
             if (!outFile || !fs.existsSync(outFile)) {
                 return;
             }
-            console.log(`[build]   pulling ${Colorful.GetColoredString([255,255,255], "non-script", ["bold"])} files for effect "${outFile}"...`);
+            console.log(`[build]   pulling ${Colorful.GetColoredString([255,255,255], "non-script", ["bold", "underline"])} files for effect "${outFile}"...`);
 
             try {
                 const entryPoints = build.initialOptions.entryPoints;
@@ -215,7 +215,7 @@ const effectPlugin: esbuild.Plugin = {
                                     outputContents = buildBanners["__EFFECT_CSS__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + fileContents;
                                 }
                                 await fs.promises.writeFile(outputFilePath, outputContents, "utf8");
-                                console.log(`[build]     - minified ${Colorful.GetColoredString([144,0,255], "CSS", ["bold"])} file "${Colorful.GetColoredString([255,255,255], `${file}`, ["bold"])}" and copied to "${Colorful.GetColoredString([255,255,255], `${outputFilePath}`, ["bold"])}"`);
+                                console.log(`[build]     - minified ${Colorful.GetColoredString([144,0,255], "CSS", ["bold", "underline"])} file "${Colorful.GetColoredString([255,255,255], `${file}`, ["bold"])}" and copied to "${Colorful.GetColoredString([255,255,255], `${outputFilePath}`, ["bold"])}"`);
                             })
                         );
                     } else if (file.endsWith(".json") || file.endsWith(".jsonc")) {
@@ -232,7 +232,7 @@ const effectPlugin: esbuild.Plugin = {
                                 outputContents = buildBanners["__EFFECT_JSON__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + whitespaceRemoved;
                             }
                             fs.writeFileSync(outputFilePath, outputContents, "utf8");
-                            console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,0], isJsonC ? "JSON-C" : "JSON", ["bold"].concat(isJsonC ? ["underline", "inverse"] : []) as any)} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
+                            console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,0], isJsonC ? "JSON-C" : "JSON", ["bold"].concat(isJsonC ? ["underline"] : []) as any)} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
                         } catch (err) {
                             console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to shorten and copy ${isJsonC ? "JSON-C" : "JSON"} file "${file}":`, ["bold", "underline"])}`, (err as Error).message);
                         }
@@ -265,7 +265,7 @@ const oneLinerPlugin: esbuild.Plugin = {
             if (!outFile || !fs.existsSync(outFile)) {
                 return;
             }
-            console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold"])} to single line...`);
+            console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline", "inverse"])} to single line...`);
 
             try {
                 const code = await fs.promises.readFile(outFile, "utf8");

@@ -436,7 +436,10 @@
 		"gen-glyphs": "tsx bundler/GlyphBuilder.ts",
 		"lint": "eslint src",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"test:host:build": "tsc -p tsconfig.test-host.json",
+		"test:host": "npm run test:host:build && vscode-test",
+		"test:host:keepCache": "cross-env VSBLOOM_KEEP_VSCODE_CACHE=1 npm run test:host"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.12.0",
@@ -449,6 +452,8 @@
 		"@types/vscode-webview": "^1.57.5",
 		"@types/ws": "^8.18.1",
 		"@vscode/sudo-prompt": "^9.3.2",
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.5.2",
 		"acorn": "^8.16.0",
 		"async-mutex": "^0.5.0",
 		"bits-ui": "^2.16.3",
