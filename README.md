@@ -35,15 +35,6 @@ VSBloom works differently from typical VS Code extensions and its effects are ma
 
 *(Extension is in early development, more effects coming soon!)*
 
-## Command List
-
-| Name | Description |
-|---------|-------------|
-| `VSBloom: Enable and Patch Electron Client` | Applies the client patch required to enable VSBloom's functionality |
-| `VSBloom: Disable and Un-Patch Electron Client` | Removes VSBloom's client patching, disabling any and all effects |
-| `VSBloom: Retry Electron Client Patching` | Removes the VSBloom client patching and promptly re-patches the client |
-| `VSBloom: Reload All Effects` | Performs an immediate hot-reload of all currently active effects |
-
 ## Frequently Asked Questions
 
 ### Is VSBloom safe? What did you do to my VS Code?!
@@ -105,11 +96,21 @@ There isn't a formalized Roadmap available quite yet, but some ideas I have for 
 - Particle effects for things like closing tabs
 - Smoothed scrubbers for scrolling and cursor snapping
 - Custom background effects
-- A dedicated WebView for the VSBloom Configuration to offer better UX instead of having many configs flooding the VSCode User Settings tab
 
 If you notice a bug with VSBloom's current functionality or effects however, please make an issue on GitHub and I will promptly look into it - **stability is paramount** with
 an extension that modifies the VS Code client, and thus I will always prioritize having a working, robust and crash-resistant implementation of current functionality over churning
 out mass amounts of effects!
+
+## Command List
+
+| Name | Description | Enabled Upon |
+|---------|-------------|-------------|
+| `VSBloom: Enable and Patch Electron Client` | Applies the client patch required to enable VSBloom's functionality | When the client is not yet patched or it is detected that it has become unpatched*(i.e after each VSCode update)* |
+| `VSBloom: Disable and Un-Patch Electron Client` | Removes VSBloom's client patching, disabling any and all effects | When the client is patched and VSBloom is up & running as expected |
+| `VSBloom: Retry Electron Client Patching` | Removes the VSBloom client patching and promptly re-patches the client | When the client is patched and VSBloom is up & running as expected |
+| `VSBloom: Reload All Effects` | Performs an immediate hot-reload of all currently active effects | When the client is patched |
+| `VSBloom: Open Menu` | Opens the VSBloom Menu, a dedicated panel providing an interactive & 'visually appealing' way of interacting with the VSBloom Extension's settings | When the client is patched and the VSBloom Menu isn't already open |
+| `VSBloom: Open Settings Editor` | Directly opens the VSBloom Settings Editor, a dedicated panel providing a much nicer & more 'visually appealing' experience for browsing & tweaking all of VSBloom's configurations, compared to the default VS Code settings list | When the client is patched |
 
 ## Contributing
 
