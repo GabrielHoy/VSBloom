@@ -79,7 +79,7 @@ function WatchNewCursorElement(cursor: Element): () => void {
 			speed: configs.solidTrailSpeed,
 			//First trail tracks the cursor directly; additional trails get a
 			//random initial direction so each one flies off uniquely before
-			//homing back in on the cursor — chaotic, distinct visual paths
+			//homing back in on the cursor - chaotic, distinct visual paths
 			//even though they all share the same goal.
 			randomInitialVelocity: i > 0,
 
