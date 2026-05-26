@@ -9,13 +9,12 @@ All notable changes to the VS: Bloom project will be documented in this file.
 ## [1.4.2] - 2026-05-26
 
 ### Added
-- Added an option to change the port that the Extension Bridge Server runs on (*changing this setting only takes effect after a re-patch of the client!*)
-- Added a "Solid Trail Count" setting to the Cursor Trails effect, this can admittedly get distracting pretty fast but if you like the Cursor Trails this can lead to some - in my opinion - pretty awesome visual effects! *Not for everyone but - for example - try doing something like making trails ~2px, mostly transparent, ~13px/s speed - then bumping the count to 250.*
-- Allowed the rather-specific 'Solid Trail Max Angle Change Per Frame' setting to be modified by the user if they don't wish for cursors to take such a wide, 'dancing' arc around the cursor as it moves - or, on the contrary, if they want more of that.
-
+- An option now exists to change the port that the Extension Bridge Server runs on (*changing this setting only takes effect after a re-patch of the client for now!*)
+- A ***'Solid Trail Count'*** setting to the Cursor Trails effect, this can admittedly get distracting pretty fast but if you like the Cursor Trails this can lead to some - in my opinion - pretty awesome visual effects! *Not for everyone but - for example - try doing something like making trails ~2px, mostly transparent, ~13px/s speed - then bumping the count to 250.*
+- The rather-specific ***'Solid Trail Max Angle Change Per Frame'*** setting is now modifiable by the user if they don't wish for cursors to take such a wide, 'dancing' arc around the cursor as it moves - *or, on the contrary, if they want more of that.*
 
 ### Fixed
-- Fixed some bugs relating to displays and dropdown menus inside of the Extension Settings page in the Webview
+- Some bugs relating to displays and dropdown menus inside of the Extension Settings page in the Webview
 
 ## [1.4.1] - 2026-03-11
 
