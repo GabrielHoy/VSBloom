@@ -8,7 +8,7 @@ import * as jsonc from "jsonc-parser";
 import * as Colorful from "../src/Debug/Colorful.ts";
 import { IsEffectEnabled } from "./EffectBuildConfigProvider";
 
-import { RebuildPackageFile } from "./PackageBuilder";
+import { RebuildPackageFile } from "./PackageJSONBuilder.ts";
 
 const isProductionBuild: boolean = process.argv.includes("--production");
 const shouldWatch: boolean = process.argv.includes("--watch");
@@ -482,7 +482,9 @@ async function Main(): Promise<void> {
     if (shouldWatch) {
         console.log(`[watch] build ${Colorful.GetColoredString([200,255,200], "started!")}`);
         await Promise.all(allContexts.map((ctx) => ctx.rebuild()));
-        console.log(`[watch] ${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold"])}`);
+        console.log();
+        console.log(`${Colorful.GetColoredString([255,255,255], "=".repeat(64), ["bold"])}\n`);
+        console.log(`[watch] ${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold", "underline"])}\n`);
 
         await Promise.all(allContexts.map((ctx) => ctx.watch()));
         console.log(`[watch] setting up effect ${Colorful.GetColoredString([144,0,255], "CSS file", ["bold"])} watchers...`);
@@ -517,7 +519,9 @@ async function Main(): Promise<void> {
     } else {
         console.log(`[build] Build ${Colorful.GetColoredString([200,255,200], "started")}`);
         await Promise.all(allContexts.map((ctx) => ctx.rebuild()));
-        console.log(`[build] ${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold"])}`);
+        console.log();
+        console.log(`${Colorful.GetColoredString([255,255,255], "=".repeat(64), ["bold"])}\n`);
+        console.log(`[build] ${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold", "underline"])}\n`);
         await Promise.all(allContexts.map((ctx) => ctx.dispose()));
     }
 }

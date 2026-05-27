@@ -2,7 +2,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import * as jsonc from "jsonc-parser";
-import type { EffectConfig } from "./PackageBuilder";
+import type { EffectConfig } from "./PackageJSONBuilder";
 
 const EFFECT_SRC_DIR = "src/Effects";
 
