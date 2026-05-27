@@ -22,7 +22,7 @@ const ephemeralDirs = [];
 
 /** @type {string} */
 const vscodePath = await downloadAndUnzipVSCode('stable');
-CloneWorkbenchFiles('vscode', ResolveVSCodeProductJson(vscodePath));
+CloneWorkbenchFiles('vscode', ResolveVSCodeProductJSON(vscodePath));
 
 // *Cursor
 // Cursor uses an InnoSetup installer on Windows (identifiable by unins000.exe),
@@ -100,18 +100,18 @@ export default [
  */
 async function FindLocallyInstalledEditor(name, executableName, registrySearch) {
 	if (process.platform !== 'win32') {
-		console.warn(`[VSBloom] ${name}: skipped — registry detection is Windows-only`);
+		console.warn(`[VSBloom] ${name}: skipped since registry detection is Windows-only currently`);
 		return null;
 	}
 	try {
 		const installDir = await QueryRegistryInstallLocation(registrySearch);
 		if (!installDir) {
-			console.warn(`[VSBloom] ${name}: not found in registry — install it to include it in the test run`);
+			console.warn(`[VSBloom] Warning: The ${name} IDE was not found in the registry: Install it to include it in the deployment test run.`);
 			return null;
 		}
 
-		const executablePath = FindFileRecursive(installDir, executableName);
-		const productJsonPath = FindFileRecursive(installDir, 'product.json');
+		const executablePath = FindFileDeep(installDir, executableName);
+		const productJsonPath = FindFileDeep(installDir, 'product.json');
 		if (!executablePath) {
 			throw new Error(`${executableName} not found under ${installDir}`);
 		}
@@ -184,6 +184,7 @@ function CloneWorkbenchFiles(editorName, productJsonPath) {
 		if (!fs.existsSync(src)) {
 			continue;
 		}
+
 		// If VSBloom has already patched this file in the live install, its
 		// .bak.vsbloom backup holds the original unpatched content. Prefer that
 		// as the clone source so the test environment always starts clean,
@@ -191,7 +192,7 @@ function CloneWorkbenchFiles(editorName, productJsonPath) {
 		const backupSrc = src + '.bak.vsbloom';
 		const effectiveSrc = fs.existsSync(backupSrc) ? backupSrc : src;
 		if (effectiveSrc !== src) {
-			console.log(`[VSBloom] ${editorName}: ${path.basename(src)} is patched in live install — cloning from .bak.vsbloom`);
+			console.log(`[VSBloom] ${editorName}: ${path.basename(src)} is patched in live install - falling back to .bak.vsbloom for file clone op to ensure a clean test slate`);
 		}
 		const dest = path.join(tempDir, 'out', key);
 		fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -216,7 +217,7 @@ function CloneWorkbenchFiles(editorName, productJsonPath) {
  * @param {number} maxDepth
  * @returns {string | null}
  */
-function FindFileRecursive(rootDir, filename, maxDepth = 8) {
+function FindFileDeep(rootDir, filename, maxDepth = 8) {
 	const lower = filename.toLowerCase();
 	/** @type {{ dir: string; depth: number }[]} */
 	const queue = [{ dir: rootDir, depth: 0 }];
@@ -250,7 +251,7 @@ function FindFileRecursive(rootDir, filename, maxDepth = 8) {
  * @param {string} executablePath
  * @returns {string}
  */
-function ResolveVSCodeProductJson(executablePath) {
+function ResolveVSCodeProductJSON(executablePath) {
 	if (process.platform === 'darwin') {
 		// executable: .../Visual Studio Code.app/Contents/MacOS/Electron
 		// product.json: .../Visual Studio Code.app/Contents/Resources/app/product.json
@@ -274,5 +275,5 @@ function ResolveVSCodeProductJson(executablePath) {
 			return candidate;
 		}
 	}
-	throw new Error(`[VSBloom] Could not find product.json under ${installDir}`);
+	throw new Error(`[VSBloom] Warning: Could not find product.json under ${installDir}`);
 }

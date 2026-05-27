@@ -265,7 +265,7 @@ const oneLinerPlugin: esbuild.Plugin = {
             if (!outFile || !fs.existsSync(outFile)) {
                 return;
             }
-            console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline", "inverse"])} to single line...`);
+            console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to single line...`);
 
             try {
                 const code = await fs.promises.readFile(outFile, "utf8");
@@ -278,7 +278,7 @@ const oneLinerPlugin: esbuild.Plugin = {
 
                 const singleLine = await CollapseJSCode(code, fileBanner);
                 await fs.promises.writeFile(outFile, singleLine, "utf8");
-                console.log(`[build]     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold"])} chars`);
+                console.log(`[build]     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold", "underline"])} chars`);
             } catch (err) {
                 console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to collapse "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
             }

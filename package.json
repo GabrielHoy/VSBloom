@@ -429,7 +429,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
-		"vsix": "vsce package --allow-star-activation",
+		"vsix": "tsx bundler/PreVSIXChecks.ts && vsce package --allow-star-activation",
 		"compile": "npm run gen-glyphs && tsx bundler/MainBundler.ts",
 		"watch": "tsx bundler/MainBundler.ts --watch",
 		"package": "npm run gen-glyphs && tsx bundler/MainBundler.ts --production",

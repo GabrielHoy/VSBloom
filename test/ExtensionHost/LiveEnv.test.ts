@@ -106,7 +106,7 @@ suite('LiveEnvironment - validate patcher against real VS Code files', () => {
 		assert.ok(/<head[\s>]/i.test(content), 'workbench.html must contain a <head> element');
 	});
 
-	suite('patch/unpatch round-trip', () => {
+	suite('Patch & Un-Patch Round-Trip', () => {
 		test('HTML: PatchElectronHTMLFile + UnPatchClient restores original content', async () => {
 			const patchClone = await CloneEnvironment(FindProductJSONPath());
 			const fakeScriptsDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'vsbloom-rt-html-'));
