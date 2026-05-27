@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.25)
 
+# CMAKE_OSX_DEPLOYMENT_TARGET *must* be set before project() so CMake selects the
+# right SDK at configure time on macOS.
+# This defines the minimum version of macOS that these native binaries will run on.
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment target")
+endif()
+
 # Grab the version string for CMake to use from the `vcpkg.json`
 # sibling file in this directory - we'll use its value for our build
 # versioning accordingly.
