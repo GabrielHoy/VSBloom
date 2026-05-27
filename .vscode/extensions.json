@@ -2,6 +2,11 @@
 	"recommendations": [
 		"dbaeumer.vscode-eslint",
 		"ms-vscode.extension-test-runner",
-		"ms-vscode.cmake-tools"
-	]
+		"ms-vscode.cmake-tools",
+		"github.vscode-github-actions",
+		"llvm-vs-code-extensions.vscode-clangd",
+		"vadimcn.vscode-lldb",
+		"svelte.svelte-vscode",
+		"dbaeumer.vscode-eslint"
+	],
 }
