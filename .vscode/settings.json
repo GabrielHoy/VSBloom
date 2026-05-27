@@ -11,6 +11,12 @@
 	"files.associations": {
 		"*.css": "tailwindcss"
 	},
+	/**
+	 * VSBloom provides some QOL JSON Schemas for generally working with
+	 * and navigating the extension's JSON configs in a reasonable manner.
+	 *
+	 * All of them will be defined below here as well as the globs they target.
+	 */
 	"json.schemas": [
 		{
 			"fileMatch": [
@@ -49,4 +55,6 @@
 		"vsbloom",
 		"WGSL"
 	],
+	"cmake.sourceDirectory": "${workspaceFolder}/src/Native",
+	"cmake.useCMakePresets": "always",
 }

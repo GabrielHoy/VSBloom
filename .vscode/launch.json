@@ -31,6 +31,28 @@
 			"env": {
 				"VSBLOOM_DEVELOPMENT_MODE": "true"
 			}
-		}
+		},
+		{
+            "name": "Debug Native (LLDB)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "${defaultBuildTask}",
+            "initCommands": []
+        },
+        {
+            "name": "Debug Native Tests (LLDB)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${cmake:buildDirectory}/tests/axiom_tests.exe",
+            "args": [],
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "${defaultBuildTask}",
+            "initCommands": []
+        }
 	]
 }

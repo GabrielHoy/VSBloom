@@ -17,3 +17,25 @@ imagery/glyphs/*.svg
 
 #Packaged Extension Files
 vsbloom-*.vsix
+
+
+
+#Native CMake files
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+CMakeUserPresets.json
+#Native clangd generated file
+.clangd
+#Native CMake intermediary build files
+src/Native/build/
+#Native vcpkg cached files
+vcpkg_installed/
