@@ -79,8 +79,16 @@
 					"when": "vsbloom.clientPatched && !vsbloom.menuPanel.visible"
 				},
 				{
+					"command": "vsbloom.stopNativeRuntime",
+					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && vsbloom.nativeRuntime.isRunning"
+				},
+				{
 					"command": "vsbloom.restartNativeRuntime",
 					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported"
+				},
+				{
+					"command": "vsbloom.startNativeRuntime",
+					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && !vsbloom.nativeRuntime.isRunning"
 				},
 				{
 					"command": "vsbloom.shutDownBridgeServer",
@@ -116,6 +124,14 @@
 			{
 				"command": "vsbloom.openExtensionSettingsEditor",
 				"title": "VSBloom: Open Settings Editor"
+			},
+			{
+				"command": "vsbloom.startNativeRuntime",
+				"title": "VSBloom: Start Native Runtime"
+			},
+			{
+				"command": "vsbloom.stopNativeRuntime",
+				"title": "VSBloom: Stop Native Runtime"
 			},
 			{
 				"command": "vsbloom.restartNativeRuntime",

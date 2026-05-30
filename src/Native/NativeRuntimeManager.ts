@@ -21,6 +21,8 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private outputChannel: vscode.OutputChannel;
 	private childProc: childProcess.ChildProcess | null = null;
 
+    public static isRunning: boolean = false;
+
 	private constructor() {
 		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
 
@@ -114,10 +116,24 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
 		this.childProc.on('close', (code: number) => {
 			this.Log('debug', `Native runtime closed with code ${code}.`);
+            VSBloomNativeRuntimeManager.SetIsRunningState(false);
+            this.childProc = null;
 		});
 
-		return this.IsNativeRuntimeActive();
+        const isNowActive = this.IsNativeRuntimeActive();
+        VSBloomNativeRuntimeManager.SetIsRunningState(isNowActive);
+		return isNowActive;
 	}
+
+    private static SetIsRunningState(isNowRunning: boolean): void {
+        vscode.commands.executeCommand(
+            'setContext',
+            'vsbloom.nativeRuntime.isRunning',
+            isNowRunning,
+        );
+
+        VSBloomNativeRuntimeManager.isRunning = isNowRunning;
+    }
 
 	/**
 	 * Checks whether the native runtime is active or not.
@@ -145,6 +161,8 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		this.Log('debug', 'Stopping the native runtime...');
 		this.childProc?.kill('SIGTERM');
 		this.childProc = null;
+
+        VSBloomNativeRuntimeManager.SetIsRunningState(false);
 
 		return true;
 	}

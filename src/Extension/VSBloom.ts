@@ -435,12 +435,52 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 
 					if (nativeRuntimeManager) {
 						await nativeRuntimeManager.RestartNativeRuntime();
+						vscode.window.showInformationMessage('Native runtime restarted.');
 					} else {
 						vscode.window.showErrorMessage('Failed to restart the native runtime, this window is not hosting the native runtime manager.');
 					}
 				},
 			);
 			context.subscriptions.push(restartNativeRuntimeCmdDisp);
+
+			const startNativeRuntimeCmdDisp = vscode.commands.registerCommand(
+				'vsbloom.startNativeRuntime',
+				async () => {
+					const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
+					if (nativeRuntimeManager) {
+						if (nativeRuntimeManager.IsNativeRuntimeActive()) {
+							vscode.window.showInformationMessage('Native runtime is already running.');
+							return;
+						}
+
+						await nativeRuntimeManager.StartNativeRuntime();
+						vscode.window.showInformationMessage('Native runtime started.');
+					} else {
+						vscode.window.showErrorMessage('Failed to start the native runtime, this window is not hosting the native runtime manager.');
+					}
+				},
+			);
+			context.subscriptions.push(startNativeRuntimeCmdDisp);
+
+			const stopNativeRuntimeCmdDisp = vscode.commands.registerCommand(
+				'vsbloom.stopNativeRuntime',
+				async () => {
+					const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
+					if (nativeRuntimeManager) {
+						if (!nativeRuntimeManager.IsNativeRuntimeActive()) {
+							vscode.window.showInformationMessage('Native runtime is not running.');
+							return;
+						}
+
+						await nativeRuntimeManager.StopNativeRuntime();
+						vscode.window.showInformationMessage('Native runtime stopped.');
+					} else {
+						vscode.window.showErrorMessage('Failed to stop the native runtime, this window is not hosting the native runtime manager.');
+					}
+				},
+			);
+			context.subscriptions.push(stopNativeRuntimeCmdDisp);
+
 
 			const shutDownBridgeServerCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.shutDownBridgeServer',
