@@ -13,11 +13,30 @@ endif()
 file(READ "${CMAKE_CURRENT_LIST_DIR}/vcpkg.json" VCPKG_JSON_RAW_CONTENT)
 string(REGEX MATCH "\"version\"[ \t\r\n]*:[ \t\r\n]*\"([^\"]+)\"" _VERSTR "${VCPKG_JSON_RAW_CONTENT}")
 set(VSBLOOM_NATIVE_VERSION "${CMAKE_MATCH_1}")
-project(vsbloom-native
+project(VSBloomNativeRuntime
     VERSION ${VSBLOOM_NATIVE_VERSION}
     LANGUAGES CXX
 )
 
+# Our RC file on Windows requires some variables to be set for versioning & file metadata:
+set(VSBLOOM_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(VSBLOOM_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(VSBLOOM_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(VSBLOOM_VERSION_BUILD $ENV{GITHUB_RUN_NUMBER})
+if(NOT VSBLOOM_VERSION_BUILD) # If we're not running in a CI environment, build defaults to 0
+  set(VSBLOOM_VERSION_BUILD 0)
+endif()
+set(VSBLOOM_VERSION_STRING "${PROJECT_VERSION}")
+string(TIMESTAMP VSBLOOM_COPYRIGHT_YEAR "%Y")
+if(WIN32)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileMeta.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/FileMeta.rc
+    @ONLY
+  )
+endif()
+
+# C++ Standards
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -37,45 +56,49 @@ find_package(nlohmann_json CONFIG REQUIRED)
 #Target sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
-add_executable(vsbloom-native ${SOURCES})
+add_executable(VSBloomNativeRuntime ${SOURCES})
 
-set_target_properties(vsbloom-native PROPERTIES OUTPUT_NAME "vsbloom-native")
+set_target_properties(VSBloomNativeRuntime PROPERTIES OUTPUT_NAME "VSBloomNativeRuntime" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-target_include_directories(vsbloom-native PRIVATE
+target_include_directories(VSBloomNativeRuntime PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(vsbloom-native PRIVATE
+target_link_libraries(VSBloomNativeRuntime PRIVATE
     nlohmann_json::nlohmann_json
 )
 
-# Platform-specific audio backend(s)
+# Platform-specific audio backend(s) and metadata
 if(WIN32)
-    target_compile_definitions(vsbloom-native PRIVATE
+    target_sources(VSBloomNativeRuntime PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/FileMeta.rc
+    )
+
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE
         VSBLOOM_AUDIO_BACKEND_WASAPI
         WIN32_LEAN_AND_MEAN
         NOMINMAX
         UNICODE
         _UNICODE
     )
-    target_link_libraries(vsbloom-native PRIVATE
+    target_link_libraries(VSBloomNativeRuntime PRIVATE
         ole32   # COM initialisation: CoInitializeEx, CoCreateInstance
         avrt    # MMCSS real-time thread priority: AvSetMmThreadCharacteristics
     )
 elseif(APPLE)
     find_library(COREAUDIO_LIB CoreAudio REQUIRED)
     find_library(AUDIOTOOLBOX_LIB AudioToolbox REQUIRED)
-    target_compile_definitions(vsbloom-native PRIVATE VSBLOOM_AUDIO_BACKEND_COREAUDIO)
-    target_link_libraries(vsbloom-native PRIVATE ${COREAUDIO_LIB} ${AUDIOTOOLBOX_LIB})
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE VSBLOOM_AUDIO_BACKEND_COREAUDIO)
+    target_link_libraries(VSBloomNativeRuntime PRIVATE ${COREAUDIO_LIB} ${AUDIOTOOLBOX_LIB})
 else()
-    target_compile_definitions(vsbloom-native PRIVATE VSBLOOM_AUDIO_BACKEND_PIPEWIRE)
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE VSBLOOM_AUDIO_BACKEND_PIPEWIRE)
 endif()
 
 # Hardening & Warnings
 if(MSVC)
-    target_compile_options(vsbloom-native PRIVATE /W4 /WX /permissive-)
+    target_compile_options(VSBloomNativeRuntime PRIVATE /W4 /WX /permissive-)
 else()
-    target_compile_options(vsbloom-native PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(VSBloomNativeRuntime PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 # We regenerate `.clangd` from `.clang.in` at configure time to point over to
@@ -88,4 +111,4 @@ configure_file(
 )
 
 #Our binary should land within `<install-prefix>/bin/vsbloom-native[.exe]`/
-install(TARGETS vsbloom-native RUNTIME DESTINATION bin)
+install(TARGETS VSBloomNativeRuntime RUNTIME DESTINATION bin)

@@ -1,0 +1,116 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM 
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never    
+ColumnLimit: 120
+Standard: Latest
+RemoveBracesLLVM: false
+BreakBeforeBraces: Attach  
+BreakAfterAttributes: Always
+NamespaceIndentation: All
+WrapNamespaceBodyWithEmptyLines: Always
+CompactNamespaces: false
+FixNamespaceComments: true
+ShortNamespaceLines: 1
+IndentPPDirectives: BeforeHash
+PPIndentWidth: 4
+IndentExternBlock: true
+RemoveSemicolon: true  
+IntegerLiteralSeparator:
+    Binary: 4   
+    Decimal: 3  
+    Hex: 4      
+AccessModifierOffset: -2
+EmptyLineAfterAccessModifier: Leave
+EmptyLineBeforeAccessModifier: Leave
+AlwaysBreakTemplateDeclarations: Yes
+RequiresClausePosition: OwnLine
+IndentRequiresClause: true
+BreakBeforeConceptDeclarations: Always
+AllowShortFunctionsOnASingleLine: None    
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never      
+AllowShortLambdasOnASingleLine: All       
+PointerAlignment: Left  
+SpaceAroundPointerQualifiers: Default
+DerivePointerAlignment: false
+ReferenceAlignment: Left
+QualifierAlignment: Custom
+QualifierOrder:
+    - inline
+    - static
+    - constexpr
+    - const
+    - friend
+    - volatile
+    - type
+    - restrict
+InsertBraces: true  
+ReflowComments: Always  
+AlignEscapedNewlines: Right
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+AlignAfterOpenBracket: BlockIndent
+BinPackParameters: OnePerLine
+BinPackArguments: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+AlignConsecutiveDeclarations:
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: true
+    AlignCompound: false
+    PadOperators: false
+AlignConsecutiveAssignments:
+    Enabled: true
+AlignConsecutiveMacros:
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: false
+AlignTrailingComments:
+    Kind: Always
+    OverEmptyLines: 0
+AlignOperands: Align
+BreakBeforeBinaryOperators: NonAssignment
+SortIncludes: CaseSensitive      
+SortUsingDeclarations: Lexicographic
+IncludeBlocks: Merge
+InsertNewlineAtEOF: false
+IncludeCategories:
+    - Regex: "^<Axiom/"
+      Priority: 1
+      SortPriority: 1
+    - Regex: "^<CL/"
+      Priority: 2
+      SortPriority: 2
+    - Regex: "^<catch2/"
+      Priority: 3
+      SortPriority: 3
+    - Regex: ".*"
+      Priority: 4
+      SortPriority: 4
+ContinuationIndentWidth: 4
+IndentCaseLabels: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1  
+BreakStringLiterals: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceBeforeInheritanceColon: true
+SpaceBeforeJsonColon: false
+SpaceBeforeCaseColon: false
+SpacesInAngles: Never
+SpaceInEmptyBlock: false
+SpacesBeforeTrailingComments: 1
+Cpp11BracedListStyle: true
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SeparateDefinitionBlocks: Always
+LambdaBodyIndentation: OuterScope

@@ -55,6 +55,6 @@
 		"vsbloom",
 		"WGSL"
 	],
-	"cmake.sourceDirectory": "${workspaceFolder}/src/Native",
+	"cmake.sourceDirectory": "D:/repos/JS-TS/VSBloom/src/Native/cpp",
 	"cmake.useCMakePresets": "always",
 }

@@ -36,6 +36,6 @@ CMakeUserPresets.json
 #Native clangd generated file
 .clangd
 #Native CMake intermediary build files
-src/Native/build/
+src/Native/cpp/build/
 #Native vcpkg cached files
 vcpkg_installed/

@@ -64,14 +64,14 @@ jobs:
 
             # Configure picks up CMAKE_TOOLCHAIN_FILE from the base preset via
             # $env{VCPKG_ROOT}. vcpkg manifest mode should then auto-install all deps
-            # declared in src/Native/vcpkg.json during this step to get us nice and
+            # declared in src/Native/cpp/vcpkg.json during this step to get us nice and
             # ready to build.
             - name: Configure
-              working-directory: src/Native
+              working-directory: src/Native/cpp
               run: cmake --preset ninja-release
 
             - name: Build
-              working-directory: src/Native
+              working-directory: src/Native/cpp
               run: cmake --build --preset ninja-release
 
             # Install the binary to a staging area, then copy it into its
@@ -82,7 +82,7 @@ jobs:
             - name: Stage binary
               shell: bash
               run: |
-                  cmake --install src/Native/build/ninja-release \
+                  cmake --install src/Native/cpp/build/ninja-release \
                     --prefix native-out \
                     --config Release
                   mkdir -p "native/${{ matrix.slug }}"
