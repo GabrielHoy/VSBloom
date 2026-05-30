@@ -1,6 +1,6 @@
 /**
  * VSBloom Main Extension Entry Point
- *
+ * 
  * This file serves as the main entry point for the VSBloom extension.
  * It is responsible for the entirety of the Extension Host side of
  * VSBloom, including bootstrapping the extension and its commands etc.,
@@ -9,7 +9,6 @@
  *
  */
 import * as vscode from 'vscode';
-import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { EffectManager } from '../Effects/EffectManager';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import { VSBloomNativeRuntimeManager } from '../Native/NativeRuntimeManager';
@@ -30,26 +29,10 @@ import {
 	type VSBloomExtensionExports,
 } from './API/ExtensionAPI';
 import { IsDevelopmentEnvironment } from './ExtensionReflection';
+import { MainOutputChannel } from './MainOutputChannel';
 import { StatusBarIconManager } from './StatusBarIconManager';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
-
-let mainOutputChannel: vscode.OutputChannel;
-
-/**
- * Logs a message to the main output channel of the VSBloom extension.
- * 
- * 
- * @param level - The level of the log message.
- * @param message - The message to log.
- * @param data - Optional data to log, will be stringified and included in the log message if it's an Object.
- */
-function Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-	mainOutputChannel.appendLine(
-		`[VSBloom/${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`,
-	);
-	console.log(`${ConstructVSBloomLogPrefix('VSBloom', level)}${message}`, data ?? '');
-}
 
 /**
  * A factory function for instantiating an 'un-patched' extension API.
@@ -94,14 +77,20 @@ async function ExtensionActivatedAndClientPatchingVerified(
 		//initialize and start the WebSocket bridge
 		const currentBridge = VSBloomBridgeServer.GetInstance(context);
 
-		Log('info', 'Attempting to fire up the extension bridge server');
+		MainOutputChannel.Log('info', 'Attempting to fire up the extension bridge server: This is *expected* to gracefully fail if another window is already hosting it!');
 		await currentBridge.Start();
 		//add the bridge server to the extension subscriptions for cleanup
 		context.subscriptions.push(currentBridge);
 		if (VSBloomBridgeServer.isServerListening) {
-			Log('info', 'Extension bridge server started; we are now taking the role of the VSBloom master server');
+			MainOutputChannel.Log(
+				'info',
+				'Extension bridge server started; we are now taking the role of the VSBloom master server',
+			);
 		} else {
-			Log('warn', 'Failed to start the extension bridge server, another window is likely hosting it already.');
+			MainOutputChannel.Log(
+				'warn',
+				'Failed to start the extension bridge server, another window is likely hosting it already.',
+			);
 		}
 
 		//? Effect Manager Initialization
@@ -119,14 +108,29 @@ async function ExtensionActivatedAndClientPatchingVerified(
 
 		//? Native Runtime Manager Initialization
 		//initialize the native runtime manager
-		const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
-		if (nativeRuntimeManager) {
-			context.subscriptions.push(nativeRuntimeManager);
-			Log('info', 'Native runtime manager initialized; we are now taking the role of the VSBloom native runtime manager');
-		}
+        const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
+        context.subscriptions.push(nativeRuntimeManager);
+        
+        const isNativeSupported = await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported();
+        vscode.commands.executeCommand(
+            'setContext',
+            'vsbloom.nativeRuntime.isSupported',
+            isNativeSupported,
+        );
+        if (isNativeSupported) {
+            MainOutputChannel.Log(
+                'info',
+                `The native runtime manager is supported on this platform - platform-specific functionality will be available.`,
+            );
+        } else {
+            MainOutputChannel.Log(
+                'warn',
+                `The native runtime manager is not supported on this platform - platform-specific functionality will not be available.`,
+            );
+        }
 
 		//? Extension Activation Flow COMPLETE :tada:
-		Log('info', 'Extension activation flow completed!');
+		MainOutputChannel.Log('info', 'Extension activation flow completed!');
 
 		return {
 			isClientPatched: true,
@@ -135,9 +139,12 @@ async function ExtensionActivatedAndClientPatchingVerified(
 			GetBridgeServer: () => currentBridge,
 		} as PatchedExtensionAPI;
 	} catch (error) {
-		Log('error', `Failed to fully activate the extension when patching was detected: ${error instanceof Error ? error.message : String(error)}`);
+		MainOutputChannel.Log(
+			'error',
+			`Failed to fully activate the extension when patching was detected: ${error instanceof Error ? error.message : String(error)}`,
+		);
 		vscode.window.showWarningMessage(
-			'Failed to start the bridge server. Some features may not work correctly. '
+			'Failed to start the bridge server. Some features may not work correctly. ',
 		);
 
 		// If we failed to bootstrap the extension's bridge server/effect manager,
@@ -208,10 +215,9 @@ async function OnExtensionConfigChanged(
  * VSCode's extension entry point
  */
 export function activate(context: vscode.ExtensionContext): VSBloomExtensionExports {
-	mainOutputChannel = vscode.window.createOutputChannel('VSBloom: Main');
-	context.subscriptions.push(mainOutputChannel);
+	context.subscriptions.push(MainOutputChannel.GetInstance());
 
-	Log('info', "VSBloom extension activated by VSCode. Let's get running!");
+	MainOutputChannel.Log('info', "VSBloom extension activated by VSCode. Let's get running!");
 
 	// Before we enter this monolithic asynchronous function,
 	// let's get an extension API provider reference that we can resolve
@@ -227,7 +233,10 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 
 	ClientPatcher.GetMainApplicationProductFile(vscode)
 		.then(async (appProductFilePath) => {
-			Log('info', "Successfully located the application's 'product.json' file");
+			MainOutputChannel.Log(
+				'info',
+				"Successfully located the application's 'product.json' file",
+			);
 
 			// First up, register our basic commands
 			// Returns true if the client was just patched and the window needs to be reloaded
@@ -405,7 +414,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 							`Reloaded ${effectManager.GetLoadedEffects().length} effect(s)!`,
 						);
 					} else {
-						vscode.window.showErrorMessage('Failed to reload effects, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to reload effects, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -431,13 +442,14 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 			const restartNativeRuntimeCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.restartNativeRuntime',
 				async () => {
-				
 					if (VSBloomBridgeServer.isServerListening) {
 						const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
 						await nativeRuntimeManager.RestartNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime restarted.');
 					} else {
-						vscode.window.showErrorMessage('Failed to restart the native runtime, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to restart the native runtime, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -449,14 +461,18 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 					if (VSBloomBridgeServer.isServerListening) {
 						const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
 						if (nativeRuntimeManager.IsNativeRuntimeActive()) {
-							vscode.window.showInformationMessage('Native runtime is already running.');
+							vscode.window.showInformationMessage(
+								'Native runtime is already running.',
+							);
 							return;
 						}
 
 						await nativeRuntimeManager.StartNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime started.');
 					} else {
-						vscode.window.showErrorMessage('Failed to start the native runtime, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to start the native runtime, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -475,7 +491,9 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						await nativeRuntimeManager.StopNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime stopped.');
 					} else {
-						vscode.window.showErrorMessage('Failed to stop the native runtime, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to stop the native runtime, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -487,9 +505,13 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 					if (VSBloomBridgeServer.isServerListening) {
 						const bridgeServer = VSBloomBridgeServer.GetInstance(context);
 						await bridgeServer.Stop();
-						vscode.window.showInformationMessage('Extension bridge server shut down.');
+						vscode.window.showInformationMessage(
+							'Attempting to shut down the Extension bridge server.',
+						);
 					} else {
-						vscode.window.showErrorMessage('Failed to shut down the bridge server, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to shut down the bridge server, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -504,14 +526,31 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 
 						if (VSBloomBridgeServer.isServerListening) {
 							const effectManager = EffectManager.GetInstance();
-							await effectManager.Start(bridgeServer);
+							const effectManagerStarted = await effectManager.Start(bridgeServer);
+							if (effectManagerStarted) {
+								vscode.window.showInformationMessage(
+									'Successfully started the Extension bridge server and effect manager.',
+								);
+							} else {
+								vscode.window.showErrorMessage(
+									'Failed to start the bridge server: The effect manager failed to start.',
+								);
+								await bridgeServer.Stop();
+							}
 						} else {
-							Log('warn', 'Failed to start the effect manager, this window failed to start the bridge server.');
+							vscode.window.showErrorMessage(
+								'Failed to start the bridge server - see the opened output channel for more verbose debug info.',
+							);
+                            if (VSBloomBridgeServer.outputChannel) {
+                                VSBloomBridgeServer.outputChannel?.show();
+                            } else {
+                                MainOutputChannel.outputChannel?.show();
+                            }
 						}
-
-						vscode.window.showInformationMessage('Extension bridge server and effect manager started.');
 					} else {
-						vscode.window.showErrorMessage('Failed to start the bridge server, this window is not hosting the bridge server.');
+						vscode.window.showErrorMessage(
+							'Failed to start the bridge server, this window is not hosting the bridge server.',
+						);
 					}
 				},
 			);
@@ -534,13 +573,16 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 				await ClientPatcher.IsClientPatched(appProductFilePath);
 
 			if (!wasClientAlreadyPatchedDuringExtensionActivation) {
-				Log('warn', 'Client is not currently patched');
+				MainOutputChannel.Log('warn', 'Client is not currently patched');
 
 				const doNotAskToPatchClient =
 					context.globalState.get<boolean>('vsbloom.patcher.doNotAskToPatchClient') ??
 					false;
 				if (doNotAskToPatchClient) {
-					Log('warn', 'User indicated previously not to display the client patch prompt; going dormant');
+					MainOutputChannel.Log(
+						'warn',
+						'User indicated previously not to display the client patch prompt; going dormant',
+					);
 					//the user previously said that they don't want us prompting them
 					//to patch the client again in the future at some point, so we'll
 					//assume they're going to patch it when they want and just go dormant.
@@ -552,11 +594,11 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 					return;
 				}
 
-				Log('info', 'Displaying client patch prompt, waiting for user response');
+				MainOutputChannel.Log('info', 'Displaying client patch prompt, waiting for user response');
 
 				const shouldPatchClient = await ShowClientPatchRequestPrompt(context);
 				if (shouldPatchClient) {
-					Log('info', 'User agreed to client patching');
+					MainOutputChannel.Log('info', 'User agreed to client patching');
 					await vscode.commands.executeCommand('vsbloom.enable', true);
 
 					// In this case we've just patched the client but it's not actually "running" yet,
@@ -565,7 +607,7 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						UnpatchedExtensionAPIFactory(UnpatchedClientState.PATCHED_RELOAD_REQUIRED),
 					);
 				} else {
-					Log('warn', 'User declined client patching; going dormant');
+					MainOutputChannel.Log('warn', 'User declined client patching; going dormant');
 					vscode.window.showInformationMessage(
 						"Not patching the Electron Client, VSBloom will not be able to function until this patch is performed - you can trigger this patch at any time in the future to enable VSBloom by running the 'VSBloom: Enable and Patch Electron Client' command!",
 					);
@@ -579,7 +621,7 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 				}
 			} else {
 				//If the client was already patched, let's get chugging along!
-				Log('info', 'Client is currently patched; continuing with extension activation');
+				MainOutputChannel.Log('info', 'Client is currently patched; continuing with extension activation');
 
 				// This 'activated-and-patched' function is just to break us out
 				// of this huge async chain and give us a clean code block to work with

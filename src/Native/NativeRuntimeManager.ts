@@ -12,41 +12,21 @@
 import * as childProcess from 'node:child_process';
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
+import { IsDevelopmentEnvironment } from '../Extension/ExtensionReflection';
+import { MainOutputChannel } from '../Extension/MainOutputChannel';
 import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
 import { GetPathToNativeBinary, IsNativeCapable, PLATFORM_SLUG } from './NativeCompatibility';
 
 export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private static instance: VSBloomNativeRuntimeManager | null = null;
 
-	private outputChannel: vscode.OutputChannel;
+	private outputChannel: vscode.OutputChannel | null = null;
 	private childProc: childProcess.ChildProcess | null = null;
 
 	public static isRunning: boolean = false;
 
 	private constructor() {
-		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
-
-		VSBloomNativeRuntimeManager.IsNativeRuntimeSupported().then((isNativeSupported) => {
-			vscode.commands.executeCommand(
-				'setContext',
-				'vsbloom.nativeRuntime.isSupported',
-				isNativeSupported,
-			);
-
-			if (isNativeSupported) {
-				this.Log(
-					'info',
-					`The native runtime manager is supported on this platform - platform-specific functionality will be available.`,
-				);
-			} else {
-				this.Log(
-					'warn',
-					`The native runtime manager is not supported on this platform - platform-specific functionality will not be available.`,
-				);
-			}
-		});
-
-		this.Log('info', 'Native Runtime Manager initialized');
+		MainOutputChannel.Log('info', 'Native Runtime Manager initialized');
 	}
 
 	public static GetInstance(): VSBloomNativeRuntimeManager {
@@ -79,14 +59,14 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 */
 	public async StartNativeRuntime(): Promise<boolean> {
 		if (!VSBloomBridgeServer.isServerListening) {
-			this.Log(
+			MainOutputChannel.Log(
 				'error',
 				'Bridge Server is not initialized, but native runtime manager has attempted to be started. This cannot be facilitated until Pseudo-Sockets are complete to marshall native traffic to the primary VSCode window.',
 			);
 			return false;
 		}
 		if (this.IsNativeRuntimeActive()) {
-			this.Log(
+			MainOutputChannel.Log(
 				'warn',
 				'A request was made to start the native runtime, but it is already running.',
 			);
@@ -94,12 +74,14 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		}
 
 		if (!(await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported())) {
-			this.Log(
+			MainOutputChannel.Log(
 				'error',
 				`A request was made to start the native runtime, but it is not capable of running on the ${PLATFORM_SLUG} platform.`,
 			);
 			return false;
 		}
+
+		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
 
 		this.Log('info', 'Attempting to start the native runtime...');
 
@@ -126,6 +108,15 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		this.childProc.on('close', (code: number) => {
 			this.Log('debug', `Native runtime closed with code ${code}.`);
 			VSBloomNativeRuntimeManager.SetIsRunningState(false);
+
+			if (!IsDevelopmentEnvironment()) {
+				//We only want to actively dispose of the output channel in non-development environments
+				//since this would make life very very difficult for me and any contributors to the project
+				//if we had our debug output channel close on us upon program crashes or termination.
+				this.outputChannel?.dispose();
+				this.outputChannel = null;
+			}
+
 			this.childProc = null;
 		});
 
@@ -160,7 +151,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 */
 	public StopNativeRuntime(): boolean {
 		if (!this.IsNativeRuntimeActive()) {
-			this.Log(
+			MainOutputChannel.Log(
 				'warn',
 				'A request was made to stop the native runtime, but it was not running.',
 			);
@@ -172,6 +163,14 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		this.childProc = null;
 
 		VSBloomNativeRuntimeManager.SetIsRunningState(false);
+
+		if (!IsDevelopmentEnvironment()) {
+			//We only want to actively dispose of the output channel in non-development environments
+			//since this would make life very very difficult for me and any contributors to the project
+			//if we had our debug output channel close on us upon program crashes or termination.
+			this.outputChannel?.dispose();
+			this.outputChannel = null;
+		}
 
 		return true;
 	}
@@ -197,7 +196,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * Logs a native runtime message to the output channel.
 	 */
 	private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-		this.outputChannel.appendLine(
+		this.outputChannel?.appendLine(
 			`[Native/${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`,
 		);
 
@@ -205,7 +204,12 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	}
 
 	public dispose(): void {
-		this.StopNativeRuntime();
+        if (this.IsNativeRuntimeActive()) {
+		    this.StopNativeRuntime();
+        }
+
+		this.outputChannel?.dispose();
+		this.outputChannel = null;
 
 		VSBloomNativeRuntimeManager.instance = null;
 	}

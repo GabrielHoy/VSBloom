@@ -1,4 +1,6 @@
 /**
+ * VSBloom Native Runtime Entry Point
+ *
  * This file serves as the main entry point for VSBloom's native runtime.
  *
  * This file gets compiled into a native binary that is used

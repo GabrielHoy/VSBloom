@@ -13,6 +13,8 @@ import * as vscode from 'vscode';
 import { WebSocket, WebSocketServer } from 'ws';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { EffectManager } from '../Effects/EffectManager';
+import { IsDevelopmentEnvironment } from '../Extension/ExtensionReflection';
+import { MainOutputChannel } from '../Extension/MainOutputChannel';
 import {
 	type ClientToExtensionMessage,
 	DEFAULT_BRIDGE_PORT,
@@ -40,7 +42,6 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	private wss: WebSocketServer | null = null;
 	private clients: Map<string, ConnectedClient> = new Map();
 	private authToken: string;
-	private outputChannel: vscode.OutputChannel | null = null;
 	private pingInterval: NodeJS.Timeout | null = null;
 	private configChangeDisposable: vscode.Disposable | null = null;
 
@@ -49,6 +50,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	// Event emitter for when a client disconnects
 	private readonly _onClientDisconnected = new vscode.EventEmitter<string>();
 
+	public static outputChannel: vscode.OutputChannel | null = null;
 	public static isServerListening: boolean = false;
 
 	/**
@@ -97,16 +99,30 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		);
 	}
 
+	private static SetBridgeOutputChannelPresent(shouldBePresent: boolean): void {
+		if (shouldBePresent) {
+			if (VSBloomBridgeServer.outputChannel) {
+				return;
+			}
+			VSBloomBridgeServer.outputChannel = vscode.window.createOutputChannel(
+				'VSBloom: Extension Bridge',
+			);
+		} else {
+			if (!IsDevelopmentEnvironment()) {
+				VSBloomBridgeServer.outputChannel?.dispose();
+				VSBloomBridgeServer.outputChannel = null;
+			}
+		}
+	}
+
 	/**
 	 * Start the WebSocket server
 	 */
 	public async Start(): Promise<void> {
 		if (this.wss) {
-			this.Log('error', 'Bridge server already running');
+			MainOutputChannel.Log('error', 'Bridge server already running');
 			return;
 		}
-
-		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Extension Bridge');
 
 		return new Promise((resolve, reject) => {
 			try {
@@ -115,7 +131,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 					host: '127.0.0.1',
 				});
 
-				this.wss.on('listening', () => {
+				this.wss.on('listening', () => {                  
+                    VSBloomBridgeServer.SetBridgeOutputChannelPresent(true);
+                    VSBloomBridgeServer.outputChannel?.appendLine(`The Extension Bridge Server has started successfully!`);
+
 					this.Log(
 						'info',
 						`Bridge server listening on ws://127.0.0.1:${this.GetServerPort()}`,
@@ -139,13 +158,18 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 						);
 						// This is not necessarily an error - another window may be hosting
 						VSBloomBridgeServer.SetServerListeningState(false);
+
+						VSBloomBridgeServer.SetBridgeOutputChannelPresent(false);
+
 						resolve();
 					} else {
-						this.Log('error', `Bridge server error`, { error });
+						MainOutputChannel.Log('error', `Unexpected bridge server error`, { error });
 						reject(error);
 					}
 				});
 			} catch (error) {
+				VSBloomBridgeServer.SetBridgeOutputChannelPresent(false);
+
 				reject(error);
 			}
 		});
@@ -165,10 +189,12 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			this.configChangeDisposable = null;
 		}
 
-		VSBloomBridgeServer.SetServerListeningState(false);
+		if (VSBloomBridgeServer.isServerListening) {
+			const effectManager = EffectManager.GetInstance();
+			await effectManager.Stop();
+		}
 
-		const effectManager = EffectManager.GetInstance();
-		await effectManager.Stop();
+		VSBloomBridgeServer.SetServerListeningState(false);
 
 		// Close all client connections
 		for (const client of this.clients.values()) {
@@ -181,6 +207,8 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			this.wss = null;
 			this.Log('info', 'Bridge server stopped');
 		}
+
+		VSBloomBridgeServer.SetBridgeOutputChannelPresent(false);
 	}
 
 	/**
@@ -474,7 +502,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			? `${prefix}${message.message} ${JSON.stringify(message.data)}`
 			: `${prefix}${message.message}`;
 
-		this.outputChannel?.appendLine(logLine);
+		VSBloomBridgeServer.outputChannel?.appendLine(logLine);
 
 		const hasDataAssociatedWithLog = message.data ?? false;
 		let dataObject: unknown = null;
@@ -523,7 +551,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Logs a server message to the output channel.
 	 */
 	private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-		this.outputChannel?.appendLine(
+		VSBloomBridgeServer.outputChannel?.appendLine(
 			`[Server/${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`,
 		);
 		console.log(`${ConstructVSBloomLogPrefix('Server', level)}${message}`, data ?? '');
@@ -536,7 +564,8 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		this.Stop();
 		this._onClientReady.dispose();
 		this._onClientDisconnected.dispose();
-		this.outputChannel?.dispose();
+		VSBloomBridgeServer.outputChannel?.dispose();
+		VSBloomBridgeServer.outputChannel = null;
 
 		VSBloomBridgeServer.instance = null;
 	}

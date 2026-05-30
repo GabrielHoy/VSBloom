@@ -1,533 +1,533 @@
 {
-	"preview": true,
-	"name": "vsbloom",
-	"displayName": "VS: Bloom",
-	"description": "Overhauls VSCode's look, theme, and feel by adding a variety of customizable animations and 'eye candy' to the UI.",
-	"author": {
-		"name": "Tampered Reality",
-		"email": "tampered@tamperedreality.net",
-		"url": "https://tamperedreality.net"
-	},
-	"version": "1.4.2",
-	"packageManager": "npm@11.11.0",
-	"publisher": "tamperedreality",
-	"license": "MIT",
-	"pricing": "Free",
-	"homepage": "https://github.com/GabrielHoy/VSBloom",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/GabrielHoy/VSBloom.git"
-	},
-	"bugs": {
-		"url": "https://github.com/GabrielHoy/VSBloom/issues",
-		"email": "vsbloom@tamperedreality.net"
-	},
-	"icon": "imagery/logo.png",
-	"engines": {
-		"vscode": "^1.105.1"
-	},
-	"galleryBanner": {
-		"color": "#131337",
-		"theme": "dark"
-	},
-	"categories": [
-		"Themes",
-		"Other",
-		"Visualization"
-	],
-	"extensionKind": [
-		"ui"
-	],
-	"main": "./build/VSBloom.js",
-	"activationEvents": [
-		"*"
-	],
-	"contributes": {
-		"icons": {
-			"vsbloom-glyph": {
-				"description": "A simplified version of the VS: Bloom Extension's Logo, intended for use in relatively 'small'/'tight' spaces like the VS Code Status Bar.",
-				"default": {
-					"fontPath": "imagery/glyphs/vsbloom-glyphs.woff",
-					"fontCharacter": "\\E001"
-				}
-			}
-		},
-		"menus": {
-			"commandPalette": [
-				{
-					"command": "vsbloom.enable",
-					"when": "!vsbloom.clientPatched"
-				},
-				{
-					"command": "vsbloom.retryPatch",
-					"when": "vsbloom.clientPatched"
-				},
-				{
-					"command": "vsbloom.disable",
-					"when": "vsbloom.clientPatched"
-				},
-				{
-					"command": "vsbloom.reloadEffects",
-					"when": "vsbloom.clientPatched"
-				},
-				{
-					"command": "vsbloom.openExtensionSettingsEditor",
-					"when": "vsbloom.clientPatched"
-				},
-				{
-					"command": "vsbloom.openMenu",
-					"when": "vsbloom.clientPatched && !vsbloom.menuPanel.visible"
-				},
-				{
-					"command": "vsbloom.stopNativeRuntime",
-					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && vsbloom.nativeRuntime.isRunning"
-				},
-				{
-					"command": "vsbloom.restartNativeRuntime",
-					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported"
-				},
-				{
-					"command": "vsbloom.startNativeRuntime",
-					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && !vsbloom.nativeRuntime.isRunning"
-				},
-				{
-					"command": "vsbloom.shutDownBridgeServer",
-					"when": "vsbloom.clientPatched && vsbloom.bridgeServer.isRunning"
-				},
-				{
-					"command": "vsbloom.startBridgeServer",
-					"when": "vsbloom.clientPatched && !vsbloom.bridgeServer.isRunning"
-				}
-			]
-		},
-		"commands": [
-			{
-				"command": "vsbloom.enable",
-				"title": "VSBloom: Enable and Patch Electron Client"
-			},
-			{
-				"command": "vsbloom.retryPatch",
-				"title": "VSBloom: Retry Electron Client Patching"
-			},
-			{
-				"command": "vsbloom.disable",
-				"title": "VSBloom: Disable and Un-Patch Electron Client"
-			},
-			{
-				"command": "vsbloom.reloadEffects",
-				"title": "VSBloom: Reload All Effects"
-			},
-			{
-				"command": "vsbloom.openMenu",
-				"title": "VSBloom: Open Menu (BETA)"
-			},
-			{
-				"command": "vsbloom.openExtensionSettingsEditor",
-				"title": "VSBloom: Open Settings Editor"
-			},
-			{
-				"command": "vsbloom.startNativeRuntime",
-				"title": "VSBloom: Start Native Runtime"
-			},
-			{
-				"command": "vsbloom.stopNativeRuntime",
-				"title": "VSBloom: Stop Native Runtime"
-			},
-			{
-				"command": "vsbloom.restartNativeRuntime",
-				"title": "VSBloom: Restart Native Runtime"
-			},
-			{
-				"command": "vsbloom.shutDownBridgeServer",
-				"title": "VSBloom: Shut Down Extension Bridge Server"
-			},
-			{
-				"command": "vsbloom.startBridgeServer",
-				"title": "VSBloom: Start Extension Bridge Server"
-			}
-		],
-		"configuration": [
-			{
-				"title": "VS: Bloom",
-				"order": 1,
-				"categoryDescription": "General configuration settings.",
-				"properties": {
-					"vsbloom.extensionConfigurationsNote.README": {
-						"order": 1,
-						"type": "boolean",
-						"default": false,
-						"hideFromCustomEditor": true,
-						"description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
-						"markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**"
-					},
-					"vsbloom.statusBarIcon.enabled": {
-						"order": 2,
-						"type": "boolean",
-						"default": true,
-						"description": "Whether or not to enable an icon in the VS Code Status Bar which opens the VS: Bloom Menu when clicked.",
-						"markdownDescription": "Whether or not to enable an icon in the VS Code [Status Bar](https://code.visualstudio.com/api/ux-guidelines/status-bar) which opens the VS: Bloom Menu when clicked.\nRegardless of this setting, you can still open the VS: Bloom Menu at any time by using the `VSBloom: Open Menu` command!"
-					},
-					"vsbloom.electronBridge.port": {
-						"order": 3,
-						"type": "number",
-						"default": 52847,
-						"description": "The port on which the Electron Bridge server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. A re-patch is required for changes to this setting to take effect!",
-						"markdownDescription": "The port on which the 'Electron Bridge' server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. **A re-patch is required for changes to this setting to take effect!**",
-						"minimum": 1,
-						"maximum": 65535,
-						"step": 1
-					}
-				}
-			},
-			{
-				"title": "Electron Patcher",
-				"order": 2,
-				"categoryDescription": "Configurations regarding VS: Bloom's Electron Patcher and its associated functionality.",
-				"properties": {
-					"vsbloom.patcher.appProductFile": {
-						"order": 4,
-						"type": "string",
-						"default": "auto",
-						"description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
-						"markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
-					},
-					"vsbloom.patcher.suppressCorruptionWarning": {
-						"order": 5,
-						"type": "boolean",
-						"default": true,
-						"description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
-						"markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. **Changes to this setting will take effect upon the next client patch!**"
-					}
-				}
-			},
-			{
-				"title": "Effect Rendering",
-				"order": 3,
-				"categoryDescription": "Configurations affecting the rendering of effects along with general controls applying to canvas-based rendering.",
-				"properties": {
-					"vsbloom.effectRendering.enableAntiAliasing": {
-						"order": 6,
-						"type": "boolean",
-						"default": true,
-						"description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",
-						"markdownDescription": "Whether or not to enable anti-aliasing for canvas-based effect rendering. *May slightly affect performance*"
-					}
-				}
-			},
-			{
-				"title": "Editor Effects",
-				"order": 4,
-				"properties": {
-					"vsbloom.cursorTrails.enabled": {
-						"order": 7,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable a trail effect that follows behind the editor cursor as it moves around.",
-						"markdownDescription": "Enable or disable a trail effect that follows behind the editor cursor as it moves around."
-					},
-					"vsbloom.cursorTrails.type": {
-						"order": 8,
-						"type": "string",
-						"enum": [
-							"solid",
-							"disconnected"
-						],
-						"default": "solid",
-						"description": "The type of cursor trail to use. 'solid' will create a continuous connected trail that follows your editor cursor around, while 'disconnected' will create 'trail segments' that follow your cursor around in a disconnected manner, collapsing into themselves as they expire.",
-						"markdownDescription": "The type of cursor trail to use. **solid** will create a continuous connected trail that follows your editor cursor around, while **disconnected** will create *trail segments* that follow your cursor around in a disconnected manner, collapsing into themselves as they expire."
-					},
-					"vsbloom.cursorTrails.disconnectedTrailSegmentLifetime": {
-						"order": 9,
-						"type": "number",
-						"default": 750,
-						"step": 25,
-						"cssUnit": "ms",
-						"description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
-						"markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
-					},
-					"vsbloom.cursorTrails.color": {
-						"order": 10,
-						"type": "string",
-						"default": "#FFFFFFAF",
-						"isColor": true,
-						"description": "The color of the trail that follows behind the cursor as it moves.",
-						"markdownDescription": "The color of the trail that follows behind the cursor as it moves."
-					},
-					"vsbloom.cursorTrails.maxSolidTrailLength": {
-						"order": 11,
-						"type": "number",
-						"default": 100,
-						"step": 5,
-						"cssUnit": "px",
-						"description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
-						"markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
-					},
-					"vsbloom.cursorTrails.solidTrailWidth": {
-						"order": 12,
-						"type": "number",
-						"default": 3,
-						"step": 0.25,
-						"cssUnit": "px",
-						"description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
-						"markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
-					},
-					"vsbloom.cursorTrails.solidTrailSpeed": {
-						"order": 13,
-						"type": "number",
-						"default": 20,
-						"step": 2.5,
-						"cssUnit": "px/s",
-						"description": "The speed at which the trail should pursue the cursor, in pixels/second",
-						"markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
-					},
-					"vsbloom.cursorTrails.solidTrailCount": {
-						"order": 14,
-						"type": "number",
-						"default": 1,
-						"step": 1,
-						"cssUnit": "trails",
-						"description": "The amount of trails that should be created per cursor for the solid trail type.",
-						"markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
-					},
-					"vsbloom.cursorTrails.solidTrailMaxAngleChangePerFrame": {
-						"order": 15,
-						"type": "number",
-						"default": 10,
-						"step": 1,
-						"cssUnit": "deg",
-						"description": "The maximum angle - in degrees - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
-						"markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes."
-					},
-					"vsbloom.lineNumberEffects.enabled": {
-						"order": 16,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable line number indicator effects.",
-						"markdownDescription": "Enable or disable line number indicator effects."
-					},
-					"vsbloom.lineNumberEffects.activeLineAnimationDuration": {
-						"order": 17,
-						"type": "number",
-						"default": 0.35,
-						"step": 0.05,
-						"cssUnit": "s",
-						"description": "The duration of the animation that occurs when the active line number changes, in seconds.",
-						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
-					},
-					"vsbloom.lineNumberEffects.activeLineOffset": {
-						"order": 18,
-						"type": "number",
-						"default": 3,
-						"step": 0.5,
-						"cssUnit": "px",
-						"description": "The offset of the active line number to the right, in pixels.",
-						"markdownDescription": "The offset of the active line number to the right, in **pixels**."
-					},
-					"vsbloom.lineNumberEffects.activeLineGlowSize": {
-						"order": 19,
-						"type": "number",
-						"default": 2.5,
-						"step": 0.25,
-						"cssUnit": "px",
-						"description": "The size of the glow effect around the active line number, in pixels.",
-						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
-					},
-					"vsbloom.lineNumberEffects.activeLineSkewAngle": {
-						"order": 20,
-						"type": "number",
-						"default": -7.5,
-						"step": 0.5,
-						"cssUnit": "deg",
-						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
-						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
-					},
-					"vsbloom.tabOverhaul.enabled": {
-						"order": 21,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable visual revamps applied to code editor tabs.",
-						"markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
-					},
-					"vsbloom.tabOverhaul.tabSeparatorStyle": {
-						"order": 22,
-						"type": "string",
-						"enum": [
-							"dashed",
-							"dotted",
-							"solid"
-						],
-						"default": "dashed",
-						"cssUnit": "",
-						"description": "The style of a separator border that appears between two open tabs.",
-						"markdownDescription": "The style of a separator border that appears between two open tabs."
-					},
-					"vsbloom.tabOverhaul.glowSize": {
-						"order": 23,
-						"type": "number",
-						"default": 1,
-						"cssUnit": "px",
-						"description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
-						"markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."
-					}
-				},
-				"categoryDescription": "Effects specific to the actual code editor."
-			},
-			{
-				"title": "Window Effects",
-				"order": 5,
-				"properties": {
-					"vsbloom.windowFocusEffects.enabled": {
-						"order": 24,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable the effects that occur when the window becomes unfocused.",
-						"markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
-					},
-					"vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
-						"order": 25,
-						"type": "string",
-						"default": "blur(0.75px) grayscale(25%)",
-						"description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
-						"markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
-					},
-					"vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
-						"order": 26,
-						"type": "number",
-						"default": 0.5,
-						"step": 0.05,
-						"cssUnit": "s",
-						"description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
-						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
-					},
-					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
-						"order": 27,
-						"type": "string",
-						"default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
-						"description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
-						"markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
-					},
-					"vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
-						"order": 28,
-						"type": "number",
-						"default": 30,
-						"cssUnit": "s",
-						"description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
-						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
-					},
-					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
-						"order": 29,
-						"type": "number",
-						"default": 0.618,
-						"step": 0.05,
-						"cssUnit": "s",
-						"description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
-						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
-					},
-					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
-						"order": 30,
-						"type": "number",
-						"default": 120,
-						"step": 5,
-						"cssUnit": "s",
-						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
-						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
-					},
-					"vsbloom.quick-InputOverhaul.enabled": {
-						"order": 31,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
-						"markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
-					},
-					"vsbloom.quick-InputOverhaul.borderWidth": {
-						"order": 32,
-						"type": "number",
-						"default": 5,
-						"cssUnit": "px",
-						"description": "The width of the added border around the Quick-Input Menu widget, in pixels.",
-						"markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels."
-					},
-					"vsbloom.quick-InputOverhaul.initialWidgetRotation": {
-						"order": 33,
-						"type": "number",
-						"default": 5,
-						"cssUnit": "deg",
-						"description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
-						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
-					},
-					"vsbloom.dynamicInteractables.enabled": {
-						"order": 34,
-						"type": "boolean",
-						"default": true,
-						"description": "Enable or disable more dynamic and responsive interactable elements around the app.",
-						"markdownDescription": "Enable or disable more dynamic and responsive interactable elements around the app."
-					}
-				},
-				"categoryDescription": "Effects applying to the application's window at large."
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run package",
-		"vsix": "tsx bundler/PreVSIXChecks.ts && num run vsix:nochecks",
-		"vsix:nochecks": "vsce package --allow-star-activation",
-		"compile": "npm run gen-glyphs && tsx bundler/MainBundler.ts",
-		"watch": "tsx bundler/MainBundler.ts --watch",
-		"package": "npm run motw:clear && npm run gen-glyphs && tsx bundler/MainBundler.ts --production",
-		"gen-glyphs": "tsx bundler/GlyphBuilder.ts",
-		"motw:clear": "python scripts/clear-motw.py",
-		"lint": "eslint src",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:host:build": "tsc -p tsconfig.test-host.json",
-		"test:host": "npm run test:host:build && vscode-test",
-		"test:host:keepCache": "cross-env VSBLOOM_KEEP_VSCODE_CACHE=1 npm run test:host"
-	},
-	"devDependencies": {
-		"@internationalized/date": "^3.12.0",
-		"@lucide/svelte": "^0.577.0",
-		"@tailwindcss/postcss": "^4.2.1",
-		"@tsconfig/svelte": "^5.0.8",
-		"@types/mocha": "^10.0.10",
-		"@types/node": "25.x",
-		"@types/vscode": "^1.105.0",
-		"@types/vscode-webview": "^1.57.5",
-		"@types/ws": "^8.18.1",
-		"@vscode/sudo-prompt": "^9.3.2",
-		"@vscode/test-cli": "^0.0.10",
-		"@vscode/test-electron": "^2.5.2",
-		"acorn": "^8.16.0",
-		"async-mutex": "^0.5.0",
-		"bits-ui": "^2.16.3",
-		"chalk": "^4.1.2",
-		"chokidar": "^5.0.0",
-		"clsx": "^2.1.1",
-		"colord": "^2.9.3",
-		"csso": "^5.0.5",
-		"esbuild": "^0.27.3",
-		"esbuild-svelte": "^0.9.4",
-		"eslint": "^10.0.2",
-		"gsap": "^3.14.2",
-		"jsonc-parser": "^3.3.1",
-		"motion": "^12.35.0",
-		"pixi.js": "^8.16.0",
-		"postcss": "^8.5.8",
-		"potrace": "^2.1.1",
-		"prettier-plugin-svelte": "^3.5.1",
-		"shadcn-svelte": "^1.1.1",
-		"svelte": "^5.53.7",
-		"svelte-exmarkdown": "^5.0.2",
-		"svelte-preprocess": "^6.0.3",
-		"tailwind-merge": "^3.5.0",
-		"tailwind-variants": "^3.2.2",
-		"tailwindcss": "^4.2.1",
-		"terser": "^5.46.0",
-		"tsx": "^4.21.0",
-		"tw-animate-css": "^1.4.0",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.56.1",
-		"vitest": "^3.2.4",
-		"webfont": "^11.2.26",
-		"ws": "^8.19.0"
-	}
+    "preview": true,
+    "name": "vsbloom",
+    "displayName": "VS: Bloom",
+    "description": "Overhauls VSCode's look, theme, and feel by adding a variety of customizable animations and 'eye candy' to the UI.",
+    "author": {
+        "name": "Tampered Reality",
+        "email": "tampered@tamperedreality.net",
+        "url": "https://tamperedreality.net"
+    },
+    "version": "1.4.2",
+    "packageManager": "npm@11.11.0",
+    "publisher": "tamperedreality",
+    "license": "MIT",
+    "pricing": "Free",
+    "homepage": "https://github.com/GabrielHoy/VSBloom",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/GabrielHoy/VSBloom.git"
+    },
+    "bugs": {
+        "url": "https://github.com/GabrielHoy/VSBloom/issues",
+        "email": "vsbloom@tamperedreality.net"
+    },
+    "icon": "imagery/logo.png",
+    "engines": {
+        "vscode": "^1.105.1"
+    },
+    "galleryBanner": {
+        "color": "#131337",
+        "theme": "dark"
+    },
+    "categories": [
+        "Themes",
+        "Other",
+        "Visualization"
+    ],
+    "extensionKind": [
+        "ui"
+    ],
+    "main": "./build/VSBloom.js",
+    "activationEvents": [
+        "*"
+    ],
+    "contributes": {
+        "icons": {
+            "vsbloom-glyph": {
+                "description": "A simplified version of the VS: Bloom Extension's Logo, intended for use in relatively 'small'/'tight' spaces like the VS Code Status Bar.",
+                "default": {
+                    "fontPath": "imagery/glyphs/vsbloom-glyphs.woff",
+                    "fontCharacter": "\\E001"
+                }
+            }
+        },
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "vsbloom.enable",
+                    "when": "!vsbloom.clientPatched"
+                },
+                {
+                    "command": "vsbloom.retryPatch",
+                    "when": "vsbloom.clientPatched"
+                },
+                {
+                    "command": "vsbloom.disable",
+                    "when": "vsbloom.clientPatched"
+                },
+                {
+                    "command": "vsbloom.reloadEffects",
+                    "when": "vsbloom.clientPatched"
+                },
+                {
+                    "command": "vsbloom.openExtensionSettingsEditor",
+                    "when": "vsbloom.clientPatched"
+                },
+                {
+                    "command": "vsbloom.openMenu",
+                    "when": "vsbloom.clientPatched && !vsbloom.menuPanel.visible"
+                },
+                {
+                    "command": "vsbloom.stopNativeRuntime",
+                    "when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && vsbloom.nativeRuntime.isRunning"
+                },
+                {
+                    "command": "vsbloom.restartNativeRuntime",
+                    "when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && vsbloom.nativeRuntime.isRunning"
+                },
+                {
+                    "command": "vsbloom.startNativeRuntime",
+                    "when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported && !vsbloom.nativeRuntime.isRunning"
+                },
+                {
+                    "command": "vsbloom.shutDownBridgeServer",
+                    "when": "vsbloom.clientPatched && vsbloom.bridgeServer.isRunning"
+                },
+                {
+                    "command": "vsbloom.startBridgeServer",
+                    "when": "vsbloom.clientPatched && !vsbloom.bridgeServer.isRunning"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "vsbloom.enable",
+                "title": "VSBloom: Enable and Patch Electron Client"
+            },
+            {
+                "command": "vsbloom.retryPatch",
+                "title": "VSBloom: Retry Electron Client Patching"
+            },
+            {
+                "command": "vsbloom.disable",
+                "title": "VSBloom: Disable and Un-Patch Electron Client"
+            },
+            {
+                "command": "vsbloom.reloadEffects",
+                "title": "VSBloom: Reload All Effects"
+            },
+            {
+                "command": "vsbloom.openMenu",
+                "title": "VSBloom: Open Menu (BETA)"
+            },
+            {
+                "command": "vsbloom.openExtensionSettingsEditor",
+                "title": "VSBloom: Open Settings Editor"
+            },
+            {
+                "command": "vsbloom.startNativeRuntime",
+                "title": "VSBloom: Start Native Runtime"
+            },
+            {
+                "command": "vsbloom.stopNativeRuntime",
+                "title": "VSBloom: Stop Native Runtime"
+            },
+            {
+                "command": "vsbloom.restartNativeRuntime",
+                "title": "VSBloom: Restart Native Runtime"
+            },
+            {
+                "command": "vsbloom.shutDownBridgeServer",
+                "title": "VSBloom: Shut Down Extension Bridge Server"
+            },
+            {
+                "command": "vsbloom.startBridgeServer",
+                "title": "VSBloom: Start Extension Bridge Server"
+            }
+        ],
+        "configuration": [
+            {
+                "title": "VS: Bloom",
+                "order": 1,
+                "categoryDescription": "General configuration settings.",
+                "properties": {
+                    "vsbloom.extensionConfigurationsNote.README": {
+                        "order": 1,
+                        "type": "boolean",
+                        "default": false,
+                        "hideFromCustomEditor": true,
+                        "description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
+                        "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**"
+                    },
+                    "vsbloom.statusBarIcon.enabled": {
+                        "order": 2,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether or not to enable an icon in the VS Code Status Bar which opens the VS: Bloom Menu when clicked.",
+                        "markdownDescription": "Whether or not to enable an icon in the VS Code [Status Bar](https://code.visualstudio.com/api/ux-guidelines/status-bar) which opens the VS: Bloom Menu when clicked.\nRegardless of this setting, you can still open the VS: Bloom Menu at any time by using the `VSBloom: Open Menu` command!"
+                    },
+                    "vsbloom.electronBridge.port": {
+                        "order": 3,
+                        "type": "number",
+                        "default": 52847,
+                        "description": "The port on which the Electron Bridge server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. A re-patch is required for changes to this setting to take effect!",
+                        "markdownDescription": "The port on which the 'Electron Bridge' server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. **A re-patch is required for changes to this setting to take effect!**",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "step": 1
+                    }
+                }
+            },
+            {
+                "title": "Electron Patcher",
+                "order": 2,
+                "categoryDescription": "Configurations regarding VS: Bloom's Electron Patcher and its associated functionality.",
+                "properties": {
+                    "vsbloom.patcher.appProductFile": {
+                        "order": 4,
+                        "type": "string",
+                        "default": "auto",
+                        "description": "The path to the 'product.json' file associated with the VSCode application itself; setting this to 'auto' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around %localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json",
+                        "markdownDescription": "The path to the `product.json` file associated with the VSCode application itself; setting this to '**auto**' will attempt to locate the appropriate path for this file automatically - it's usually located somewhere around `%localappdata%\\Programs\\Microsoft VS Code\\resources\\app\\product.json`"
+                    },
+                    "vsbloom.patcher.suppressCorruptionWarning": {
+                        "order": 5,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. Changes to this setting will take effect upon the next client patch.",
+                        "markdownDescription": "Whether or not to try and suppress the 'client corrupted' warning message that may appear as a result of VSBloom modifying files related to the Electron renderer. **Changes to this setting will take effect upon the next client patch!**"
+                    }
+                }
+            },
+            {
+                "title": "Effect Rendering",
+                "order": 3,
+                "categoryDescription": "Configurations affecting the rendering of effects along with general controls applying to canvas-based rendering.",
+                "properties": {
+                    "vsbloom.effectRendering.enableAntiAliasing": {
+                        "order": 6,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",
+                        "markdownDescription": "Whether or not to enable anti-aliasing for canvas-based effect rendering. *May slightly affect performance*"
+                    }
+                }
+            },
+            {
+                "title": "Editor Effects",
+                "order": 4,
+                "properties": {
+                    "vsbloom.cursorTrails.enabled": {
+                        "order": 7,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable a trail effect that follows behind the editor cursor as it moves around.",
+                        "markdownDescription": "Enable or disable a trail effect that follows behind the editor cursor as it moves around."
+                    },
+                    "vsbloom.cursorTrails.type": {
+                        "order": 8,
+                        "type": "string",
+                        "enum": [
+                            "solid",
+                            "disconnected"
+                        ],
+                        "default": "solid",
+                        "description": "The type of cursor trail to use. 'solid' will create a continuous connected trail that follows your editor cursor around, while 'disconnected' will create 'trail segments' that follow your cursor around in a disconnected manner, collapsing into themselves as they expire.",
+                        "markdownDescription": "The type of cursor trail to use. **solid** will create a continuous connected trail that follows your editor cursor around, while **disconnected** will create *trail segments* that follow your cursor around in a disconnected manner, collapsing into themselves as they expire."
+                    },
+                    "vsbloom.cursorTrails.disconnectedTrailSegmentLifetime": {
+                        "order": 9,
+                        "type": "number",
+                        "default": 750,
+                        "step": 25,
+                        "cssUnit": "ms",
+                        "description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
+                        "markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
+                    },
+                    "vsbloom.cursorTrails.color": {
+                        "order": 10,
+                        "type": "string",
+                        "default": "#FFFFFFAF",
+                        "isColor": true,
+                        "description": "The color of the trail that follows behind the cursor as it moves.",
+                        "markdownDescription": "The color of the trail that follows behind the cursor as it moves."
+                    },
+                    "vsbloom.cursorTrails.maxSolidTrailLength": {
+                        "order": 11,
+                        "type": "number",
+                        "default": 100,
+                        "step": 5,
+                        "cssUnit": "px",
+                        "description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
+                        "markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
+                    },
+                    "vsbloom.cursorTrails.solidTrailWidth": {
+                        "order": 12,
+                        "type": "number",
+                        "default": 3,
+                        "step": 0.25,
+                        "cssUnit": "px",
+                        "description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
+                        "markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
+                    },
+                    "vsbloom.cursorTrails.solidTrailSpeed": {
+                        "order": 13,
+                        "type": "number",
+                        "default": 20,
+                        "step": 2.5,
+                        "cssUnit": "px/s",
+                        "description": "The speed at which the trail should pursue the cursor, in pixels/second",
+                        "markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
+                    },
+                    "vsbloom.cursorTrails.solidTrailCount": {
+                        "order": 14,
+                        "type": "number",
+                        "default": 1,
+                        "step": 1,
+                        "cssUnit": "trails",
+                        "description": "The amount of trails that should be created per cursor for the solid trail type.",
+                        "markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
+                    },
+                    "vsbloom.cursorTrails.solidTrailMaxAngleChangePerFrame": {
+                        "order": 15,
+                        "type": "number",
+                        "default": 10,
+                        "step": 1,
+                        "cssUnit": "deg",
+                        "description": "The maximum angle - in degrees - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
+                        "markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes."
+                    },
+                    "vsbloom.lineNumberEffects.enabled": {
+                        "order": 16,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable line number indicator effects.",
+                        "markdownDescription": "Enable or disable line number indicator effects."
+                    },
+                    "vsbloom.lineNumberEffects.activeLineAnimationDuration": {
+                        "order": 17,
+                        "type": "number",
+                        "default": 0.35,
+                        "step": 0.05,
+                        "cssUnit": "s",
+                        "description": "The duration of the animation that occurs when the active line number changes, in seconds.",
+                        "markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
+                    },
+                    "vsbloom.lineNumberEffects.activeLineOffset": {
+                        "order": 18,
+                        "type": "number",
+                        "default": 3,
+                        "step": 0.5,
+                        "cssUnit": "px",
+                        "description": "The offset of the active line number to the right, in pixels.",
+                        "markdownDescription": "The offset of the active line number to the right, in **pixels**."
+                    },
+                    "vsbloom.lineNumberEffects.activeLineGlowSize": {
+                        "order": 19,
+                        "type": "number",
+                        "default": 2.5,
+                        "step": 0.25,
+                        "cssUnit": "px",
+                        "description": "The size of the glow effect around the active line number, in pixels.",
+                        "markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
+                    },
+                    "vsbloom.lineNumberEffects.activeLineSkewAngle": {
+                        "order": 20,
+                        "type": "number",
+                        "default": -7.5,
+                        "step": 0.5,
+                        "cssUnit": "deg",
+                        "description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
+                        "markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
+                    },
+                    "vsbloom.tabOverhaul.enabled": {
+                        "order": 21,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable visual revamps applied to code editor tabs.",
+                        "markdownDescription": "Enable or disable visual revamps applied to code editor tabs."
+                    },
+                    "vsbloom.tabOverhaul.tabSeparatorStyle": {
+                        "order": 22,
+                        "type": "string",
+                        "enum": [
+                            "dashed",
+                            "dotted",
+                            "solid"
+                        ],
+                        "default": "dashed",
+                        "cssUnit": "",
+                        "description": "The style of a separator border that appears between two open tabs.",
+                        "markdownDescription": "The style of a separator border that appears between two open tabs."
+                    },
+                    "vsbloom.tabOverhaul.glowSize": {
+                        "order": 23,
+                        "type": "number",
+                        "default": 1,
+                        "cssUnit": "px",
+                        "description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
+                        "markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."
+                    }
+                },
+                "categoryDescription": "Effects specific to the actual code editor."
+            },
+            {
+                "title": "Window Effects",
+                "order": 5,
+                "properties": {
+                    "vsbloom.windowFocusEffects.enabled": {
+                        "order": 24,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable the effects that occur when the window becomes unfocused.",
+                        "markdownDescription": "Enable or disable the effects that occur when the window becomes unfocused."
+                    },
+                    "vsbloom.windowFocusEffects.shortTermUnfocusEffectFilter": {
+                        "order": 25,
+                        "type": "string",
+                        "default": "blur(0.75px) grayscale(25%)",
+                        "description": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application.",
+                        "markdownDescription": "The CSS filter(s) which are applied to the window when the user initially unfocuses the application."
+                    },
+                    "vsbloom.windowFocusEffects.shortTermUnfocusEffectTransitionDuration": {
+                        "order": 26,
+                        "type": "number",
+                        "default": 0.5,
+                        "step": 0.05,
+                        "cssUnit": "s",
+                        "description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
+                        "markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
+                    },
+                    "vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
+                        "order": 27,
+                        "type": "string",
+                        "default": "blur(2.75px) grayscale(85%) sepia(5%) contrast(110%) brightness(95%) saturate(250%)",
+                        "description": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property.",
+                        "markdownDescription": "The CSS filter(s) which are applied to the window when the user has been unfocused for a 'long' period of time, controlled by the `longTermUnfocusTransitionThreshold` property."
+                    },
+                    "vsbloom.windowFocusEffects.longTermUnfocusEffectTransitionDuration": {
+                        "order": 28,
+                        "type": "number",
+                        "default": 30,
+                        "cssUnit": "s",
+                        "description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
+                        "markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
+                    },
+                    "vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
+                        "order": 29,
+                        "type": "number",
+                        "default": 0.618,
+                        "step": 0.05,
+                        "cssUnit": "s",
+                        "description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
+                        "markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
+                    },
+                    "vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
+                        "order": 30,
+                        "type": "number",
+                        "default": 120,
+                        "step": 5,
+                        "cssUnit": "s",
+                        "description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
+                        "markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
+                    },
+                    "vsbloom.quick-InputOverhaul.enabled": {
+                        "order": 31,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable a visual overhaul of the Quick-Input Menu.",
+                        "markdownDescription": "Enable or disable a visual overhaul of the Quick-Input Menu."
+                    },
+                    "vsbloom.quick-InputOverhaul.borderWidth": {
+                        "order": 32,
+                        "type": "number",
+                        "default": 5,
+                        "cssUnit": "px",
+                        "description": "The width of the added border around the Quick-Input Menu widget, in pixels.",
+                        "markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels."
+                    },
+                    "vsbloom.quick-InputOverhaul.initialWidgetRotation": {
+                        "order": 33,
+                        "type": "number",
+                        "default": 5,
+                        "cssUnit": "deg",
+                        "description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
+                        "markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
+                    },
+                    "vsbloom.dynamicInteractables.enabled": {
+                        "order": 34,
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable more dynamic and responsive interactable elements around the app.",
+                        "markdownDescription": "Enable or disable more dynamic and responsive interactable elements around the app."
+                    }
+                },
+                "categoryDescription": "Effects applying to the application's window at large."
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "vsix": "tsx bundler/PreVSIXChecks.ts && num run vsix:nochecks",
+        "vsix:nochecks": "vsce package --allow-star-activation",
+        "compile": "npm run gen-glyphs && tsx bundler/MainBundler.ts",
+        "watch": "tsx bundler/MainBundler.ts --watch",
+        "package": "npm run motw:clear && npm run gen-glyphs && tsx bundler/MainBundler.ts --production",
+        "gen-glyphs": "tsx bundler/GlyphBuilder.ts",
+        "motw:clear": "python scripts/clear-motw.py",
+        "lint": "eslint src",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:host:build": "tsc -p tsconfig.test-host.json",
+        "test:host": "npm run test:host:build && vscode-test",
+        "test:host:keepCache": "cross-env VSBLOOM_KEEP_VSCODE_CACHE=1 npm run test:host"
+    },
+    "devDependencies": {
+        "@internationalized/date": "^3.12.0",
+        "@lucide/svelte": "^0.577.0",
+        "@tailwindcss/postcss": "^4.2.1",
+        "@tsconfig/svelte": "^5.0.8",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "25.x",
+        "@types/vscode": "^1.105.0",
+        "@types/vscode-webview": "^1.57.5",
+        "@types/ws": "^8.18.1",
+        "@vscode/sudo-prompt": "^9.3.2",
+        "@vscode/test-cli": "^0.0.10",
+        "@vscode/test-electron": "^2.5.2",
+        "acorn": "^8.16.0",
+        "async-mutex": "^0.5.0",
+        "bits-ui": "^2.16.3",
+        "chalk": "^4.1.2",
+        "chokidar": "^5.0.0",
+        "clsx": "^2.1.1",
+        "colord": "^2.9.3",
+        "csso": "^5.0.5",
+        "esbuild": "^0.27.3",
+        "esbuild-svelte": "^0.9.4",
+        "eslint": "^10.0.2",
+        "gsap": "^3.14.2",
+        "jsonc-parser": "^3.3.1",
+        "motion": "^12.35.0",
+        "pixi.js": "^8.16.0",
+        "postcss": "^8.5.8",
+        "potrace": "^2.1.1",
+        "prettier-plugin-svelte": "^3.5.1",
+        "shadcn-svelte": "^1.1.1",
+        "svelte": "^5.53.7",
+        "svelte-exmarkdown": "^5.0.2",
+        "svelte-preprocess": "^6.0.3",
+        "tailwind-merge": "^3.5.0",
+        "tailwind-variants": "^3.2.2",
+        "tailwindcss": "^4.2.1",
+        "terser": "^5.46.0",
+        "tsx": "^4.21.0",
+        "tw-animate-css": "^1.4.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.56.1",
+        "vitest": "^3.2.4",
+        "webfont": "^11.2.26",
+        "ws": "^8.19.0"
+    }
 }

@@ -12,6 +12,7 @@ import * as path from 'node:path';
 import * as jsonc from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
+import { MainOutputChannel } from '../Extension/MainOutputChannel';
 import type { EffectConfiguration } from '../ExtensionBridge/API';
 import {
 	DoesExtensionConfigValueExist,
@@ -33,9 +34,11 @@ export class EffectManager implements vscode.Disposable {
 
 	private loadedEffects: Map<string, LoadedEffect> = new Map();
 	private staticEffectConfigs: Map<string, EffectConfiguration> = new Map();
-	private outputChannel: vscode.OutputChannel | null = null;
 	private managerDisposables: vscode.Disposable[] = [];
 	private server: VSBloomBridgeServer | null = null;
+
+	public static outputChannel: vscode.OutputChannel | null = null;
+	public static isEffectManagerRunning: boolean = false;
 
 	private constructor() {
 		//Load all of the static effect configurations into
@@ -45,16 +48,33 @@ export class EffectManager implements vscode.Disposable {
 		this.Log('debug', 'Effect manager initialized');
 	}
 
-	public async Start(server: VSBloomBridgeServer): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
+	public async Start(server: VSBloomBridgeServer): Promise<boolean> {
+		if (EffectManager.isEffectManagerRunning) {
+			MainOutputChannel.Log(
+				'warn',
+				'Effect manager is already running, cannot start a new instance. Did something go wrong with effect manager / bridge server synchronization? This is a very odd state.',
+			);
+			return false;
+		}
+
+		return new Promise<boolean>((resolve, reject) => {
 			if (!VSBloomBridgeServer.isServerListening) {
-				reject(new Error('Bridge Server is not initialized, but effect manager has attempted to be created'));
+				MainOutputChannel.Log(
+					'error',
+					'Bridge Server is not initialized, but effect manager has attempted to be created. Synchronization between the two must be maintained.',
+				);
+				reject(
+					new Error(
+						'Bridge Server is not initialized, but effect manager has attempted to be created',
+					),
+				);
 				return;
 			}
 			this.server = server;
 
-			this.outputChannel = vscode.window.createOutputChannel('VSBloom: Effect Manager');
-			this.managerDisposables.push(this.outputChannel);
+			EffectManager.outputChannel =
+				vscode.window.createOutputChannel('VSBloom: Effect Manager');
+			this.managerDisposables.push(EffectManager.outputChannel);
 
 			//watch for new clients becoming ready so we can replicate
 			//current effects to them & keep in sync
@@ -86,8 +106,10 @@ export class EffectManager implements vscode.Disposable {
 			//trigger an initial sync of effect enable/disable states
 			this.HandleExtensionConfigsChanged();
 
-			this.Log('info', "Effect manager started");
-			resolve();
+			EffectManager.isEffectManagerRunning = true;
+
+			this.Log('info', 'Effect manager started');
+			resolve(true);
 		});
 	}
 
@@ -98,14 +120,16 @@ export class EffectManager implements vscode.Disposable {
 				return;
 			}
 
-			this.Log('info', "Effect manager stopping");
+			this.Log('info', 'Effect manager stopping');
+
+			EffectManager.isEffectManagerRunning = false;
 
 			this.UnloadAllEffects();
 			this.managerDisposables.forEach((disposable) => {
 				disposable.dispose();
 			});
 			this.managerDisposables = [];
-			
+
 			this.server = null;
 
 			resolve();
@@ -232,7 +256,10 @@ export class EffectManager implements vscode.Disposable {
 	 */
 	public LoadEffect(effectName: string, js?: string, css?: string): void {
 		if (!this.server) {
-			this.Log('error', 'LoadEffect called but the server is not initialized, this should never happen');
+			this.Log(
+				'error',
+				'LoadEffect called but the server is not initialized, this should never happen',
+			);
 			return;
 		}
 
@@ -327,7 +354,10 @@ export class EffectManager implements vscode.Disposable {
 	 */
 	public UnloadEffect(effectName: string): void {
 		if (!this.server) {
-			this.Log('error', 'UnloadEffect called but the server is not initialized, this should never happen');
+			this.Log(
+				'error',
+				'UnloadEffect called but the server is not initialized, this should never happen',
+			);
 			return;
 		}
 
@@ -415,7 +445,10 @@ export class EffectManager implements vscode.Disposable {
 	 */
 	public ReplicateCurrentEffectsToClient(windowId: string): void {
 		if (!this.server) {
-			this.Log('error', 'ReplicateCurrentEffectsToClient called but the server is not initialized, this should never happen');
+			this.Log(
+				'error',
+				'ReplicateCurrentEffectsToClient called but the server is not initialized, this should never happen',
+			);
 			return;
 		}
 
@@ -439,7 +472,9 @@ export class EffectManager implements vscode.Disposable {
 	 * Log a message to the output channel.
 	 */
 	private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string): void {
-		this.outputChannel?.appendLine(`[EffectManager/${level.toUpperCase()}]: ${message}`);
+		EffectManager.outputChannel?.appendLine(
+			`[EffectManager/${level.toUpperCase()}]: ${message}`,
+		);
 		console.log(`${ConstructVSBloomLogPrefix('EffectManager', level)}${message}`);
 	}
 
@@ -447,6 +482,8 @@ export class EffectManager implements vscode.Disposable {
 	 * Dispose of the manager.
 	 */
 	public dispose(): void {
+		EffectManager.isEffectManagerRunning = false;
+
 		this.UnloadAllEffects();
 		this.managerDisposables.forEach((disposable) => {
 			disposable.dispose();
