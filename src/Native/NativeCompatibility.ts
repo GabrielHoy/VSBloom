@@ -7,32 +7,32 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { GetExtensionDirectory } from './ExtensionReflection';
+import { GetExtensionDirectory, IsDevelopmentEnvironment } from '../Extension/ExtensionReflection';
 
 /**
  * The name of the core native binary.
  *
  * This will be located at `build-native/<platform>/<CORE_NATIVE_BIN_NAME>[<.exe>]`.
  */
-const CORE_NATIVE_BIN_NAME = 'VSBloomNativeRuntime';
+export const CORE_NATIVE_BIN_NAME = 'VSBloomNativeRuntime';
 /**
  * Whether we're running on the Windows platform or not - this will
  * determine whether we'll need to append a `.exe` suffix to the
  * core native binary name when looking for it in build subdirectories.
  */
-const IS_WIN = process.platform === 'win32';
+export const IS_WIN = process.platform === 'win32';
 /**
  * A list of platform slugs that pre-built native binaries should
  * be available for inside of the `build-native/<platform>` subdirectory.
  */
-const NATIVE_CAPABLE_PLATFORMS = ['win32-x64', 'linux-x64', 'darwin-x64', 'darwin-arm64'];
+export const NATIVE_CAPABLE_PLATFORMS = ['win32-x64', 'linux-x64', 'darwin-x64', 'darwin-arm64'];
 /**
  * The platform slug for the current platform.
  *
  * This will be used to determine which pre-built native binary we'll
  * be utilizing - if any can be, that is.
  */
-const PLATFORM_SLUG = `${process.platform}-${process.arch}`;
+export const PLATFORM_SLUG = `${process.platform}-${process.arch}`;
 
 /**
  * Gets the path to the directory containing pre-built native binaries for the current platform.
@@ -46,6 +46,9 @@ const PLATFORM_SLUG = `${process.platform}-${process.arch}`;
  * @returns The path to the directory containing pre-built native binaries for the current platform.
  */
 export function GetNativeBinaryBuildDirectoryForPlatform(): string {
+    if (IsDevelopmentEnvironment() && process.env.VSBLOOM_DEVELOPMENT_NATIVE_RUNTIME_PATH) {
+        return path.dirname(process.env.VSBLOOM_DEVELOPMENT_NATIVE_RUNTIME_PATH);
+    }
     return path.join(GetExtensionDirectory(), 'build-native', PLATFORM_SLUG);
 }
 
@@ -59,7 +62,7 @@ export function GetNativeBinaryBuildDirectoryForPlatform(): string {
  * 
  * @returns The path to the native binary for the current platform.
  */
-export async function GetPathToNativeBinary(): Promise<string | null> {
+export function GetPathToNativeBinary(): string {
     const nativeBinDir = GetNativeBinaryBuildDirectoryForPlatform();
 
     return path.join(nativeBinDir, `${CORE_NATIVE_BIN_NAME}${IS_WIN ? '.exe' : ''}`);
@@ -76,8 +79,17 @@ export async function IsNativeCapable(): Promise<boolean> {
     if (NATIVE_CAPABLE_PLATFORMS.includes(PLATFORM_SLUG)) {
         const nativeBinDir = GetNativeBinaryBuildDirectoryForPlatform();
         const nativeBinDirExists = fs.existsSync(nativeBinDir);
+        const nativeBinDirValid = nativeBinDirExists && fs.statSync(nativeBinDir).isDirectory();
 
-        return nativeBinDirExists && fs.statSync(nativeBinDir).isDirectory();
+        if (!nativeBinDirValid) {
+            return false;
+        }
+
+        const nativeBinPath = GetPathToNativeBinary();
+        const nativeBinPathExists = fs.existsSync(nativeBinPath);
+        const nativeBinPathValid = nativeBinPathExists && fs.statSync(nativeBinPath).isFile();
+
+        return nativeBinPathValid;
     } else {
         return false;
     }

@@ -12,6 +12,7 @@ import type { IncomingMessage } from 'node:http';
 import * as vscode from 'vscode';
 import { WebSocket, WebSocketServer } from 'ws';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
+import { EffectManager } from '../Effects/EffectManager';
 import {
 	type ClientToExtensionMessage,
 	DEFAULT_BRIDGE_PORT,
@@ -39,7 +40,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	private wss: WebSocketServer | null = null;
 	private clients: Map<string, ConnectedClient> = new Map();
 	private authToken: string;
-	private outputChannel: vscode.OutputChannel;
+	private outputChannel: vscode.OutputChannel | null = null;
 	private pingInterval: NodeJS.Timeout | null = null;
 	private configChangeDisposable: vscode.Disposable | null = null;
 
@@ -47,6 +48,8 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	private readonly _onClientReady = new vscode.EventEmitter<string>();
 	// Event emitter for when a client disconnects
 	private readonly _onClientDisconnected = new vscode.EventEmitter<string>();
+
+	public static isServerListening: boolean = false;
 
 	/**
 	 * Event that fires when a client completes the connection handshake and is ready.
@@ -67,8 +70,6 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	public readonly OnClientDisconnected: vscode.Event<string> = this._onClientDisconnected.event;
 
 	private constructor(private context: vscode.ExtensionContext) {
-		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Extension Bridge');
-
 		//retrieve or generate auth token
 		const storedToken = context.globalState.get<string>('vsbloom.bridge.authToken');
 		if (storedToken) {
@@ -86,14 +87,26 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		return VSBloomBridgeServer.instance;
 	}
 
+	private static SetServerListeningState(isNowListening: boolean): void {
+		VSBloomBridgeServer.isServerListening = isNowListening;
+
+		vscode.commands.executeCommand(
+			'setContext',
+			'vsbloom.bridgeServer.isRunning',
+			isNowListening,
+		);
+	}
+
 	/**
 	 * Start the WebSocket server
 	 */
 	public async Start(): Promise<void> {
 		if (this.wss) {
-			this.Log('warn', 'Bridge server already running');
+			this.Log('error', 'Bridge server already running');
 			return;
 		}
+
+		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Extension Bridge');
 
 		return new Promise((resolve, reject) => {
 			try {
@@ -109,6 +122,8 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 					);
 					this.DispatchKeepAlivePingDaemon();
 					this.SetupExtensionConfigChangedListener();
+					VSBloomBridgeServer.SetServerListeningState(true);
+
 					resolve();
 				});
 
@@ -138,7 +153,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	/**
 	 * Stop the WebSocket server and clean up.
 	 */
-	public Stop(): void {
+	public async Stop(): Promise<void> {
 		if (this.pingInterval) {
 			clearInterval(this.pingInterval);
 			this.pingInterval = null;
@@ -148,6 +163,11 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			this.configChangeDisposable.dispose();
 			this.configChangeDisposable = null;
 		}
+
+		VSBloomBridgeServer.SetServerListeningState(false);
+
+		const effectManager = EffectManager.GetInstance();
+		await effectManager.Stop();
 
 		// Close all client connections
 		for (const client of this.clients.values()) {
@@ -166,7 +186,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Get the port for which the server is running on.
 	 */
 	public GetServerPort(): number {
-		return this.context.globalState.get<number>('vsbloom.electronBridge.currentClientBridgePort', DEFAULT_BRIDGE_PORT);
+		return this.context.globalState.get<number>(
+			'vsbloom.electronBridge.currentClientBridgePort',
+			DEFAULT_BRIDGE_PORT,
+		);
 	}
 
 	/**
@@ -252,7 +275,9 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		}
 
 		// Recursively extract the configuration, filtering out non-serializable values
-		return this.ExtractExtensionConfigObject(rawConfig as Record<string, unknown>);
+		return VSBloomBridgeServer.ExtractExtensionConfigObject(
+			rawConfig as Record<string, unknown>,
+		);
 	}
 
 	/**
@@ -286,10 +311,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		for (const key of Object.keys(obj)) {
 			const value = obj[key];
 
-			if (this.IsPlainJSObject(value)) {
+			if (VSBloomBridgeServer.IsPlainJSObject(value)) {
 				// Recursively extract nested objects
-				result[key] = this.ExtractExtensionConfigObject(value);
-			} else if (this.IsSerializableConfigPrimitive(value)) {
+				result[key] = VSBloomBridgeServer.ExtractExtensionConfigObject(value);
+			} else if (VSBloomBridgeServer.IsSerializableConfigPrimitive(value)) {
 				// Include primitive values directly
 				result[key] = value;
 			} else if (Array.isArray(value)) {
@@ -448,7 +473,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 			? `${prefix}${message.message} ${JSON.stringify(message.data)}`
 			: `${prefix}${message.message}`;
 
-		this.outputChannel.appendLine(logLine);
+		this.outputChannel?.appendLine(logLine);
 
 		const hasDataAssociatedWithLog = message.data ?? false;
 		let dataObject: unknown = null;
@@ -497,11 +522,10 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 	 * Logs a server message to the output channel.
 	 */
 	private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-		this.outputChannel.appendLine(
+		this.outputChannel?.appendLine(
 			`[Server/${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`,
 		);
 		console.log(`${ConstructVSBloomLogPrefix('Server', level)}${message}`, data ?? '');
-		// console.log(`[${colorful.cyanBright(`VSBloom`)}/${colorful.cyanBright("Server")}]: ${message}`);
 	}
 
 	/**
@@ -511,7 +535,7 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 		this.Stop();
 		this._onClientReady.dispose();
 		this._onClientDisconnected.dispose();
-		this.outputChannel.dispose();
+		this.outputChannel?.dispose();
 
 		VSBloomBridgeServer.instance = null;
 	}

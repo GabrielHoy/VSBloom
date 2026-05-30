@@ -48,11 +48,12 @@ int main() {
     std::cout << "Hello, World!" << std::endl;
     std::cout << "Platform: " << platformSlug << std::endl;
     std::cout << "Beginning callback registration..." << std::endl;
+    std::cerr << "Test error output..." << std::endl;
 
     bool couldSyncProcTerm = VSBloom::IPC::SynchronizeWithParentProcessTermination(OnParentProcessTerminated);
 
     if (!couldSyncProcTerm) {
-        std::cout
+        std::cerr
             << "[FATAL] Failed to register parent process termination callback, we cannot continue executing without certainty that our process will exit when the parent process does - exiting native runtime for safety..."
             << std::endl;
         return EXIT_FAILURE;

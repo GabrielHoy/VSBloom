@@ -33,7 +33,24 @@
 			}
 		},
 		{
-            "name": "Debug Native Runtime (LLDB)",
+			"name": "Run VSBloom (Isolated + Local-Native Binary)",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--disable-extensions"
+			],
+			"outFiles": [
+				"${workspaceFolder}/build/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"VSBLOOM_DEVELOPMENT_MODE": "true",
+				"VSBLOOM_DEVELOPMENT_NATIVE_RUNTIME_PATH": "${workspaceFolder}/src/Native/cpp/build/ninja-debug/VSBloomNativeRuntime.exe"
+			}
+		},
+		{
+            "name": "Debug Native Runtime Directly (LLDB)",
             "type": "lldb",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",

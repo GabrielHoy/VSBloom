@@ -154,6 +154,16 @@ export class Janitor {
 		await this.CleanAll();
 		this.alive = false;
 	}
+
+	public DestroyNoCleanup(): void {
+		if (!this.alive) {
+			throw new Error('Attempt to call DestroyNoCleanup on a Janitor that is already destroyed');
+		}
+
+		this.alive = false;
+		this.cleanupTasks.clear();
+		this.namedCleanupTasks.clear();
+	}
 }
 
 export default Janitor;

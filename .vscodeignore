@@ -55,3 +55,18 @@ imagery/CorruptExample.png
 
 #Notifications
 README_LOGO.md
+
+#Repo scripts
+scripts/
+
+#Potential AI integrations for IDE's
+CLAUDE.md
+.claude/
+.cursor/
+
+#Test infrastructure
+test/
+vitest.config.ts
+.vscode-test.mjs
+tsconfig.test.json
+tsconfig.test-host.json

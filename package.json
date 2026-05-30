@@ -77,6 +77,18 @@
 				{
 					"command": "vsbloom.openMenu",
 					"when": "vsbloom.clientPatched && !vsbloom.menuPanel.visible"
+				},
+				{
+					"command": "vsbloom.restartNativeRuntime",
+					"when": "vsbloom.clientPatched && vsbloom.nativeRuntime.isSupported"
+				},
+				{
+					"command": "vsbloom.shutDownBridgeServer",
+					"when": "vsbloom.clientPatched && vsbloom.bridgeServer.isRunning"
+				},
+				{
+					"command": "vsbloom.startBridgeServer",
+					"when": "vsbloom.clientPatched && !vsbloom.bridgeServer.isRunning"
 				}
 			]
 		},
@@ -104,6 +116,18 @@
 			{
 				"command": "vsbloom.openExtensionSettingsEditor",
 				"title": "VSBloom: Open Settings Editor"
+			},
+			{
+				"command": "vsbloom.restartNativeRuntime",
+				"title": "VSBloom: Restart Native Runtime"
+			},
+			{
+				"command": "vsbloom.shutDownBridgeServer",
+				"title": "VSBloom: Shut Down Extension Bridge Server"
+			},
+			{
+				"command": "vsbloom.startBridgeServer",
+				"title": "VSBloom: Start Extension Bridge Server"
 			}
 		],
 		"configuration": [
@@ -429,11 +453,13 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
-		"vsix": "tsx bundler/PreVSIXChecks.ts && vsce package --allow-star-activation",
+		"vsix": "tsx bundler/PreVSIXChecks.ts && num run vsix:nochecks",
+		"vsix:nochecks": "vsce package --allow-star-activation",
 		"compile": "npm run gen-glyphs && tsx bundler/MainBundler.ts",
 		"watch": "tsx bundler/MainBundler.ts --watch",
-		"package": "npm run gen-glyphs && tsx bundler/MainBundler.ts --production",
+		"package": "npm run motw:clear && npm run gen-glyphs && tsx bundler/MainBundler.ts --production",
 		"gen-glyphs": "tsx bundler/GlyphBuilder.ts",
+		"motw:clear": "python scripts/clear-motw.py",
 		"lint": "eslint src",
 		"test": "vitest run",
 		"test:watch": "vitest",

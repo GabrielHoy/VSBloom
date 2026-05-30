@@ -33,57 +33,92 @@ export class EffectManager implements vscode.Disposable {
 
 	private loadedEffects: Map<string, LoadedEffect> = new Map();
 	private staticEffectConfigs: Map<string, EffectConfiguration> = new Map();
-	private outputChannel: vscode.OutputChannel;
+	private outputChannel: vscode.OutputChannel | null = null;
 	private managerDisposables: vscode.Disposable[] = [];
+	private server: VSBloomBridgeServer | null = null;
 
-	private constructor(private server: VSBloomBridgeServer) {
-		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Effect Manager');
-		this.managerDisposables.push(this.outputChannel);
-
+	private constructor() {
 		//Load all of the static effect configurations into
 		//the `staticEffectConfigs` map
 		this.LoadStaticEffectConfigs();
 
-		//watch for new clients becoming ready so we can replicate
-		//current effects to them & keep in sync
-		this.managerDisposables.push(
-			server.OnClientReady((windowId) => {
-				this.Log(
-					'info',
-					`A new client is ready, replicating current effects to it: ${windowId}`,
-				);
-				//replicate all currently loaded effects to the new client
-				this.ReplicateCurrentEffectsToClient(windowId);
-			}),
-		);
-
-		//listen for vsbloom config changes so we can enable or
-		//disable effects accordingly based on new config values
-		this.managerDisposables.push(
-			vscode.workspace.onDidChangeConfiguration((e) => {
-				if (e.affectsConfiguration('vsbloom')) {
-					this.Log(
-						'debug',
-						'Extension configuration changed, handling effect enable/disable states accordingly',
-					);
-					this.HandleExtensionConfigsChanged();
-				}
-			}),
-		);
-
-		//trigger an initial sync of effect enable/disable states
-		this.HandleExtensionConfigsChanged();
-
-		this.Log('debug', 'Effect manager initialized and ready to go');
+		this.Log('debug', 'Effect manager initialized');
 	}
 
-	public static GetInstance(context: vscode.ExtensionContext): EffectManager {
-		if (!EffectManager.instance) {
-			const currentBridge = VSBloomBridgeServer.GetInstance(context);
-			if (!currentBridge) {
-				throw new Error('Server is not initialized, but effect manager is attempted to be created');
+	public async Start(server: VSBloomBridgeServer): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			if (!VSBloomBridgeServer.isServerListening) {
+				reject(new Error('Bridge Server is not initialized, but effect manager has attempted to be created'));
+				return;
 			}
-			EffectManager.instance = new EffectManager(currentBridge);
+			this.server = server;
+
+			this.outputChannel = vscode.window.createOutputChannel('VSBloom: Effect Manager');
+			this.managerDisposables.push(this.outputChannel);
+
+			//watch for new clients becoming ready so we can replicate
+			//current effects to them & keep in sync
+			this.managerDisposables.push(
+				server.OnClientReady((windowId) => {
+					this.Log(
+						'info',
+						`A new client is ready, replicating current effects to it: ${windowId}`,
+					);
+					//replicate all currently loaded effects to the new client
+					this.ReplicateCurrentEffectsToClient(windowId);
+				}),
+			);
+
+			//listen for vsbloom config changes so we can enable or
+			//disable effects accordingly based on new config values
+			this.managerDisposables.push(
+				vscode.workspace.onDidChangeConfiguration((e) => {
+					if (e.affectsConfiguration('vsbloom')) {
+						this.Log(
+							'debug',
+							'Extension configuration changed, handling effect enable/disable states accordingly',
+						);
+						this.HandleExtensionConfigsChanged();
+					}
+				}),
+			);
+
+			//trigger an initial sync of effect enable/disable states
+			this.HandleExtensionConfigsChanged();
+
+			this.Log('info', "Effect manager started");
+			resolve();
+		});
+	}
+
+	public async Stop(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			if (!this.server) {
+				reject(new Error('Effect manager is not initialized, but stop was called'));
+				return;
+			}
+
+			this.Log('info', "Effect manager stopping");
+
+			this.UnloadAllEffects();
+			this.managerDisposables.forEach((disposable) => {
+				disposable.dispose();
+			});
+			this.managerDisposables = [];
+			
+			this.server = null;
+
+			resolve();
+		});
+	}
+
+	//TODO: Add a way for the EffectManager to send a message over to the Bridge Server to do something on the window it's running on.
+	public static GetInstance(): EffectManager {
+		if (!EffectManager.instance) {
+			if (!VSBloomBridgeServer.isServerListening) {
+				throw new Error('Bridge Server is not initialized, but effect manager is attempted to be created. This cannot be facilitated until Pseudo-Sockets are complete to marshall traffic to the primary VSCode window.');
+			}
+			EffectManager.instance = new EffectManager();
 		}
 
 		return EffectManager.instance;
@@ -199,6 +234,11 @@ export class EffectManager implements vscode.Disposable {
 	 * of choice for generally loading effects in VSBloom.
 	 */
 	public LoadEffect(effectName: string, js?: string, css?: string): void {
+		if (!this.server) {
+			this.Log('error', 'LoadEffect called but the server is not initialized, this should never happen');
+			return;
+		}
+
 		if (this.IsEffectLoaded(effectName)) {
 			this.Log(
 				'error',
@@ -289,6 +329,11 @@ export class EffectManager implements vscode.Disposable {
 	 * Unloads an effect by name.
 	 */
 	public UnloadEffect(effectName: string): void {
+		if (!this.server) {
+			this.Log('error', 'UnloadEffect called but the server is not initialized, this should never happen');
+			return;
+		}
+
 		if (!this.IsEffectLoaded(effectName)) {
 			this.Log(
 				'error',
@@ -372,6 +417,11 @@ export class EffectManager implements vscode.Disposable {
 	 * ensuring that newly joining clients are up to speed.
 	 */
 	public ReplicateCurrentEffectsToClient(windowId: string): void {
+		if (!this.server) {
+			this.Log('error', 'ReplicateCurrentEffectsToClient called but the server is not initialized, this should never happen');
+			return;
+		}
+
 		this.Log(
 			'debug',
 			`Replicating ${this.loadedEffects.size} currently loaded effect${this.loadedEffects.size === 1 ? '' : 's'} to client with Window ID "${windowId}"`,
@@ -392,7 +442,7 @@ export class EffectManager implements vscode.Disposable {
 	 * Log a message to the output channel.
 	 */
 	private Log(level: 'info' | 'warn' | 'error' | 'debug', message: string): void {
-		this.outputChannel.appendLine(`[EffectManager/${level.toUpperCase()}]: ${message}`);
+		this.outputChannel?.appendLine(`[EffectManager/${level.toUpperCase()}]: ${message}`);
 		console.log(`${ConstructVSBloomLogPrefix('EffectManager', level)}${message}`);
 	}
 
