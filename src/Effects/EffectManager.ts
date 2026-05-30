@@ -115,9 +115,6 @@ export class EffectManager implements vscode.Disposable {
 	//TODO: Add a way for the EffectManager to send a message over to the Bridge Server to do something on the window it's running on.
 	public static GetInstance(): EffectManager {
 		if (!EffectManager.instance) {
-			if (!VSBloomBridgeServer.isServerListening) {
-				throw new Error('Bridge Server is not initialized, but effect manager is attempted to be created. This cannot be facilitated until Pseudo-Sockets are complete to marshall traffic to the primary VSCode window.');
-			}
 			EffectManager.instance = new EffectManager();
 		}
 

@@ -134,10 +134,11 @@ export class VSBloomBridgeServer implements vscode.Disposable {
 				this.wss.on('error', (error: NodeJS.ErrnoException) => {
 					if (error.code === 'EADDRINUSE') {
 						this.Log(
-							'error',
+							'warn',
 							`Port ${this.GetServerPort()} is already in use. Another VSCode window may be running VSBloom.`,
 						);
 						// This is not necessarily an error - another window may be hosting
+						VSBloomBridgeServer.SetServerListeningState(false);
 						resolve();
 					} else {
 						this.Log('error', `Bridge server error`, { error });

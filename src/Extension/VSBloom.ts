@@ -101,7 +101,7 @@ async function ExtensionActivatedAndClientPatchingVerified(
 		if (VSBloomBridgeServer.isServerListening) {
 			Log('info', 'Extension bridge server started; we are now taking the role of the VSBloom master server');
 		} else {
-			Log('error', 'Failed to start the extension bridge server, another window is likely hosting it already.');
+			Log('warn', 'Failed to start the extension bridge server, another window is likely hosting it already.');
 		}
 
 		//? Effect Manager Initialization
@@ -431,13 +431,13 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 			const restartNativeRuntimeCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.restartNativeRuntime',
 				async () => {
-					const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
-
-					if (nativeRuntimeManager) {
+				
+					if (VSBloomBridgeServer.isServerListening) {
+						const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
 						await nativeRuntimeManager.RestartNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime restarted.');
 					} else {
-						vscode.window.showErrorMessage('Failed to restart the native runtime, this window is not hosting the native runtime manager.');
+						vscode.window.showErrorMessage('Failed to restart the native runtime, this window is not hosting the bridge server.');
 					}
 				},
 			);
@@ -446,8 +446,8 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 			const startNativeRuntimeCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.startNativeRuntime',
 				async () => {
-					const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
-					if (nativeRuntimeManager) {
+					if (VSBloomBridgeServer.isServerListening) {
+						const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
 						if (nativeRuntimeManager.IsNativeRuntimeActive()) {
 							vscode.window.showInformationMessage('Native runtime is already running.');
 							return;
@@ -456,7 +456,7 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						await nativeRuntimeManager.StartNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime started.');
 					} else {
-						vscode.window.showErrorMessage('Failed to start the native runtime, this window is not hosting the native runtime manager.');
+						vscode.window.showErrorMessage('Failed to start the native runtime, this window is not hosting the bridge server.');
 					}
 				},
 			);
@@ -465,8 +465,8 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 			const stopNativeRuntimeCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.stopNativeRuntime',
 				async () => {
-					const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
-					if (nativeRuntimeManager) {
+					if (VSBloomBridgeServer.isServerListening) {
+						const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
 						if (!nativeRuntimeManager.IsNativeRuntimeActive()) {
 							vscode.window.showInformationMessage('Native runtime is not running.');
 							return;
@@ -475,12 +475,11 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						await nativeRuntimeManager.StopNativeRuntime();
 						vscode.window.showInformationMessage('Native runtime stopped.');
 					} else {
-						vscode.window.showErrorMessage('Failed to stop the native runtime, this window is not hosting the native runtime manager.');
+						vscode.window.showErrorMessage('Failed to stop the native runtime, this window is not hosting the bridge server.');
 					}
 				},
 			);
 			context.subscriptions.push(stopNativeRuntimeCmdDisp);
-
 
 			const shutDownBridgeServerCmdDisp = vscode.commands.registerCommand(
 				'vsbloom.shutDownBridgeServer',
@@ -503,10 +502,14 @@ export function activate(context: vscode.ExtensionContext): VSBloomExtensionExpo
 						const bridgeServer = VSBloomBridgeServer.GetInstance(context);
 						await bridgeServer.Start();
 
-						const effectManager = EffectManager.GetInstance();
-						await effectManager.Start(bridgeServer);
+						if (VSBloomBridgeServer.isServerListening) {
+							const effectManager = EffectManager.GetInstance();
+							await effectManager.Start(bridgeServer);
+						} else {
+							Log('warn', 'Failed to start the effect manager, this window failed to start the bridge server.');
+						}
 
-						vscode.window.showInformationMessage('Extension bridge server started.');
+						vscode.window.showInformationMessage('Extension bridge server and effect manager started.');
 					} else {
 						vscode.window.showErrorMessage('Failed to start the bridge server, this window is not hosting the bridge server.');
 					}
