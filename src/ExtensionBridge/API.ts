@@ -62,6 +62,80 @@ export type ClientToExtensionMessage =
 	| LogMessage
 	| WindowIdChangeMessage;
 
+//Pseudo-Server -> Extension Message
+export interface PseudoServerReadyMessage {
+	type: 'pseudo-server-ready';
+    identifier: string;
+}
+
+export interface PseudoServerKeepAliveResponseMessage {
+    type: 'i-am-alive';
+}
+
+export interface PseudoServerMarshalledMessage {
+    type: 'marshalled-message';
+    id: string;
+    data: string;
+}
+
+export type PseudoServerMarshalledFireAllClientsData = {
+    type: 'fire-all-clients';
+    data: ExtensionToClientMessage;
+}
+
+export type PseudoServerMarshalledFireClientData = {
+    type: 'fire-client';
+    data: {
+        windowId: string;
+        message: ExtensionToClientMessage
+    };
+}
+
+export type PseudoServerMarshalledReplicateExtensionConfigData = {
+    type: 'replicate-extension-config';
+    data: null;
+}
+
+export type PseudoServerMarshalledReloadAllEffectsData = {
+    type: 'reload-all-effects';
+    data: null;
+}
+
+export type PseudoServerMarshalledSetNativeRuntimeActiveData = {
+    type: 'set-native-runtime-active';
+    data: {
+        shouldBeActive: true;
+        shouldRestart: boolean;
+    } | {
+        shouldBeActive: false;
+    };
+}
+
+export type PseudoServerToExtensionMessage = PseudoServerReadyMessage | PseudoServerMarshalledMessage | PseudoServerKeepAliveResponseMessage;
+export type PseudoServerMarshalledMessageDecodedData = PseudoServerMarshalledFireAllClientsData | PseudoServerMarshalledFireClientData | PseudoServerMarshalledReplicateExtensionConfigData | PseudoServerMarshalledReloadAllEffectsData | PseudoServerMarshalledSetNativeRuntimeActiveData;
+
+//Server -> Pseudo-Server Message
+export interface ExtensionToPseudoServerKeepAliveQueryMessage {
+    type: 'are-u-alive';
+}
+export interface ExtensionToPseudoServerLogReplicationMessage {
+    type: 'replicate-log';
+    level: 'info' | 'warn' | 'error' | 'debug';
+    message: string;
+    data?: unknown;
+}
+export interface ExtensionToPseudoServerNativeRuntimeStateMessage {
+    type: 'native-runtime-state';
+    isRunning: boolean;
+}
+export type ServerToPseudoServerMessage = ExtensionToPseudoServerKeepAliveQueryMessage | ExtensionToPseudoServerLogReplicationMessage | ExtensionToPseudoServerNativeRuntimeStateMessage;
+
+//General Pseudo-Server Datatypes
+export interface PseudoServerMarshalledMessageEventPayload {
+    originServerID: string;
+    payload: PseudoServerMarshalledMessageDecodedData;
+}
+
 //Configuration Types
 
 export interface UserConfigurableEffectProperty {

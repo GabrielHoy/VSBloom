@@ -1,8 +1,8 @@
 /**
- * Native IPC
+ * Native Termination Synchronization
  *
- * Provides declarations for VSBloom's native Inter-Process Communication
- * protocol(s) and associated behaviors.
+ * Provides declarations for VSBloom's native termination synchronization
+ * mechanisms and associated behaviors / utilities.
  */
 
 #pragma once
@@ -25,7 +25,7 @@
 
 #endif
 
-namespace VSBloom::IPC {
+namespace VSBloom::Termination {
 
     /**
      * Synchronizes the termination of this runtime's process with the actual
@@ -97,7 +97,8 @@ namespace VSBloom::IPC {
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 #endif
 
-        const bool couldRegisterTermCallback = VSBloom::IPC::RegisterParentProcessTerminationCallback(runOnTerm);
+        const bool couldRegisterTermCallback =
+            VSBloom::Termination::RegisterParentProcessTerminationCallback(runOnTerm);
         if (!couldRegisterTermCallback) {
             return false;
         }
@@ -105,4 +106,4 @@ namespace VSBloom::IPC {
         return true;
     }
 
-} // namespace VSBloom::IPC
+} // namespace VSBloom::Termination

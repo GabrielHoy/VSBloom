@@ -37,6 +37,7 @@ type OneLinerWorkerResponse = {
 const PARALLEL_WORKER_LIMIT = Math.max(1, Math.min(os.availableParallelism(), 8));
 let activeOneLinerWorkers = 0;
 const oneLinerWorkerQueue: Array<() => void> = [];
+const BUILD_OUTPUT_PREFIX = `${Colorful.GetColoredString([255,255,255], "[build]", ["dim"])}${Colorful.GetColoredString([255,255,255],"",["reset"])}`;
 
 async function AcquireOneLinerWorkerSlot(): Promise<void> {
     if (activeOneLinerWorkers < PARALLEL_WORKER_LIMIT) {
@@ -183,7 +184,7 @@ const effectPlugin: esbuild.Plugin = {
             if (!outFile || !fs.existsSync(outFile)) {
                 return;
             }
-            console.log(`[build]   pulling ${Colorful.GetColoredString([255,255,255], "non-script", ["bold", "underline"])} files for effect "${outFile}"...`);
+            console.log(`${BUILD_OUTPUT_PREFIX}   pulling ${Colorful.GetColoredString([255,255,255], "non-script", ["bold", "underline"])} files for effect "${outFile}"...`);
 
             try {
                 const entryPoints = build.initialOptions.entryPoints;
@@ -215,7 +216,7 @@ const effectPlugin: esbuild.Plugin = {
                                     outputContents = buildBanners["__EFFECT_CSS__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + fileContents;
                                 }
                                 await fs.promises.writeFile(outputFilePath, outputContents, "utf8");
-                                console.log(`[build]     - minified ${Colorful.GetColoredString([144,0,255], "CSS", ["bold", "underline"])} file "${Colorful.GetColoredString([255,255,255], `${file}`, ["bold"])}" and copied to "${Colorful.GetColoredString([255,255,255], `${outputFilePath}`, ["bold"])}"`);
+                                console.log(`${BUILD_OUTPUT_PREFIX}     - minified ${Colorful.GetColoredString([144,0,255], "CSS", ["bold", "underline"])} file "${Colorful.GetColoredString([255,255,255], `${file}`, ["bold"])}" and copied to "${Colorful.GetColoredString([255,255,255], `${outputFilePath}`, ["bold"])}"`);
                             })
                         );
                     } else if (file.endsWith(".json") || file.endsWith(".jsonc")) {
@@ -232,15 +233,15 @@ const effectPlugin: esbuild.Plugin = {
                                 outputContents = buildBanners["__EFFECT_JSON__"].replace(EFFECT_NAME_SENTINEL, effectName) + "\n" + whitespaceRemoved;
                             }
                             fs.writeFileSync(outputFilePath, outputContents, "utf8");
-                            console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,0], isJsonC ? "JSON-C" : "JSON", ["bold"].concat(isJsonC ? ["underline"] : []) as any)} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
+                            console.log(`${BUILD_OUTPUT_PREFIX}     - copied ${Colorful.GetColoredString([255,255,0], isJsonC ? "JSON-C" : "JSON", ["bold"].concat(isJsonC ? ["underline"] : []) as unknown as Array<Colorful.ColorfulModifier>)} file "${Colorful.GetColoredString([255,255,255], file, ["bold"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["bold"])}"`);
                         } catch (err) {
-                            console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to shorten and copy ${isJsonC ? "JSON-C" : "JSON"} file "${file}":`, ["bold", "underline"])}`, (err as Error).message);
+                            console.error(`${BUILD_OUTPUT_PREFIX} ${Colorful.GetColoredString([255,0,0], `Failed to shorten and copy ${isJsonC ? "JSON-C" : "JSON"} file "${file}":`, ["bold", "underline"])}`, (err as Error).message);
                         }
                     } else {
                         const outputFilePath = path.join(path.dirname(outFile), file);
                         fileCopyPromises.push(
                             fs.promises.copyFile(path.join(effectDirectory, file), outputFilePath).then(() => {
-                                console.log(`[build]     - copied ${Colorful.GetColoredString([255,255,255], "unexpected-extension", ["bold"])} file "${Colorful.GetColoredString([255,255,255], file, ["dim"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["dim"])}"`);
+                                console.log(`${BUILD_OUTPUT_PREFIX}     - copied ${Colorful.GetColoredString([255,255,255], "unexpected-extension", ["bold"])} file "${Colorful.GetColoredString([255,255,255], file, ["dim"])}" to "${Colorful.GetColoredString([255,255,255], outputFilePath, ["dim"])}"`);
                             })
                         );
                     }
@@ -248,7 +249,7 @@ const effectPlugin: esbuild.Plugin = {
 
                 await Promise.all(fileCopyPromises);
             } catch (err) {
-                console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to update non-script files for effect "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
+                console.error(`${BUILD_OUTPUT_PREFIX} ${Colorful.GetColoredString([255,0,0], `Failed to update non-script files for effect "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
             }
         });
     },
@@ -265,7 +266,7 @@ const oneLinerPlugin: esbuild.Plugin = {
             if (!outFile || !fs.existsSync(outFile)) {
                 return;
             }
-            console.log(`[build]   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to single line...`);
+            console.log(`${BUILD_OUTPUT_PREFIX}   collapsing ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to single line...`);
 
             try {
                 const code = await fs.promises.readFile(outFile, "utf8");
@@ -278,9 +279,9 @@ const oneLinerPlugin: esbuild.Plugin = {
 
                 const singleLine = await CollapseJSCode(code, fileBanner);
                 await fs.promises.writeFile(outFile, singleLine, "utf8");
-                console.log(`[build]     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold", "underline"])} chars`);
+                console.log(`${BUILD_OUTPUT_PREFIX}     - collapsed ${Colorful.GetColoredString([255,255,255], outFile, ["bold", "underline"])} to ${Colorful.GetColoredString([255,255,255], singleLine.length.toLocaleString(), ["bold", "underline"])} chars`);
             } catch (err) {
-                console.error(`[build] ${Colorful.GetColoredString([255,0,0], `Failed to collapse "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
+                console.error(`${BUILD_OUTPUT_PREFIX} ${Colorful.GetColoredString([255,0,0], `Failed to collapse "${outFile}":`, ["bold", "underline"])}`, (err as Error).message);
             }
         });
     },
@@ -330,7 +331,7 @@ async function Main(): Promise<void> {
     }
 
     RebuildPackageFile();
-    console.log(`[build] ${Colorful.GetColoredString([255,255,0], "package.json", ["bold", "underline"])} file rebuilt`);
+    console.log(`${BUILD_OUTPUT_PREFIX} ${Colorful.GetColoredString([255,255,0], "package.json", ["bold", "underline"])} file rebuilt`);
 
     const mainCtx = await esbuild.context({
         bundle: true,
@@ -517,11 +518,11 @@ async function Main(): Promise<void> {
 
         console.log(`[watch] ${Colorful.GetColoredString([255,255,255], "watching for changes...", ["italic"])}`);
     } else {
-        console.log(`[build] Build ${Colorful.GetColoredString([200,255,200], "started")}`);
+        console.log(`${BUILD_OUTPUT_PREFIX} Build ${Colorful.GetColoredString([200,255,200], "started")}`);
         await Promise.all(allContexts.map((ctx) => ctx.rebuild()));
         console.log();
         console.log(`${Colorful.GetColoredString([255,255,255], "=".repeat(64), ["bold"])}\n`);
-        console.log(`[build] ${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold", "underline"])}\n`);
+        console.log(`${Colorful.GetColoredString([0,255,0], "Build finished!", ["bold", "underline"])}\n`);
         await Promise.all(allContexts.map((ctx) => ctx.dispose()));
     }
 }

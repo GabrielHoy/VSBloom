@@ -19,7 +19,7 @@ import {
 	GetExtensionConfigValue,
 	GetInternalPathForEffectProperty,
 } from '../ExtensionBridge/API';
-import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 
 interface LoadedEffect {
 	effectName: string;

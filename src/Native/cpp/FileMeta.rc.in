@@ -20,7 +20,7 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "Tampered Reality\0"
-      VALUE "FileDescription", "VSBloom Native Host\0"
+      VALUE "FileDescription", "VSBloom: Native Runtime\0"
       VALUE "FileVersion", "@VSBLOOM_VERSION_STRING@.@VSBLOOM_VERSION_BUILD@\0"
       VALUE "InternalName", "VSBloomNativeRuntime\0"
       VALUE "OriginalFilename", "VSBloomNativeRuntime.exe\0"

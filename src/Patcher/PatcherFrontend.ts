@@ -1,27 +1,27 @@
 /**
  * VSBloom Patcher Frontend
- * 
+ *
  * The Patcher Frontend can be thought about as
  * part of the main Client Patching function
  * providers, though this frontend module is given
  * direct access to the `vscode` import whereas
  * we cannot make any assumption of its existence
  * within the ClientPatcher.ts module
- * 
+ *
  * (This is due to the fact that the ClientPatcher.ts
  * module may be running in a separate process if the
  * ElevatedClientPatcher had to be invoked to patch the
  * client)
  */
 import * as path from 'node:path';
-import * as vscode from 'vscode';
 import * as sudo from '@vscode/sudo-prompt';
+import * as vscode from 'vscode';
+import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
+import { DEFAULT_BRIDGE_PORT } from '../ExtensionBridge/API';
+import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import * as Elevation from '../Patcher/Elevation';
 import * as ClientPatcher from './ClientPatcher';
 import * as Common from './Common';
-import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
-import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
-import { DEFAULT_BRIDGE_PORT } from '../ExtensionBridge/API';
 
 export enum ClientPatchingStatus {
 	PATCHED = 0,
@@ -169,7 +169,9 @@ export async function EnsureClientIsPatched(
  * Ensure that the current client is correctly un-patched, and un-patches
  * it if it's not
  */
-export async function EnsureClientIsUnpatched(appProductFilePath: string): Promise<ClientPatchingStatus> {
+export async function EnsureClientIsUnpatched(
+	appProductFilePath: string,
+): Promise<ClientPatchingStatus> {
 	const isClientPatched = await ClientPatcher.IsClientPatched(appProductFilePath);
 
 	if (!isClientPatched) {
@@ -252,7 +254,9 @@ export async function EnsureClientIsUnpatched(appProductFilePath: string): Promi
  * Show a prompt to the user asking if they're OK with
  * patching the client, then return their response
  */
-export async function ShowClientPatchRequestPrompt(context: vscode.ExtensionContext): Promise<boolean> {
+export async function ShowClientPatchRequestPrompt(
+	context: vscode.ExtensionContext,
+): Promise<boolean> {
 	const userChoice = await vscode.window.showInformationMessage(
 		"In order for VSBloom to function properly, we need to apply a patch to the Electron Client to make many of the extension's features possible. Are you OK with this?",
 		'Yes',

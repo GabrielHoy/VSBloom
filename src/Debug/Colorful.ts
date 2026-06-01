@@ -15,6 +15,8 @@ import * as chalkModule from 'chalk';
 export let isColoredOutputEnabled = true;
 export let colorful = new chalkModule.Instance({ level: 3 });
 
+export type ColorfulModifier = 'bold' | 'underline' | 'inverse' | 'dim' | 'italic' | 'reset';
+
 type ColorDefinition = {
 	rgb: [number, number, number];
 	rgbFunc: (...args: [number, number, number]) => chalkModule.Chalk;
@@ -31,6 +33,7 @@ export const coloredLogBrandNetworkOriginNameColors: Record<string, ColorDefinit
 export const coloredLogSourceNameColors: Record<string, ColorDefinition> = {
 	VSBloom: { rgb: [41,184,219], rgbFunc: colorful.rgb }, //blue-ish cyan
 	Server: { rgb: [0, 180, 180], rgbFunc: colorful.rgb }, //colorful.cyanBright,
+    PseudoServer: { rgb: [45, 180, 180], rgbFunc: colorful.rgb }, //slightly more white than Server,
 	Client: { rgb: [0, 180, 0], rgbFunc: colorful.rgb }, //colorful.green,
 	EffectManager: { rgb: [229, 229, 16], rgbFunc: colorful.rgb }, //colorful.yellow,
 	Extension: { rgb: [128, 128, 128], rgbFunc: colorful.rgb }, //colorful.grey,
@@ -123,7 +126,7 @@ export function ConstructNonBrandedLogPrefix(
 export function GetColoredString(
 	rgb: [number, number, number],
 	str: string,
-	modifiers?: ('bold' | 'underline' | 'inverse' | 'dim' | 'italic' | 'reset')[],
+	modifiers?: ColorfulModifier[],
 ): string {
 	if (isColoredOutputEnabled) {
 		if (modifiers) {

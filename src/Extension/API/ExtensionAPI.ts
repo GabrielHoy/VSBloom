@@ -1,5 +1,5 @@
 import type { EffectManager } from '../../Effects/EffectManager';
-import type { VSBloomBridgeServer } from '../../ExtensionBridge/Server';
+import type { VSBloomBridgeServer } from '../../ExtensionBridge/BridgeServer/Server';
 import type { DeferredResultConsumer } from './DeferredResults';
 
 export enum UnpatchedClientState {

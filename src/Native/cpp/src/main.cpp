@@ -33,8 +33,8 @@
  *
  * ...With that being said, let's get to it!
  */
-#include "IPC.hpp"
 #include "Platform.hpp"
+#include "Termination.hpp"
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
@@ -52,14 +52,15 @@ int main() {
     std::cout << "Beginning callback registration..." << std::endl;
     std::cerr << "Test error output..." << std::endl;
 
-    bool couldSyncProcTerm = VSBloom::IPC::SynchronizeWithParentProcessTermination(OnParentProcessTerminated);
-
+    bool couldSyncProcTerm = VSBloom::Termination::SynchronizeWithParentProcessTermination(OnParentProcessTerminated);
     if (!couldSyncProcTerm) {
         std::cerr
             << "[FATAL] Failed to register parent process termination callback, we cannot continue executing without certainty that our process will exit when the parent process does - exiting native runtime for safety..."
             << std::endl;
         return EXIT_FAILURE;
     }
+
+    std::cout << "Parent process termination callback registered successfully. All seems well!" << std::endl;
 
     // TODO: Loopback capture per-device instead of yielding indefinitely.
     std::this_thread::sleep_for(std::chrono::seconds(60 * 10));

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { type Disposable, Uri, ViewColumn } from 'vscode';
-import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import * as ClientPatcher from '../Patcher/ClientPatcher';
 import type { BloomToSveltePayload, SvelteToBloomPayload } from '../Webview/WebviewNetworking';
 import * as ExtensionReflection from './ExtensionReflection';

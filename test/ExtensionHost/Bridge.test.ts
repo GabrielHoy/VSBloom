@@ -28,7 +28,7 @@ suite('Bridge', () => {
 	});
 
 	test('connection with wrong token is closed with code 4001', (done) => {
-		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?token=definitely-wrong-token`;
+		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=client&token=definitely-wrong-token`;
 		const ws = new WS.WebSocket(url);
 		ws.on('close', (code: number) => {
 			assert.strictEqual(code, 4001, 'Unauthorized connection should close with 4001');
@@ -38,17 +38,27 @@ suite('Bridge', () => {
 	});
 
 	test('connection with no token is closed with code 4001', (done) => {
-		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}`;
+		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=client`;
 		const ws = new WS.WebSocket(url);
 		ws.on('close', (code: number) => {
-			assert.strictEqual(code, 4001);
+			assert.strictEqual(code, 4001, 'No token should close with 4001');
 			done();
 		});
 		ws.on('error', (err: Error) => done(err));
 	});
 
+    test('connection with invalid type is closed with code 4001', (done) => {
+        const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=invalid`;
+        const ws = new WS.WebSocket(url);
+        ws.on('close', (code: number) => {
+            assert.strictEqual(code, 4001, 'Invalid connection type should close with 4001');
+            done();
+        });
+        ws.on('error', (err: Error) => done(err));
+    });
+
 	test('authorised connection receives replicate-extension-config after client-ready', (done) => {
-		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?token=${testBridge.GetAuthToken()}`;
+		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=client&token=${testBridge.GetAuthToken()}`;
 		const ws = new WS.WebSocket(url);
 		ws.on('open', () => {
 			ws.send(JSON.stringify({ type: 'client-ready', windowId: 'bridge-test-window' }));
@@ -72,7 +82,7 @@ suite('Bridge', () => {
 			}
 		});
 
-		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?token=${testBridge.GetAuthToken()}`;
+		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=client&token=${testBridge.GetAuthToken()}`;
 		const ws = new WS.WebSocket(url);
 		ws.on('open', () => {
 			ws.send(JSON.stringify({ type: 'client-ready', windowId }));
@@ -87,7 +97,7 @@ suite('Bridge', () => {
 		const countBefore = testBridge.GetClientCount();
 		const windowId = `test-count-${Date.now()}`;
 
-		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?token=${testBridge.GetAuthToken()}`;
+		const url = `ws://127.0.0.1:${testBridge.GetServerPort()}?type=client&token=${testBridge.GetAuthToken()}`;
 		const ws = new WS.WebSocket(url);
 
 		const readyDisposable = testBridge.OnClientReady((id) => {

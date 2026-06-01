@@ -14,7 +14,8 @@ import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { IsDevelopmentEnvironment } from '../Extension/ExtensionReflection';
 import { MainOutputChannel } from '../Extension/MainOutputChannel';
-import { VSBloomBridgeServer } from '../ExtensionBridge/Server';
+import { VSBloomPseudoServer } from '../ExtensionBridge/BridgeServer/PseudoServer';
+import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import { GetPathToNativeBinary, IsNativeCapable, PLATFORM_SLUG } from './NativeCompatibility';
 
 export class VSBloomNativeRuntimeManager implements vscode.Disposable {
@@ -22,8 +23,18 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
 	private outputChannel: vscode.OutputChannel | null = null;
 	private childProc: childProcess.ChildProcess | null = null;
+	//This is private because the IsNativeRuntimeActive method is less prone to desync and should always be used instead
+	//The reason this exists at all is to provide a self-checking mechanism to try and make sure we're not accidentally
+	//ever desynchronizing from the actual state of the native runtime during development.
+	private static isRunning: boolean = false;
 
-	public static isRunning: boolean = false;
+	private readonly _onNativeRuntimeStateChanged = new vscode.EventEmitter<boolean>();
+	/**
+	 * Fires when the native runtime starts or stops.
+	 * Payload is the new running state: `true` = started, `false` = stopped.
+	 */
+	public readonly OnNativeRuntimeStateChanged: vscode.Event<boolean> =
+		this._onNativeRuntimeStateChanged.event;
 
 	private constructor() {
 		MainOutputChannel.Log('info', 'Native Runtime Manager initialized');
@@ -81,7 +92,14 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 			return false;
 		}
 
-		this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
+        if (!this.outputChannel) {
+            this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
+        } else {
+            //This is an ugly line. It's just a pretty dev-indicator to print out a
+            //block of dashes with a title in the middle stating that we're starting
+            //a new native runtime session.
+            this.Log('info', `\n\n${`${(`-`.repeat(50))}\n`.repeat(2)}${`-`.repeat(10)}  NEW NATIVE RUNTIME SESSION  ${`-`.repeat(10)}\n${`${(`-`.repeat(50))}\n`.repeat(2)}\n`);
+        }
 
 		this.Log('info', 'Attempting to start the native runtime...');
 
@@ -107,7 +125,9 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
 		this.childProc.on('close', (code: number) => {
 			this.Log('debug', `Native runtime closed with code ${code}.`);
-			VSBloomNativeRuntimeManager.SetIsRunningState(false);
+            if (VSBloomNativeRuntimeManager.isRunning) {
+                VSBloomNativeRuntimeManager.SetIsRunningState(false);
+            }
 
 			if (!IsDevelopmentEnvironment()) {
 				//We only want to actively dispose of the output channel in non-development environments
@@ -132,11 +152,25 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 			isNowRunning,
 		);
 
+		if (VSBloomNativeRuntimeManager.isRunning === isNowRunning) {
+			MainOutputChannel.Log(
+				'error',
+				'A request was made to set the native runtime active state, but the state was already the same as the requested state. A desync like this should not be allowed to happen with the Native Runtime.',
+			);
+			if (IsDevelopmentEnvironment()) {
+				vscode.window.showErrorMessage(
+					'PIVOT TO INVESTIGATE: A request was made to set the native runtime active state, but the state was already the same as the requested state.',
+				);
+			}
+		}
+
 		VSBloomNativeRuntimeManager.isRunning = isNowRunning;
+		VSBloomNativeRuntimeManager.instance?._onNativeRuntimeStateChanged.fire(isNowRunning);
 	}
 
 	/**
-	 * Checks whether the native runtime is active or not.
+	 * Checks whether the native runtime is active or not on the local VSCode window
+     * instance.
 	 *
 	 * @returns A boolean indicating whether the native runtime is active or not.
 	 */
@@ -146,10 +180,26 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		);
 	}
 
+    /**
+     * Checks whether the native runtime is active *anywhere* on the system,
+     * including both the local VSCode window instance and the main bridge
+     * server instance that should actually be hosting it if it is running.
+     * 
+     * @returns A boolean indicating whether the native runtime is active anywhere on the system.
+     */
+	public static IsNativeRuntimeActiveAnywhereOnSystem(): boolean {
+		const nativeRuntime = VSBloomNativeRuntimeManager.GetInstance();
+
+		return VSBloomBridgeServer.isServerListening
+			? (nativeRuntime.IsNativeRuntimeActive() ?? false)
+			: (VSBloomPseudoServer.GetInstanceIfExists()?.GetMasterNativeRuntimeIsRunning() ??
+					false);
+	}
+
 	/**
 	 * Stops the native runtime if it was running.
 	 */
-	public StopNativeRuntime(): boolean {
+	public async StopNativeRuntime(): Promise<boolean> {
 		if (!this.IsNativeRuntimeActive()) {
 			MainOutputChannel.Log(
 				'warn',
@@ -159,7 +209,22 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		}
 
 		this.Log('debug', 'Stopping the native runtime...');
-		this.childProc?.kill('SIGTERM');
+		const couldKill = this.childProc?.kill('SIGTERM');
+		if (!couldKill) {
+			MainOutputChannel.Log(
+				'error',
+				'A request was made to stop the native runtime, but it could not be successfully killed.',
+			);
+			if (IsDevelopmentEnvironment()) {
+				vscode.window.showErrorMessage(
+					'PIVOT TO INVESTIGATE: A request was made to stop the native runtime, but it could not be successfully killed.',
+				);
+
+                return false;
+			}
+			return false;
+		}
+
 		this.childProc = null;
 
 		VSBloomNativeRuntimeManager.SetIsRunningState(false);
@@ -204,13 +269,14 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	}
 
 	public dispose(): void {
-        if (this.IsNativeRuntimeActive()) {
-		    this.StopNativeRuntime();
-        }
+		if (this.IsNativeRuntimeActive()) {
+			this.StopNativeRuntime();
+		}
 
 		this.outputChannel?.dispose();
 		this.outputChannel = null;
 
+		this._onNativeRuntimeStateChanged.dispose();
 		VSBloomNativeRuntimeManager.instance = null;
 	}
 }

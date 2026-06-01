@@ -103,11 +103,6 @@ class VSBloomClient implements IVSBloomClient {
 	) {
 		this.windowId = this.GetNewWindowId();
 
-		// ?With the addition of Pseudo-Sockets this is proably
-		// ?too risky, since we're now dealing with two IPC jumps 
-		// ?and I'm not sure if I'm OK with the data-races this brings on
-		// this.SyncWindowIDUpdatesWithWindowTitleUpdates();
-
 		//create the trusted types policy we need to dynamically run
 		//code in a way that satisfies the CSP directives in vsc's workbench.html
 		this.trustedPolicy = this.CreateTrustedTypesPolicy();
@@ -171,7 +166,7 @@ class VSBloomClient implements IVSBloomClient {
 	 */
 	private ConnectToWebsocketServer(): void {
 		try {
-			const url = `ws://127.0.0.1:${this.port}?token=${encodeURIComponent(this.authToken)}`;
+			const url = `ws://127.0.0.1:${this.port}?type=client&token=${encodeURIComponent(this.authToken)}`;
 			this.ws = new WebSocket(url);
 
 			this.ws.onopen = () => {
@@ -696,98 +691,6 @@ class VSBloomClient implements IVSBloomClient {
 			default:
 				console.log(prefix, message, data ?? '');
 		}
-	}
-
-	/**
-	 * Synchronizes the window ID of this client with the title element
-	 * inside of the Electron Renderer's DOM
-	 */
-	private SyncWindowIDUpdatesWithWindowTitleUpdates(): void {
-		let lastKnownTitle = document.title;
-
-		let titleObserver: MutationObserver | null = null;
-
-		const onTitleChange = () => {
-			const newTitle = document.title;
-			if (lastKnownTitle !== newTitle) {
-				lastKnownTitle = newTitle;
-				this.windowId = this.GetNewWindowId();
-			}
-		};
-
-		function observeTitleElement(titleEl: HTMLTitleElement) {
-			disconnectTitleObserver();
-
-			titleObserver = new MutationObserver(onTitleChange);
-			titleObserver.observe(titleEl, { characterData: true, childList: true, subtree: true });
-		}
-
-		function disconnectTitleObserver() {
-			if (titleObserver) {
-				try {
-					titleObserver.disconnect();
-				} catch {
-					/* no-op */
-				}
-				titleObserver = null;
-			}
-		}
-
-		const observeHeadForTitle = () => {
-			const head = document.head;
-			if (!head) {
-				//what
-				return;
-			}
-
-			const currentTitleEl = head.querySelector('title');
-			if (currentTitleEl) {
-				observeTitleElement(currentTitleEl);
-			}
-
-			//mutation observer for title element addition/removal/replacement
-			const headObserver = new MutationObserver((mutations) => {
-				let needsRescan = false;
-				mutations.forEach((mutation) => {
-					if (
-						mutation.type === 'childList' &&
-						Array.from(mutation.addedNodes)
-							.concat(Array.from(mutation.removedNodes))
-							.some(
-								(node) =>
-									node.nodeType === Node.ELEMENT_NODE &&
-									(node as Element).tagName.toLowerCase() === 'title',
-							)
-					) {
-						needsRescan = true;
-					}
-				});
-				if (needsRescan) {
-					disconnectTitleObserver();
-					const newTitleEl = head.querySelector('title');
-					if (newTitleEl) {
-						observeTitleElement(newTitleEl);
-						onTitleChange();
-					} else {
-						onTitleChange();
-					}
-				}
-			});
-			headObserver.observe(head, { childList: true });
-
-			const pollInterval = 250;
-			const intervalId = setInterval(() => {
-				onTitleChange();
-			}, pollInterval);
-
-			window.addEventListener('beforeunload', () => {
-				headObserver.disconnect();
-				disconnectTitleObserver();
-				clearInterval(intervalId);
-			});
-		};
-
-		observeHeadForTitle();
 	}
 
 	/**
