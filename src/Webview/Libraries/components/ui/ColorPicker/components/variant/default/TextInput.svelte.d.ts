@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Texts } from '../../../utils/texts.js';
 import type { RgbaColor, HsvaColor } from 'colord';
 interface Props {

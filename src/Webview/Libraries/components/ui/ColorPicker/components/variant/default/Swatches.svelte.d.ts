@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Texts } from '../../../utils/texts.js';
 interface Props {
 	/** Optional array of color swatches to display */

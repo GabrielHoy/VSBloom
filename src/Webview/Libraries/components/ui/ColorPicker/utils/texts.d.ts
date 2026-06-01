@@ -28,6 +28,7 @@ export declare const defaultA11yTexts: {
 };
 export type Texts = typeof defaultTexts;
 export type A11yTexts = typeof defaultA11yTexts;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type DeepPartial<T> = T extends Function
 	? T
 	: T extends object

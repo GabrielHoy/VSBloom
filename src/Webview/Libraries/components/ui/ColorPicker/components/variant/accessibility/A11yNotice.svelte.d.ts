@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { type A11yTextsPartial } from '../../../utils/texts.js';
 import type { A11yColor, Components } from '../../../type/types.js';
 export interface Props {

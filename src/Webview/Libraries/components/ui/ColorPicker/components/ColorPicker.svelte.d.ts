@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { A11yColor, Components } from '../type/types.js';
 import { type A11yTextsPartial, type TextsPartial } from '../utils/texts.js';
 import { type Colord, type HsvaColor, type RgbaColor } from 'colord';

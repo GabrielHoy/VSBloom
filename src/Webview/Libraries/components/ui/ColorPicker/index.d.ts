@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { default as ColorPicker } from './components/ColorPicker.svelte';
 export default ColorPicker;
 export type { HsvaColor, RgbaColor } from 'colord';

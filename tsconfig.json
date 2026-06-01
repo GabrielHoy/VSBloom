@@ -1,4 +1,7 @@
 {
+    "files": [
+		"src/EffectLib/jsonc-module.d.ts"
+	],
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "ES2022",
@@ -8,6 +11,7 @@
 			"ES2022"
 		],
 		"sourceMap": true,
+        "resolveJsonModule": true,
 		"rootDir": "src",
 		"types": [],
 		"strict": true,   /* enable all strict type-checking options */
@@ -28,6 +32,8 @@
 		"src/Effects/*/",
 		"src/Webview/SvelteMounter.ts",
 		"src/Webview/**/*.svelte",
-		"src/Webview/svelte-shim.d.ts"
+		"src/Webview/svelte-shim.d.ts",
+		"src/Webview/Libraries/**/*.d.ts",
+		"src/Webview/Libraries/**/*.svelte.d.ts"
 	]
 }

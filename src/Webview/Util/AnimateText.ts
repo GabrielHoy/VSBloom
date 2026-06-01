@@ -454,6 +454,7 @@ function ApplyGlitchAnimation(
 		restart: () => {
 			element.classList.remove('animate-glitch');
 			// Force reflow to restart animation
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 			element.offsetHeight;
 			element.classList.add('animate-glitch');
 		},

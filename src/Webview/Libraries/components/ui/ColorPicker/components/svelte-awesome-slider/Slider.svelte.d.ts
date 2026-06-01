@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 interface Props {
 	/** min value of the slider */
 	min?: string | number;

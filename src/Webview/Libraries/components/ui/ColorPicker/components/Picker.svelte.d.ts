@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Components } from '../type/types.js';
 import type { Texts } from '../utils/texts.js';
 interface Props {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 interface Props {
 	/** DOM element of the label wrapper */
 	labelElement: HTMLLabelElement | undefined;
