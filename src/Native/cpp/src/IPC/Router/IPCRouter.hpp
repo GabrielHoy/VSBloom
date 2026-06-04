@@ -1,0 +1,68 @@
+/**
+ * IPC Router
+ *
+ * Provides functionality for taking a receieved message
+ * string from the parent process and correctly parsing
+ * it as NDJSON, then dispatching it to the appropriate
+ * handler method inside of a map of IPC method handlers.
+ *
+ * The IPC Router is additionally responsible for correctly
+ * receiving any responses that may be sent back to the router
+ * from aforementioned handler methods and then correctly
+ * serializing them into a binary NDJSON blob & sending
+ * said response back to the parent process over stdout
+ * accordingly.
+ *
+ * The IPC Router is the single point through which all VSBloom
+ * Native Runtime IPC traffic should ultimately flow through
+ * whether incoming or outgoing, forming a - relatively - high-level
+ * full-duplex IPC channel between the parent process and the native runtime.
+ *
+ */
+
+#pragma once
+
+#include "../Cryptography/IPCCryptography.hpp"
+#include "../IPCSendables.hpp"
+#include "../Methods/IPCMethods.hpp"
+#include <optional>
+#include <string>
+
+namespace VSBloom::IPC {
+
+    using messageSubmissionCallback_t = std::function<void(const std::string&)>;
+
+    void DefaultMessageSubmissionCallback(const std::string& messageToPush);
+
+    class IPCRouter {
+      private:
+        const methodHandlerMap_t&                  methodRequestHandlers;
+        const messageSubmissionCallback_t          messageSubmissionCallback;
+        std::optional<Cryptography::EncryptionKey> encryptionKey;
+
+      public:
+
+        IPCRouter(
+            const methodHandlerMap_t&         methodRequestHandlers,
+            const messageSubmissionCallback_t messageSubmissionCallback = DefaultMessageSubmissionCallback
+        );
+        ~IPCRouter();
+
+        /**
+         * Enables encryption for all subsequent sends and requires all
+         * subsequent received messages to be in an encrypted envelope.
+         *
+         * Keep note that this should be called after sending a valid
+         * StartupSuccessMessage carrying the actual encryption key to
+         * whatever you want to facilitate encrypted IPC traffic with,
+         * otherwise you're essentially locking all future messages with
+         * a lock that noone has the key to unlock...and eliminating any
+         * way you had of sending them that key.
+         */
+        void SetEncryptionKey(const Cryptography::EncryptionKey& key);
+
+        void OnNewMessageReceived(const std::string& message);
+        void SendMessage(const IPCSendable& sendableMessage);
+    };
+
+} // namespace VSBloom::IPC

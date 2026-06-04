@@ -29,6 +29,7 @@ endif()
 set(VSBLOOM_VERSION_STRING "${PROJECT_VERSION}")
 string(TIMESTAMP VSBLOOM_COPYRIGHT_YEAR "%Y")
 if(WIN32)
+  set(VSBLOOM_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../imagery/VSBloomNativeRuntime.ico")
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/FileMeta.rc.in
     ${CMAKE_CURRENT_BINARY_DIR}/FileMeta.rc
@@ -41,6 +42,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
 # We'll utilize sccache for caching compiler invocations to speed up rebuilds
 # (If it's present on the system, that is)
 find_program(SCCACHE_EXECUTABLE sccache)
@@ -52,6 +54,7 @@ endif()
 
 # Dependencies - vcpkg managed, check out CMakePresets.json for more details!
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 #Target sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
@@ -66,6 +69,7 @@ target_include_directories(VSBloomNativeRuntime PRIVATE
 
 target_link_libraries(VSBloomNativeRuntime PRIVATE
     nlohmann_json::nlohmann_json
+    OpenSSL::Crypto
 )
 
 # Platform-specific audio backend(s) and metadata
@@ -96,9 +100,21 @@ endif()
 
 # Hardening & Warnings
 if(MSVC)
-    target_compile_options(VSBloomNativeRuntime PRIVATE /W4 /WX /permissive-)
+    target_compile_options(VSBloomNativeRuntime PRIVATE
+        /W4
+        /WX
+        /permissive-
+        /EHsc
+    )
 else()
-    target_compile_options(VSBloomNativeRuntime PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(VSBloomNativeRuntime PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror
+        -Wdangling
+        -Wlifetime
+    )
 endif()
 
 # We regenerate `.clangd` from `.clang.in` at configure time to point over to

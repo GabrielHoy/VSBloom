@@ -3,11 +3,11 @@
  *
  * This file serves as the main entry point for VSBloom's native runtime.
  *
+ * Welcome to C++ land! Real magic can happen here.
+ *
  * This file gets compiled into a native binary that is used
  * to power the extension's functionality which requires the
- * utilization of operating-system specific functionality,
- * in particular - things such as the WASAPI Loopback Capture
- * API on Windows, and equivalents on other platforms.
+ * utilization of operating-system specific functionality.
  *
  * ?To immediately address the elephant in the room presented
  * by this runtime's existence - as addressed in `Patcher/ClientPatcher.ts`
@@ -33,35 +33,82 @@
  *
  * ...With that being said, let's get to it!
  */
-#include "Platform.hpp"
-#include "Termination.hpp"
-#include <chrono>
+#include "IPC/Cryptography/IPCCryptography.hpp"
+#include "IPC/IPCSendables.hpp"
+#include "IPC/Listener/IPCListener.hpp"
+#include "IPC/Methods/IPCMethods.hpp"
+#include "IPC/Router/IPCRouter.hpp"
 #include <cstdlib>
+#include <functional>
+#include <future>
 #include <iostream>
 
-void OnParentProcessTerminated() {
-    std::cout << "Parent process terminated, exiting process..." << std::endl;
-    // std::_Exit(EXIT_SUCCESS); //TODO: Uncomment once ready to actually begin
-}
-
 int main() {
-    const std::string platformSlug = VSBloom::GetPlatformSlug();
+    // The Native Runtime's process is intended to have its lifetime managed
+    // primarily by the parent VSBloom Extension process(unless that process
+    // terminates unexpectedly) and the IPCListener class facilitates that
+    // for us - so once we end up finishing our work in the main thread here,
+    // instead of returning and exiting the process we're going to wait upon
+    // this procShutdownFuture to be fulfilled - signalling that either the
+    // parent process terminated unexpectedly OR that the parent process has
+    // instructed us to shutdown.
+    // The idea is that in the interim once we're waiting upon this future at
+    // the bottom of the `main` function, the IPCListener has its own thread
+    // responsible for listening to and processing/dispatching messages from
+    // the parent process - that thread's work will essentially form the foundation
+    // of the *actual* loop behind the Native Runtime and its functionality.
+    std::promise<void> procShutdownSignal;
+    std::future<void>  procShutdownFuture = procShutdownSignal.get_future();
 
-    std::cout << "Hello, World!" << std::endl;
-    std::cout << "Platform: " << platformSlug << std::endl;
-    std::cout << "Beginning callback registration..." << std::endl;
-    std::cerr << "Test error output..." << std::endl;
+    // Generate an encryption key before we do pretty much anything
+    // in terms of IPC traffic, so that we have it before any traffic
+    // arrives for us to process
+    const VSBloom::IPC::Cryptography::EncryptionKey encryptionKey =
+        VSBloom::IPC::Cryptography::GenerateSessionEncryptionKey();
+    const std::string hexEncryptionKey = VSBloom::IPC::Cryptography::KeyToHex(encryptionKey);
 
-    bool couldSyncProcTerm = VSBloom::Termination::SynchronizeWithParentProcessTermination(OnParentProcessTerminated);
-    if (!couldSyncProcTerm) {
+    // The IPCRouter will be responsible for correctly parsing and routing
+    // any incoming messages from the parent process it receives into their
+    // correct handler methods, defined by the `methodRequestHandlers` map.
+    VSBloom::IPC::IPCRouter ipcRouter(
+        VSBloom::IPC::methodRequestHandlers,
+        VSBloom::IPC::DefaultMessageSubmissionCallback
+    );
+
+    // Now that we have a valid IPC Router to work with, we can setup the
+    // IPC Listener in order to start listening for messages from the parent
+    // process over stdin and dispatch them into the IPC Router's matching
+    // request handler method - OnNewMessageReceived - to be parsed and routed
+    // accordingly from there.
+    VSBloom::IPC::IPCListener ipcListener([&ipcRouter](const std::string& incomingMsg) -> void {
+        ipcRouter.OnNewMessageReceived(incomingMsg);
+    }, [&procShutdownSignal]() -> void { procShutdownSignal.set_value(); });
+
+    bool couldBootstrapIPCListener = ipcListener.TryIPCBootstrap();
+    if (!couldBootstrapIPCListener) {
         std::cerr
-            << "[FATAL] Failed to register parent process termination callback, we cannot continue executing without certainty that our process will exit when the parent process does - exiting native runtime for safety..."
+            << "[FATAL] Failed to bootstrap the IPC Listener, we cannot continue executing without certainty that our process will exit when the parent process does - exiting native runtime for safety..."
             << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::cout << "Parent process termination callback registered successfully. All seems well!" << std::endl;
+    // Now that we've successfully bootstrapped the IPC Listener and we're
+    // all set up, let's notify the parent process to begin the startup
+    // handshake and allow for actual functionality to begin! This message
+    // will act as a trigger for the parent process to know we're generally 'alive'
+    // as well as carrying our encryption key as a one-time message so that the
+    // only thing that can end up actually sending us valid traffic ends up being
+    // the parent process which received said key.
+    ipcRouter.SendMessage(VSBloom::IPC::StartupSuccessMessage{hexEncryptionKey});
 
-    // TODO: Loopback capture per-device instead of yielding indefinitely.
-    std::this_thread::sleep_for(std::chrono::seconds(60 * 10));
+    // All messages in both directions from this point onward are AES-256-GCM encrypted
+    // now that we've sent the encryption key over and assigned our router the key
+    // to utilize for all subsequent traffic accordingly.
+    ipcRouter.SetEncryptionKey(encryptionKey);
+
+    // We're now completely setup and ready to go, so we'll wait upon the
+    // procShutdownFuture to be fulfilled signalling that we should exit
+    // the process accordingly.
+    procShutdownFuture.wait();
+    return EXIT_SUCCESS;
 }

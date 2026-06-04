@@ -16,6 +16,7 @@ export interface EffectEnableRequestMessage {
 	js?: string;
 	css?: string;
 }
+
 export interface EffectReloadRequestMessage {
 	type: 'reload-effect';
 	effectName: string;
