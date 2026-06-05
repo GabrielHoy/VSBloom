@@ -362,9 +362,6 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			return;
 		}
 
-		if (message.type !== 'are-u-alive') {
-			this.Log('debug', `Broadcasting message`, { message });
-		}
 		const data = JSON.stringify(message);
 		for (const client of this.clients.values()) {
 			if (client.ws.readyState === WebSocket.OPEN) {
@@ -447,7 +444,6 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			type: 'replicate-extension-config',
 			settings: config,
 		});
-		this.Log('debug', 'Broadcasted config update to all clients');
 	}
 
 	/**
@@ -689,8 +685,6 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	 * and validates their authentication token
 	 */
 	private HandleNewClientWebSocketConnection(ws: WebSocket, _url: URL): void {
-		this.Log('info', 'Connection authenticated with a client; awaiting ready handshake');
-
 		ws.on('message', (data) => {
 			try {
 				const message = JSON.parse(data.toString()) as ClientToExtensionMessage;
@@ -774,7 +768,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 
 		this.Log(
 			'info',
-			`Registered new window client as ready with window ID "${windowId}" (${this.clients.size} total clients)`,
+			`Registered new ready window client with window ID "${windowId}" (${this.clients.size} total client${this.clients.size > 1 ? "s" : ""})`,
 		);
 
 		//send the current extension configuration over

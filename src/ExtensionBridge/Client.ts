@@ -352,9 +352,6 @@ class VSBloomClient implements IVSBloomClient {
 		}
 
 		try {
-			this.Log('debug', `Calling Start method on effect module "${effectName}"`, {
-				effectHandle,
-			});
 			if (css) {
 				effectHandle.cssElementId = this.CreateCSSElement(`effect-css-${effectName}`, css);
 			}
@@ -365,10 +362,6 @@ class VSBloomClient implements IVSBloomClient {
 				await startResult;
 			}
 			effectHandle.isEnabled = true;
-			this.Log('debug', `Effect "${effectName}" started successfully`, {
-				effectHandle,
-				startResult,
-			});
 		} catch (error) {
 			console.error(error);
 			this.Log(
@@ -605,10 +598,6 @@ class VSBloomClient implements IVSBloomClient {
 		//of the <head> tag in an attempt to
 		//ensure highest specificity
 		document.head.appendChild(newStyleElement);
-
-		this.Log('debug', `Created a new CSS Stylesheet with ID "${internalDOMId}"`, {
-			length: css.length,
-		});
 
 		return id;
 	}

@@ -80,10 +80,6 @@ export class EffectManager implements vscode.Disposable {
 			//current effects to them & keep in sync
 			this.managerDisposables.push(
 				server.OnClientReady((windowId) => {
-					this.Log(
-						'info',
-						`A new client is ready, replicating current effects to it: ${windowId}`,
-					);
 					//replicate all currently loaded effects to the new client
 					this.ReplicateCurrentEffectsToClient(windowId);
 				}),
@@ -94,10 +90,6 @@ export class EffectManager implements vscode.Disposable {
 			this.managerDisposables.push(
 				vscode.workspace.onDidChangeConfiguration((e) => {
 					if (e.affectsConfiguration('vsbloom')) {
-						this.Log(
-							'debug',
-							'Extension configuration changed, handling effect enable/disable states accordingly',
-						);
 						this.HandleExtensionConfigsChanged();
 					}
 				}),
@@ -179,19 +171,11 @@ export class EffectManager implements vscode.Disposable {
 			//if the effect should be enabled right now, load it if it's not already loaded
 			if (shouldEffectBeEnabled) {
 				if (!this.IsEffectLoaded(effectName)) {
-					this.Log(
-						'info',
-						`Effect "${effectName}" should be enabled based on config value "${effectEnabledPropPath}", but is not currently loaded: loading it`,
-					);
 					this.LoadEffect(effectName);
 				}
 			} else {
 				//effect should be disabled, unload it if it's currently loaded
 				if (this.IsEffectLoaded(effectName)) {
-					this.Log(
-						'info',
-						`Effect "${effectName}" should be disabled based on config value "${effectEnabledPropPath}", but is currently loaded: unloading it`,
-					);
 					this.UnloadEffect(effectName);
 				}
 			}
@@ -346,7 +330,7 @@ export class EffectManager implements vscode.Disposable {
 			css: css,
 		});
 
-		this.Log('info', `Loaded Effect: "${effectName}"`);
+		this.Log('debug', `Loaded Effect: "${effectName}"`);
 	}
 
 	/**
@@ -377,7 +361,7 @@ export class EffectManager implements vscode.Disposable {
 			effectName: effectName,
 		});
 
-		this.Log('info', `Unloaded Effect: "${effectName}"`);
+		this.Log('debug', `Unloaded Effect: "${effectName}"`);
 	}
 
 	/**
@@ -407,7 +391,7 @@ export class EffectManager implements vscode.Disposable {
 	 * Reload any and all currently loaded effects.
 	 */
 	public async ReloadAllEffects(): Promise<void> {
-		this.Log('info', `Reloading all ${this.loadedEffects.size} effect(s)`);
+		this.Log('debug', `Reloading all ${this.loadedEffects.size} effect(s)`);
 
 		const reloadingEffects: string[] = [];
 		for (const effectName of this.loadedEffects.keys()) {
@@ -430,7 +414,7 @@ export class EffectManager implements vscode.Disposable {
 	 */
 	public UnloadAllEffects(): void {
 		this.Log(
-			'info',
+			'debug',
 			`Unloading all ${this.loadedEffects.size} effect${this.loadedEffects.size === 1 ? '' : 's'}`,
 		);
 
@@ -451,11 +435,6 @@ export class EffectManager implements vscode.Disposable {
 			);
 			return;
 		}
-
-		this.Log(
-			'debug',
-			`Replicating ${this.loadedEffects.size} currently loaded effect${this.loadedEffects.size === 1 ? '' : 's'} to client with Window ID "${windowId}"`,
-		);
 
 		for (const [effectName, effect] of this.loadedEffects.entries()) {
 			this.server.FireClient(windowId, {

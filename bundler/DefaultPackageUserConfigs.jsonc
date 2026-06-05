@@ -34,7 +34,6 @@
                 "order": 2,
                 "type": "boolean",
                 "default": true,
-                // "hideFromCustomEditor": true,
                 "description": "Whether or not to enable an icon in the VS Code Status Bar which opens the VS: Bloom Menu when clicked.",
                 "markdownDescription": "Whether or not to enable an icon in the VS Code [Status Bar](https://code.visualstudio.com/api/ux-guidelines/status-bar) which opens the VS: Bloom Menu when clicked.\nRegardless of this setting, you can still open the VS: Bloom Menu at any time by using the `VSBloom: Open Menu` command!"
             },
@@ -47,6 +46,13 @@
                 "minimum": 1,
                 "maximum": 65535,
                 "step": 1
+            },
+            "vsbloom.nativeRuntime.enabled": {
+                "order": 4,
+                "type": "boolean",
+                "default": false,
+                "description": "Whether or not to enable the VSBloom Native Runtime: This is a native C++ binary used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript, when enabled it will start and stop as a sub-process tied to the VSCode window.",
+                "markdownDescription": "Whether or not to enable the **__VSBloom Native Runtime__**: This is a *native C++ binary* used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript alone. When enabled, a process named `VSBloomNativeRuntime` will start and stop as a sub-process tied to the VSCode window."
             }
         }
     },

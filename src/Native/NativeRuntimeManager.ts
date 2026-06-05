@@ -12,6 +12,7 @@
 import * as childProcess from 'node:child_process';
 import * as crypto from 'node:crypto';
 import * as readline from 'node:readline';
+import * as asyncMutex from 'async-mutex';
 import * as vscode from 'vscode';
 import { ConstructVSBloomLogPrefix } from '../Debug/Colorful';
 import { IsDevelopmentEnvironment } from '../Extension/ExtensionReflection';
@@ -28,6 +29,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private childProc: childProcess.ChildProcessWithoutNullStreams | null = null;
 	private childProcLineReader: readline.Interface | null = null;
 	private encryptionKey: Buffer | null = null;
+	private runtimeEnabledSettingChangeMutex = new asyncMutex.Mutex();
 	//This is private because the IsNativeRuntimeActive method is less prone to desync and should always be used instead
 	//The reason this exists at all is to provide a self-checking mechanism to try and make sure we're not accidentally
 	//ever desynchronizing from the actual state of the native runtime during development.
@@ -43,6 +45,8 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
 	private constructor() {
 		MainOutputChannel.Log('info', 'Native Runtime Manager initialized');
+
+        this.UpdateNativeRuntimeEnabledState();
 	}
 
 	public static GetInstance(): VSBloomNativeRuntimeManager {
@@ -74,105 +78,105 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * supported on the current platform.**
 	 */
 	public async StartNativeRuntime(): Promise<boolean> {
-		if (!VSBloomBridgeServer.isServerListening) {
-			MainOutputChannel.Log(
-				'error',
-				'Bridge Server is not initialized, but native runtime manager has attempted to be started. This cannot be facilitated until Pseudo-Sockets are complete to marshall native traffic to the primary VSCode window.',
-			);
-			return false;
-		}
-		if (this.IsNativeRuntimeActive()) {
-			MainOutputChannel.Log(
-				'warn',
-				'A request was made to start the native runtime, but it is already running.',
-			);
-			return true;
-		}
+        if (!VSBloomBridgeServer.isServerListening) {
+            MainOutputChannel.Log(
+                'error',
+                'Bridge Server is not initialized, but native runtime manager has attempted to be started. This cannot be facilitated until Pseudo-Sockets are complete to marshall native traffic to the primary VSCode window.',
+            );
+            return false;
+        }
+        if (this.IsNativeRuntimeActive()) {
+            MainOutputChannel.Log(
+                'warn',
+                'A request was made to start the native runtime, but it is already running.',
+            );
+            return true;
+        }
 
-		if (!(await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported())) {
-			MainOutputChannel.Log(
-				'error',
-				`A request was made to start the native runtime, but it is not capable of running on the ${PLATFORM_SLUG} platform.`,
-			);
-			return false;
-		}
+        if (!(await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported())) {
+            MainOutputChannel.Log(
+                'error',
+                `A request was made to start the native runtime, but it is not capable of running on the ${PLATFORM_SLUG} platform.`,
+            );
+            return false;
+        }
 
-		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
-		} else {
-			//This is an ugly line. It's just a pretty dev-indicator to print out a
-			//block of dashes with a title in the middle stating that we're starting
-			//a new native runtime session.
-			this.Log(
-				'info',
-				`\n\n${`${`-`.repeat(50)}\n`.repeat(2)}${`-`.repeat(10)}  NEW NATIVE RUNTIME SESSION  ${`-`.repeat(10)}\n${`${`-`.repeat(50)}\n`.repeat(2)}\n`,
-			);
-		}
+        if (!this.outputChannel) {
+            this.outputChannel = vscode.window.createOutputChannel('VSBloom: Native Runtime');
+        } else {
+            //This is an ugly line. It's just a pretty dev-indicator to print out a
+            //block of dashes with a title in the middle stating that we're starting
+            //a new native runtime session.
+            this.Log(
+                'info',
+                `\n\n${`${`-`.repeat(50)}\n`.repeat(2)}${`-`.repeat(10)}  NEW NATIVE RUNTIME SESSION  ${`-`.repeat(10)}\n${`${`-`.repeat(50)}\n`.repeat(2)}\n`,
+            );
+        }
 
-		this.Log('debug', 'Attempting to start the native runtime...');
+        this.Log('debug', 'Attempting to start the native runtime...');
 
-		const nativeBinPath = await GetPathToNativeBinary();
+        const nativeBinPath = await GetPathToNativeBinary();
 
-		this.Log('debug', `The native runtime binary was found at ${nativeBinPath}.`);
+        this.Log('debug', `The native runtime binary was found at ${nativeBinPath}.`);
 
-		this.childProc = childProcess.spawn(nativeBinPath, [], {
-			stdio: ['pipe', 'pipe', 'pipe'],
-			shell: undefined,
-			windowsHide: false,
-		});
+        this.childProc = childProcess.spawn(nativeBinPath, [], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            shell: undefined,
+            windowsHide: false,
+        });
 
-		this.childProc.stderr?.on('data', (chunk: Buffer) => {
-			const s = chunk.toString();
-			this.Log('error', `Something went wrong in the Native Runtime: ${s}`);
-		});
+        this.childProc.stderr?.on('data', (chunk: Buffer) => {
+            const s = chunk.toString();
+            this.Log('error', `Something went wrong in the Native Runtime: ${s}`);
+        });
 
-		this.childProc.on('close', (code: number) => {
-			this.Log('debug', `Native runtime closed with code ${code}.`);
-			if (VSBloomNativeRuntimeManager.isRunning) {
-				VSBloomNativeRuntimeManager.SetIsRunningState(false);
-			}
+        this.childProc.on('close', (code: number) => {
+            this.Log('debug', `Native runtime closed with code ${code}.`);
+            if (VSBloomNativeRuntimeManager.isRunning) {
+                VSBloomNativeRuntimeManager.SetIsRunningState(false);
+            }
 
-			if (!IsDevelopmentEnvironment()) {
-				//We only want to actively dispose of the output channel in non-development environments
-				//since this would make life very very difficult for me and any contributors to the project
-				//if we had our debug output channel close on us upon program crashes or termination.
-				this.outputChannel?.dispose();
-				this.outputChannel = null;
-			}
+            if (!IsDevelopmentEnvironment()) {
+                //We only want to actively dispose of the output channel in non-development environments
+                //since this would make life very very difficult for me and any contributors to the project
+                //if we had our debug output channel close on us upon program crashes or termination.
+                this.outputChannel?.dispose();
+                this.outputChannel = null;
+            }
 
-			this.childProc = null;
-			this.encryptionKey = null;
-			this.childProcLineReader?.close();
-			this.childProcLineReader = null;
-		});
+            this.childProc = null;
+            this.encryptionKey = null;
+            this.childProcLineReader?.close();
+            this.childProcLineReader = null;
+        });
 
-		this.childProcLineReader = readline.createInterface({
-			input: this.childProc.stdout,
-			output: process.stdout,
-		});
+        this.childProcLineReader = readline.createInterface({
+            input: this.childProc.stdout,
+            output: process.stdout,
+        });
 
-		this.childProcLineReader.on('line', (messageFromChildProc: string) => {
-			//We assume that each message from the native runtime's stdout channel
-			//will be an NDJSON message from the native runtime (encrypted once the
-			//session key has been received via the i-am-alive handshake).
-			const parsedMessage = VSBloomNativeRuntimeManager.TryParseNativeReceivedMessage(
-				messageFromChildProc,
-				this.encryptionKey,
-			);
-			if (!parsedMessage) {
-				this.Log(
-					'error',
-					`Received an invalid message from the Native Runtime: ${messageFromChildProc}`,
-				);
-				return;
-			}
+        this.childProcLineReader.on('line', (messageFromChildProc: string) => {
+            //We assume that each message from the native runtime's stdout channel
+            //will be an NDJSON message from the native runtime (encrypted once the
+            //session key has been received via the i-am-alive handshake).
+            const parsedMessage = VSBloomNativeRuntimeManager.TryParseNativeReceivedMessage(
+                messageFromChildProc,
+                this.encryptionKey,
+            );
+            if (!parsedMessage) {
+                this.Log(
+                    'error',
+                    `Received an invalid message from the Native Runtime: ${messageFromChildProc}`,
+                );
+                return;
+            }
 
-			this.HandleNativeReceivedMessage(parsedMessage);
-		});
+            this.HandleNativeReceivedMessage(parsedMessage);
+        });
 
-		const isNowActive = this.IsNativeRuntimeActive();
-		VSBloomNativeRuntimeManager.SetIsRunningState(isNowActive);
-		return isNowActive;
+        const isNowActive = this.IsNativeRuntimeActive();
+        VSBloomNativeRuntimeManager.SetIsRunningState(isNowActive);
+        return isNowActive;
 	}
 
 	private static SetIsRunningState(isNowRunning: boolean): void {
@@ -230,61 +234,63 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * Stops the native runtime if it was running.
 	 */
 	public async StopNativeRuntime(): Promise<boolean> {
-		if (!this.IsNativeRuntimeActive()) {
-			MainOutputChannel.Log(
-				'warn',
-				'A request was made to stop the native runtime, but it was not running.',
-			);
-			return false;
-		}
+        if (!this.IsNativeRuntimeActive()) {
+            MainOutputChannel.Log(
+                'warn',
+                'A request was made to stop the native runtime, but it was not running.',
+            );
+            return false;
+        }
 
-		this.Log('debug', 'Stopping the native runtime...');
-		
+        this.Log('debug', 'Stopping the native runtime...');
+
         const procStillRunning = this.childProc?.exitCode === null;
-        const procExitPromise = procStillRunning ? new Promise<void>(resolve => {
-            if (this.childProc) {
-                this.childProc.once('exit', () => resolve());
-            } else {
-                resolve();
-            }
-          }) : Promise.resolve();
+        const procExitPromise = procStillRunning
+            ? new Promise<void>((resolve) => {
+                    if (this.childProc) {
+                        this.childProc.once('exit', () => resolve());
+                    } else {
+                        resolve();
+                    }
+                })
+            : Promise.resolve();
 
         const couldKill = this.childProc?.kill('SIGTERM');
-		if (!couldKill) {
-			MainOutputChannel.Log(
-				'error',
-				'A request was made to stop the native runtime, but it could not be successfully killed.',
-			);
-			if (IsDevelopmentEnvironment()) {
-				vscode.window.showErrorMessage(
-					'PIVOT TO INVESTIGATE: A request was made to stop the native runtime, but it could not be successfully killed.',
-				);
+        if (!couldKill) {
+            MainOutputChannel.Log(
+                'error',
+                'A request was made to stop the native runtime, but it could not be successfully killed.',
+            );
+            if (IsDevelopmentEnvironment()) {
+                vscode.window.showErrorMessage(
+                    'PIVOT TO INVESTIGATE: A request was made to stop the native runtime, but it could not be successfully killed.',
+                );
 
-				return false;
-			}
-			return false;
-		}
+                return false;
+            }
+            return false;
+        }
         //Wait for the process to actually *exit* before proceeding
         await procExitPromise;
 
-		this.childProcLineReader?.close();
-		this.childProcLineReader = null;
-		this.childProc = null;
-		this.encryptionKey = null;
+        this.childProcLineReader?.close();
+        this.childProcLineReader = null;
+        this.childProc = null;
+        this.encryptionKey = null;
 
         if (VSBloomNativeRuntimeManager.isRunning) {
-		    VSBloomNativeRuntimeManager.SetIsRunningState(false);
+            VSBloomNativeRuntimeManager.SetIsRunningState(false);
         }
 
-		if (!IsDevelopmentEnvironment()) {
-			//We only want to actively dispose of the output channel in non-development environments
-			//since this would make life very very difficult for me and any contributors to the project
-			//if we had our debug output channel close on us upon program crashes or termination.
-			this.outputChannel?.dispose();
-			this.outputChannel = null;
-		}
+        if (!IsDevelopmentEnvironment()) {
+            //We only want to actively dispose of the output channel in non-development environments
+            //since this would make life very very difficult for me and any contributors to the project
+            //if we had our debug output channel close on us upon program crashes or termination.
+            this.outputChannel?.dispose();
+            this.outputChannel = null;
+        }
 
-		return true;
+        return true;
 	}
 
 	/**
@@ -304,27 +310,27 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		return await this.StartNativeRuntime();
 	}
 
-    //B64-encoded, first twelve bytes are nonce, last sixteen bytes are the gcm_tag,
-    //everything in between is ciphertext.
-    private static AESGCMEncrypt(key: Buffer, plaintext: string): string {
-        const nonce = crypto.randomBytes(12);
-        const cipher = crypto.createCipheriv('aes-256-gcm', key, nonce);
-        const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-        const tag = cipher.getAuthTag();
-        return Buffer.concat([nonce, ciphertext, tag]).toString('base64');
-    }
+	//B64-encoded, first twelve bytes are nonce, last sixteen bytes are the gcm_tag,
+	//everything in between is ciphertext.
+	private static AESGCMEncrypt(key: Buffer, plaintext: string): string {
+		const nonce = crypto.randomBytes(12);
+		const cipher = crypto.createCipheriv('aes-256-gcm', key, nonce);
+		const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+		const tag = cipher.getAuthTag();
+		return Buffer.concat([nonce, ciphertext, tag]).toString('base64');
+	}
 
-    //B64-encoded, first twelve bytes are nonce, last sixteen bytes are the gcm_tag,
-    //everything in between is ciphertext.
-    private static AESGCMDecrypt(key: Buffer, encryptedBase64: string): string {
-        const packed = Buffer.from(encryptedBase64, 'base64');
-        const nonce = packed.subarray(0, 12);
-        const tag = packed.subarray(packed.length - 16);
-        const ciphertext = packed.subarray(12, packed.length - 16);
-        const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonce);
-        decipher.setAuthTag(tag);
-        return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
-    }
+	//B64-encoded, first twelve bytes are nonce, last sixteen bytes are the gcm_tag,
+	//everything in between is ciphertext.
+	private static AESGCMDecrypt(key: Buffer, encryptedBase64: string): string {
+		const packed = Buffer.from(encryptedBase64, 'base64');
+		const nonce = packed.subarray(0, 12);
+		const tag = packed.subarray(packed.length - 16);
+		const ciphertext = packed.subarray(12, packed.length - 16);
+		const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonce);
+		decipher.setAuthTag(tag);
+		return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+	}
 
 	private static TryParseNativeReceivedMessage(
 		message: string,
@@ -365,17 +371,17 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
 		switch (messageType) {
 			case 'i-am-alive': {
-                this.NativeRuntimeAliveMessageHandler(message);
+				this.NativeRuntimeAliveMessageHandler(message);
 				break;
 			}
-            case 'method-exception': {
-                this.NativeMethodExceptionRaisedMessageHandler(message);
-                break;
-            }
-            case 'secure-acknowledgement': {
-                this.NativeSecureAcknowledgementMessageHandler(message);
-                break;
-            }
+			case 'method-exception': {
+				this.NativeMethodExceptionRaisedMessageHandler(message);
+				break;
+			}
+			case 'secure-acknowledgement': {
+				this.NativeSecureAcknowledgementMessageHandler(message);
+				break;
+			}
 			default: {
 				this.Log(
 					'error',
@@ -386,31 +392,35 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		}
 	}
 
-    private NativeMethodExceptionRaisedMessageHandler(
-        message: NativeReceivables.NativeReceivableMethodExceptionRaisedMessage,
-    ): void {
-        this.Log('error', `EXCEPTION RAISED in Native Runtime:`, message);
-    }
+	private NativeMethodExceptionRaisedMessageHandler(
+		message: NativeReceivables.NativeReceivableMethodExceptionRaisedMessage,
+	): void {
+		this.Log('error', `EXCEPTION RAISED in Native Runtime:`, message);
+	}
 
-    private NativeSecureAcknowledgementMessageHandler(
-        message: NativeReceivables.NativeReceivableSecureAcknowledgementMessage,
-    ): void {
-        const keyByteLength = this.encryptionKey?.length ?? 0;
+	private NativeSecureAcknowledgementMessageHandler(
+		message: NativeReceivables.NativeReceivableSecureAcknowledgementMessage,
+	): void {
+		const keyByteLength = this.encryptionKey?.length ?? 0;
 
-        this.Log('info', `Established ${keyByteLength * 8}-bit AES-256-GCM encrypted session, our IPC channel should now be secure.`, { message });
-    }
+		this.Log(
+			'info',
+			`Established ${keyByteLength * 8}-bit AES-256-GCM encrypted session, our IPC channel should now be secure.`,
+			{ message },
+		);
+	}
 
 	private NativeRuntimeAliveMessageHandler(
 		message: NativeReceivables.NativeReceivableStartupSuccessMessage,
 	): void {
 		this.encryptionKey = Buffer.from(message.data.encryptionKey, 'hex');
 
-        // All messages sent from here onward are AES-256-GCM encrypted.
-        // We'll test this fact by sending a 'test-secure-message' payload
-        // to the Native Runtime immediately after establishing the encryption
-        // key; if TypeScript and C++ agree on the session's encryption, this
-        // will immediately prompt a 'secure-acknowledgement' message from the
-        // Native Runtime - completing the secure session establishment handshake.
+		// All messages sent from here onward are AES-256-GCM encrypted.
+		// We'll test this fact by sending a 'test-secure-message' payload
+		// to the Native Runtime immediately after establishing the encryption
+		// key; if TypeScript and C++ agree on the session's encryption, this
+		// will immediately prompt a 'secure-acknowledgement' message from the
+		// Native Runtime - completing the secure session establishment handshake.
 		this.SendMessageToNativeRuntime('test-secure-message', {
 			message: '<secure message functionality probe string>',
 		});
@@ -419,7 +429,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	/**
 	 * Serializes a native runtime sendable message (encrypting it
 	 * with AES-256-GCM once the encryption key has been established
-     * during the i-am-alive handshake initiation from the native side)
+	 * during the i-am-alive handshake initiation from the native side)
 	 */
 	private static SerializeNativeSendableMessage(
 		messagePayload: NativeMessages.NativeSendableMessage,
@@ -427,7 +437,9 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	): string {
 		const jsonifiedMessage = JSON.stringify(messagePayload);
 		if (keyForEncryption !== null) {
-			return JSON.stringify({ enc: VSBloomNativeRuntimeManager.AESGCMEncrypt(keyForEncryption, jsonifiedMessage) });
+			return JSON.stringify({
+				enc: VSBloomNativeRuntimeManager.AESGCMEncrypt(keyForEncryption, jsonifiedMessage),
+			});
 		}
 		return jsonifiedMessage;
 	}
@@ -463,6 +475,42 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 				`A request was made to send a message to the Native Runtime, but it was either not running or stdin did not exist. Message:`,
 				payloadToSend,
 			);
+		}
+	}
+
+	private async UpdateNativeRuntimeEnabledState() {
+        const config = vscode.workspace.getConfiguration();
+        const isNativeRuntimeSettingEnabled = config.get<boolean>('vsbloom.nativeRuntime.enabled');
+
+        vscode.commands.executeCommand('setContext', 'vsbloom.nativeRuntime.isEnabled', isNativeRuntimeSettingEnabled);
+
+        const areWeMainBridgeServer = VSBloomBridgeServer.isServerListening;
+        if (!areWeMainBridgeServer) {
+            // We're not the actual main bridge server window, so we aren't
+            // the one responsible for managing the Native Runtime's binary;
+            // leave it to the instance hosting the main bridge server to
+            // start and stop accordingly.
+            return;
+        }
+
+        await this.runtimeEnabledSettingChangeMutex.runExclusive(async () => {
+            const isNRActive = this.IsNativeRuntimeActive();
+    
+            if (isNativeRuntimeSettingEnabled && !isNRActive) {
+                await this.StartNativeRuntime();
+            } else if (!isNativeRuntimeSettingEnabled && isNRActive) {
+                await this.StopNativeRuntime();
+            }
+        });
+	}
+
+	public async ExtensionConfigurationUpdated(e: vscode.ConfigurationChangeEvent) {
+		if (!e.affectsConfiguration('vsbloom')) {
+			return; //this config change doesn't affect us
+		}
+
+		if (e.affectsConfiguration('vsbloom.nativeRuntime.enabled')) {
+			await this.UpdateNativeRuntimeEnabledState();
 		}
 	}
 

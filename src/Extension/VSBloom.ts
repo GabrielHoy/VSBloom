@@ -129,7 +129,7 @@ async function ExtensionActivatedAndClientPatchingVerified(
 		if (isNativeSupported) {
 			MainOutputChannel.Log(
 				'info',
-				`The native runtime manager is supported on this platform - platform-specific functionality will be available.`,
+				`The native runtime is supported on this platform - platform-specific functionality will be available if enabled.`,
 			);
 		} else {
 			MainOutputChannel.Log(
@@ -191,6 +191,9 @@ async function OnExtensionConfigChanged(
 
 	const statusBarIconManager = StatusBarIconManager.GetInstance();
 	statusBarIconManager.ExtensionConfigurationUpdated(e);
+
+    const nativeRuntimeManager = VSBloomNativeRuntimeManager.GetInstance();
+    nativeRuntimeManager.ExtensionConfigurationUpdated(e);
 
 	if (e.affectsConfiguration('vsbloom.extensionConfigurationsNote.README')) {
 		// If&when the user checks the 'readme' config, we'll attempt to redirect them to the menu

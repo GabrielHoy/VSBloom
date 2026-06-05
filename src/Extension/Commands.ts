@@ -21,7 +21,7 @@ import {
 	EnsureClientIsPatched,
 	EnsureClientIsUnpatched,
 } from '../Patcher/PatcherFrontend';
-import { GetExtensionPackageJSON, IsDevelopmentEnvironment } from './ExtensionReflection';
+import { GetExtensionPackageJSON } from './ExtensionReflection';
 import { MainOutputChannel } from './MainOutputChannel';
 import * as VersionTracking from './VersionTracking';
 import { MenuPanel } from './WebviewMenuPanel';
@@ -236,15 +236,42 @@ export async function RegisterVSBloomCommands(
 
 		const nativeRuntime = VSBloomNativeRuntimeManager.GetInstance();
 		const isNRActiveForRestart = VSBloomNativeRuntimeManager.IsNativeRuntimeActiveAnywhereOnSystem();
+        const isMainBridgeServer = VSBloomBridgeServer.isServerListening;
+        //If the native runtime is not active to restart, we need to start it up
 		if (!isNRActiveForRestart) {
-			vscode.window.showWarningMessage(
-				'The native runtime is not currently running, starting it instead of restarting.',
-			);
-			await vscode.commands.executeCommand('vsbloom.startNativeRuntime');
+            const config = vscode.workspace.getConfiguration();
+            const isNREnabled = config.get<boolean>('vsbloom.nativeRuntime.enabled');
+            if (isNREnabled) {
+                if (isMainBridgeServer) {
+                    const couldStartNativeRuntime = await nativeRuntime.StartNativeRuntime();
+                    if (couldStartNativeRuntime) {
+                        vscode.window.showInformationMessage('Native runtime started.');
+                    } else {
+                        vscode.window.showErrorMessage('Failed to start the native runtime.');
+                    }
+                } else {
+                    const pseudo = VSBloomPseudoServer.GetInstanceIfExists();
+                    if (pseudo?.IsRunning()) {
+                        pseudo.SendMarshalledCommand('set-native-runtime-active', {
+                            shouldBeActive: true,
+                            shouldRestart: false
+                        });
+                        vscode.window.showInformationMessage('Sending request to start the native runtime...');
+                    } else {
+                        vscode.window.showErrorMessage('Failed to restart the native runtime: We couldn\'t establish a connection to the VSBloom Bridge Server.');
+                    }
+                }
+            } else {
+                vscode.window.showWarningMessage(
+                    'Couldn\'t restart the Native Runtime, it is not currently enabled.',
+                );
+            }
 			return;
 		}
 
-		if (VSBloomBridgeServer.isServerListening) {
+        //Otherwise the native runtime is currently active and running,
+        //we need to tell it to restart itself
+		if (isMainBridgeServer) {
 			const isNRNowActive = await nativeRuntime.RestartNativeRuntime();
 
 			if (isNRNowActive) {
@@ -264,92 +291,6 @@ export async function RegisterVSBloomCommands(
 			} else {
 				vscode.window.showErrorMessage(
 					"Failed to restart the native runtime: We couldn't establish a connection to the VSBloom Bridge Server.",
-				);
-			}
-		}
-	});
-
-	DefineCommand('vsbloom.startNativeRuntime', async () => {
-		if (!(await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported())) {
-			vscode.window.showErrorMessage(
-				'The native runtime is not supported on this platform, it cannot be restarted.',
-			);
-			return;
-		}
-
-		const nativeRuntime = VSBloomNativeRuntimeManager.GetInstance();
-		const isNRActiveForStart = VSBloomNativeRuntimeManager.IsNativeRuntimeActiveAnywhereOnSystem();
-		if (isNRActiveForStart) {
-			vscode.window.showErrorMessage(
-				'The native runtime is already active, it cannot be started twice.',
-			);
-			return;
-		}
-
-		if (VSBloomBridgeServer.isServerListening) {
-			const isNRNowActive = await nativeRuntime.StartNativeRuntime();
-
-			if (isNRNowActive) {
-				vscode.window.showInformationMessage('Native runtime started.');
-			} else {
-				vscode.window.showErrorMessage('Failed to start the native runtime.');
-			}
-		} else {
-			// Secondary window, marshal the command to the main bridge server
-			const pseudo = VSBloomPseudoServer.GetInstanceIfExists();
-			if (pseudo?.IsRunning()) {
-				pseudo.SendMarshalledCommand('set-native-runtime-active', {
-					shouldBeActive: true,
-					shouldRestart: false,
-				});
-
-                vscode.window.showInformationMessage('Sending request to start the native runtime...');
-			} else {
-				vscode.window.showErrorMessage(
-					"Failed to start the native runtime: We couldn't establish a connection to the VSBloom Bridge Server.",
-				);
-			}
-		}
-	});
-
-	DefineCommand('vsbloom.stopNativeRuntime', async () => {
-		if (!(await VSBloomNativeRuntimeManager.IsNativeRuntimeSupported())) {
-			vscode.window.showErrorMessage(
-				'The native runtime is not supported on this platform, it cannot be restarted.',
-			);
-			return;
-		}
-
-		const nativeRuntime = VSBloomNativeRuntimeManager.GetInstance();
-		const isNRActiveForStop = VSBloomNativeRuntimeManager.IsNativeRuntimeActiveAnywhereOnSystem();
-		if (!isNRActiveForStop) {
-			vscode.window.showErrorMessage(
-				'The native runtime is not currently active, there is nothing to stop.',
-			);
-			return;
-		}
-
-		if (VSBloomBridgeServer.isServerListening) {
-			const wasNRStoppedSuccessfully = await nativeRuntime.StopNativeRuntime();
-			if (wasNRStoppedSuccessfully) {
-				vscode.window.showInformationMessage('Native runtime stopped.');
-			} else {
-				vscode.window.showErrorMessage(
-					`${IsDevelopmentEnvironment() ? 'PIVOT TO INVESTIGATE: ' : ''} Something went wrong stopping the native runtime.`,
-				);
-			}
-		} else {
-			//Secondary window, marshal the command to the main bridge server
-			const pseudo = VSBloomPseudoServer.GetInstanceIfExists();
-			if (pseudo?.IsRunning()) {
-				pseudo.SendMarshalledCommand('set-native-runtime-active', {
-					shouldBeActive: false,
-				});
-
-                vscode.window.showInformationMessage("Sending request to stop the native runtime...");
-			} else {
-				vscode.window.showErrorMessage(
-					"Failed to stop the native runtime: We couldn't establish a connection to the VSBloom Bridge Server.",
 				);
 			}
 		}
