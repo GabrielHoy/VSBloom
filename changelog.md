@@ -4,7 +4,10 @@
 
 All notable changes to the VS: Bloom project will be documented in this file.
 
-## [UNRELEASED] - 2026-XX-XX
+## [1.4.3] - 2026-06-06
+# Fixed
+- Fixed a bug that occurred for people utilizing the Cursor IDE, after their most recent update the Client Corruption Warning Suppression setting would fail-out during the client patch process and the user would be prompted with an 'installation corrupted' message regardless of the suppression setting's state.
+- VSBloom now has a new logo! No more prototype-AI-image.
 
 ## [1.4.2] - 2026-05-26
 
