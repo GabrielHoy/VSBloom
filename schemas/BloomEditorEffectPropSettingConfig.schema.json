@@ -1,0 +1,73 @@
+{
+    "$comment": "This schema is used to provide configuration intellisense for the VS Bloom Settings Editor's 'inBloomEditor' property.",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": [],
+    "$id": "bloomEditorEffectPropSettingConfig",
+    "description": "Configurations for the property which apply to the VS Bloom Settings Editor.",
+    "properties": {
+        "hide": {
+            "type": "boolean",
+            "description": "Whether to hide the property from the VS Bloom Settings Editor.",
+            "default": false
+        },
+        "displayName": {
+            "type": "string",
+            "description": "The display name of the property which will be shown in the VS Bloom Settings Editor.",
+            "anyOf": [
+                {
+                    "type": "string",
+                    "description": "A plaintext string that will be displayed as the display name."
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The text to display for the display name."
+                        },
+                        "useMarkdown": {
+                            "type": "boolean",
+                            "description": "Whether to use markdown formatting for displaying the display name.",
+                            "default": false
+                        }
+                    }
+                }
+            ]
+        },
+        "tooltip": {
+            "description": "The tooltip of the property which will be shown in the VS Bloom Settings Editor.",
+            "anyOf": [
+                {
+                    "type": "string",
+                    "description": "A plaintext string that will be displayed as the tooltip."
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The text to display for the tooltip."
+                        },
+                        "useMarkdown": {
+                            "type": "boolean",
+                            "description": "Whether to use markdown formatting for displaying the tooltip.",
+                            "default": false
+                        }
+                    }
+                }
+            ]
+        },
+        "stepSize": {
+            "type": "number",
+            "description": "The step size for the property in the VS Bloom Settings Editor. Note that this does NOT establish any guaruntee that users don't simply manually input a value at a more precise level than the step allows for.",
+            "default": 1
+        },
+        "cssUnit": {
+            "type": "string",
+            "description": "The CSS unit string that will be appended to the CSS variable name for the configurable property when it is automatically pulled from the user's VS Code settings and forwarded into a CSS variable on the Electron Renderer's DOM :root element.",
+            "default": ""
+        }
+    },
+    "additionalProperties": false
+}

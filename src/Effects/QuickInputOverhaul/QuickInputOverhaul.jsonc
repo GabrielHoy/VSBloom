@@ -15,7 +15,9 @@
             // "settingsEditorDisplayName": "Widget Border Width",
             "type": "number",
             "default": 5,
-            "cssUnit": "px",
+            "inBloomEditor": {
+                "cssUnit": "px"
+            },
             "description": "The width of the added border around the Quick-Input Menu widget, in pixels.",
             "markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels."
         },
@@ -23,7 +25,9 @@
             "name": "initialWidgetRotation",
             "type": "number",
             "default": 5,
-            "cssUnit": "deg",
+            "inBloomEditor": {
+                "cssUnit": "deg"
+            },
             "description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
             "markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
         }

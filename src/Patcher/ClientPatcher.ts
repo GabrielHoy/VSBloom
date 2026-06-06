@@ -483,7 +483,7 @@ export async function PatchElectronHTMLFile(
 	//find the <head> tag and patch appropriate scripts *directly* after it is defined
 	//order matters here: sharedLibsPayload first, then clientPayload
 	const headTagMatch = patchedFileContents.match(/<head([^>]*)>/i);
-	if (!headTagMatch || !headTagMatch.index) {
+	if (!headTagMatch?.index) {
 		throw new Error(
 			Common.RaiseError(
 				`Unable to find the <head> tag in the Electron init file at '${initFilePath}'. This is likely a bug in the VSBloom extension.`,

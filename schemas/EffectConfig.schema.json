@@ -1,7 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["effectDisplayName", "configurableProperties"],
+    "required": [
+        "effectDisplayName",
+        "configurableProperties"
+    ],
     "properties": {
         "effectDisplayName": {
             "type": "string",
@@ -20,14 +23,22 @@
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["name", "type", "default", "description"],
+                "required": [
+                    "name",
+                    "type",
+                    "default",
+                    "description"
+                ],
                 "properties": {
                     "name": {
                         "type": "string",
                         "description": "The name of the configurable property which will be exposed to the user to configure in VSCode as well as exposed to TypeScript."
                     },
                     "settingsEditorDisplayName": {
-                        "type": ["string", "object"],
+                        "type": [
+                            "string",
+                            "object"
+                        ],
                         "properties": {
                             "text": {
                                 "type": "string",
@@ -44,7 +55,11 @@
                     "type": {
                         "type": "string",
                         "description": "The data type of the configurable property.",
-                        "enum": ["boolean", "string", "number"]
+                        "enum": [
+                            "boolean",
+                            "string",
+                            "number"
+                        ]
                     },
                     "default": {},
                     "description": {
@@ -57,20 +72,17 @@
                     },
                     "enum": {
                         "type": "array",
-                        "items": { "type": "string" },
+                        "items": {
+                            "type": "string"
+                        },
                         "description": "An array of possible values for the configurable property."
-                    },
-                    "step": {
-                        "type": "number",
-                        "description": "The step size for the configurable property in the VS Bloom Settings Editor. Note - this does not restrict users from inputting smaller steps."
-                    },
-                    "cssUnit": {
-                        "type": "string",
-                        "description": "A CSS unit string that will be appended to the CSS variable name for the configurable property when it is automatically pulled from the user's VS Code settings and forwarded into a CSS variable on the Electron Renderer's DOM :root element."
                     },
                     "isColor": {
                         "type": "boolean",
                         "description": "Whether the configurable property is a color or not. If true, the VS Bloom Settings Editor will automatically render an interactive color picker for the property."
+                    },
+                    "inBloomEditor": {
+                        "$ref": "BloomEditorEffectPropSettingConfig.schema.json"
                     }
                 },
                 "additionalProperties": false

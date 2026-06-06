@@ -24,8 +24,10 @@
             "name": "disconnectedTrailSegmentLifetime",
             "type": "number",
             "default": 750,
-            "step": 25,
-            "cssUnit": "ms",
+            "inBloomEditor": {
+                "cssUnit": "ms",
+                "stepSize": 25
+            },
             "description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
             "markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
         },
@@ -41,8 +43,10 @@
             "name": "maxSolidTrailLength",
             "type": "number",
             "default": 100,
-            "step": 5,
-            "cssUnit": "px",
+            "inBloomEditor": {
+                "cssUnit": "px",
+                "stepSize": 5
+            },
             "description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
             "markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
         },
@@ -50,8 +54,10 @@
             "name": "solidTrailWidth",
             "type": "number",
             "default": 3,
-            "step": 0.25,
-            "cssUnit": "px",
+            "inBloomEditor": {
+                "cssUnit": "px",
+                "stepSize": 0.25
+            },
             "description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
             "markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
         },
@@ -59,8 +65,10 @@
             "name": "solidTrailSpeed",
             "type": "number",
             "default": 20,
-            "step": 2.5,
-            "cssUnit": "px/s",
+            "inBloomEditor": {
+                "cssUnit": "px/s",
+                "stepSize": 2.5
+            },
             "description": "The speed at which the trail should pursue the cursor, in pixels/second",
             "markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
         },
@@ -68,8 +76,10 @@
             "name": "solidTrailCount",
             "type": "number",
             "default": 1,
-            "step": 1,
-            "cssUnit": "trails",
+            "inBloomEditor": {
+                "cssUnit": "trails",
+                "stepSize": 1
+            },
             "description": "The amount of trails that should be created per cursor for the solid trail type.",
             "markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
         },
@@ -77,8 +87,10 @@
             "name": "solidTrailMaxAngleChangePerFrame",
             "type": "number",
             "default": 10,
-            "step": 1,
-            "cssUnit": "deg",
+            "inBloomEditor": {
+                "cssUnit": "deg",
+                "stepSize": 1
+            },
             "description": "The maximum angle - in degrees - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
             "markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes."
         }

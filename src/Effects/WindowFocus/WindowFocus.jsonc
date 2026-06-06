@@ -20,8 +20,10 @@
             "name": "shortTermUnfocusEffectTransitionDuration",
             "type": "number",
             "default": 0.5,
-            "step": 0.05,
-            "cssUnit": "s",
+            "inBloomEditor": {
+                "cssUnit": "s",
+                "stepSize": 0.05
+            },
             "description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
             "markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
         },
@@ -36,7 +38,9 @@
             "name": "longTermUnfocusEffectTransitionDuration",
             "type": "number",
             "default": 30,
-            "cssUnit": "s",
+            "inBloomEditor": {
+                "cssUnit": "s"
+            },
             "description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
             "markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
         },
@@ -44,8 +48,10 @@
             "name": "windowRefocusEffectTransitionDuration",
             "type": "number",
             "default": 0.618,
-            "step": 0.05,
-            "cssUnit": "s",
+            "inBloomEditor": {
+                "cssUnit": "s",
+                "stepSize": 0.05
+            },
             "description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
             "markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
         },
@@ -53,8 +59,10 @@
             "name": "longTermUnfocusTransitionThreshold",
             "type": "number",
             "default": 120,
-            "step": 5,
-            "cssUnit": "s",
+            "inBloomEditor": {
+                "cssUnit": "s",
+                "stepSize": 5
+            },
             "description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
             "markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
         }

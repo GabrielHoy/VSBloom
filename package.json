@@ -157,9 +157,11 @@
 						"order": 1,
 						"type": "boolean",
 						"default": false,
-						"hideFromCustomEditor": true,
 						"description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
-						"markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**"
+						"markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**",
+						"inBloomEditor": {
+							"hide": true
+						}
 					},
 					"vsbloom.statusBarIcon.enabled": {
 						"order": 2,
@@ -176,7 +178,9 @@
 						"markdownDescription": "The port on which the 'Electron Bridge' server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. **A re-patch is required for changes to this setting to take effect!**",
 						"minimum": 1,
 						"maximum": 65535,
-						"step": 1
+						"inBloomEditor": {
+							"stepSize": 1
+						}
 					},
 					"vsbloom.nativeRuntime.enabled": {
 						"order": 4,
@@ -248,10 +252,12 @@
 						"order": 10,
 						"type": "number",
 						"default": 750,
-						"step": 25,
-						"cssUnit": "ms",
 						"description": "The lifetime - in milliseconds - of each trail segment that gets left behind by the cursor as it moves.",
-						"markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves."
+						"markdownDescription": "The lifetime - in **milliseconds** - of each trail segment that gets left behind by the cursor as it moves.",
+						"inBloomEditor": {
+							"cssUnit": "ms",
+							"stepSize": 25
+						}
 					},
 					"vsbloom.cursorTrails.color": {
 						"order": 11,
@@ -265,46 +271,56 @@
 						"order": 12,
 						"type": "number",
 						"default": 100,
-						"step": 5,
-						"cssUnit": "px",
 						"description": "The maximum length of the trail that follows behind the cursor as it moves, in pixels.",
-						"markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**."
+						"markdownDescription": "The maximum length of the trail that follows behind the cursor as it moves, in **pixels**.",
+						"inBloomEditor": {
+							"cssUnit": "px",
+							"stepSize": 5
+						}
 					},
 					"vsbloom.cursorTrails.solidTrailWidth": {
 						"order": 13,
 						"type": "number",
 						"default": 3,
-						"step": 0.25,
-						"cssUnit": "px",
 						"description": "The width of the trail that follows behind the cursor as it moves, in pixels.",
-						"markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**."
+						"markdownDescription": "The width of the trail that follows behind the cursor as it moves, in **pixels**.",
+						"inBloomEditor": {
+							"cssUnit": "px",
+							"stepSize": 0.25
+						}
 					},
 					"vsbloom.cursorTrails.solidTrailSpeed": {
 						"order": 14,
 						"type": "number",
 						"default": 20,
-						"step": 2.5,
-						"cssUnit": "px/s",
 						"description": "The speed at which the trail should pursue the cursor, in pixels/second",
-						"markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**."
+						"markdownDescription": "The speed at which the trail should pursue the cursor, in **pixels/second**.",
+						"inBloomEditor": {
+							"cssUnit": "px/s",
+							"stepSize": 2.5
+						}
 					},
 					"vsbloom.cursorTrails.solidTrailCount": {
 						"order": 15,
 						"type": "number",
 						"default": 1,
-						"step": 1,
-						"cssUnit": "trails",
 						"description": "The amount of trails that should be created per cursor for the solid trail type.",
-						"markdownDescription": "The amount of trails that should be created per cursor for the solid trail type."
+						"markdownDescription": "The amount of trails that should be created per cursor for the solid trail type.",
+						"inBloomEditor": {
+							"cssUnit": "trails",
+							"stepSize": 1
+						}
 					},
 					"vsbloom.cursorTrails.solidTrailMaxAngleChangePerFrame": {
 						"order": 16,
 						"type": "number",
 						"default": 10,
-						"step": 1,
-						"cssUnit": "deg",
 						"description": "The maximum angle - in degrees - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
-						"markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes."
+						"markdownDescription": "The maximum angle - in **degrees** - for which solid trail's head can change per frame, whilst accelerating towards the cursor's position as it changes.",
+						"inBloomEditor": {
+							"cssUnit": "deg",
+							"stepSize": 1
+						}
 					},
 					"vsbloom.lineNumberEffects.enabled": {
 						"order": 17,
@@ -317,37 +333,45 @@
 						"order": 18,
 						"type": "number",
 						"default": 0.35,
-						"step": 0.05,
-						"cssUnit": "s",
 						"description": "The duration of the animation that occurs when the active line number changes, in seconds.",
-						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**."
+						"markdownDescription": "The duration of the animation that occurs when the active line number changes, in **seconds**.",
+						"inBloomEditor": {
+							"cssUnit": "s",
+							"stepSize": 0.05
+						}
 					},
 					"vsbloom.lineNumberEffects.activeLineOffset": {
 						"order": 19,
 						"type": "number",
 						"default": 3,
-						"step": 0.5,
-						"cssUnit": "px",
 						"description": "The offset of the active line number to the right, in pixels.",
-						"markdownDescription": "The offset of the active line number to the right, in **pixels**."
+						"markdownDescription": "The offset of the active line number to the right, in **pixels**.",
+						"inBloomEditor": {
+							"cssUnit": "px",
+							"stepSize": 0.5
+						}
 					},
 					"vsbloom.lineNumberEffects.activeLineGlowSize": {
 						"order": 20,
 						"type": "number",
 						"default": 2.5,
-						"step": 0.25,
-						"cssUnit": "px",
 						"description": "The size of the glow effect around the active line number, in pixels.",
-						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**."
+						"markdownDescription": "The size of the glow effect around the active line number, in **pixels**.",
+						"inBloomEditor": {
+							"cssUnit": "px",
+							"stepSize": 0.25
+						}
 					},
 					"vsbloom.lineNumberEffects.activeLineSkewAngle": {
 						"order": 21,
 						"type": "number",
 						"default": -7.5,
-						"step": 0.5,
-						"cssUnit": "deg",
 						"description": "The angle of the skew effect on the active line number's text, in degrees. Negative values allowed.",
-						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*"
+						"markdownDescription": "The angle of the skew effect on the active line number's text, in **degrees**. *Negative values allowed.*",
+						"inBloomEditor": {
+							"cssUnit": "deg",
+							"stepSize": 0.5
+						}
 					},
 					"vsbloom.tabOverhaul.enabled": {
 						"order": 22,
@@ -365,17 +389,21 @@
 							"solid"
 						],
 						"default": "dashed",
-						"cssUnit": "",
 						"description": "The style of a separator border that appears between two open tabs.",
-						"markdownDescription": "The style of a separator border that appears between two open tabs."
+						"markdownDescription": "The style of a separator border that appears between two open tabs.",
+						"inBloomEditor": {
+							"cssUnit": ""
+						}
 					},
 					"vsbloom.tabOverhaul.glowSize": {
 						"order": 24,
 						"type": "number",
 						"default": 1,
-						"cssUnit": "px",
 						"description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
-						"markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."
+						"markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**.",
+						"inBloomEditor": {
+							"cssUnit": "px"
+						}
 					}
 				},
 				"categoryDescription": "Effects specific to the actual code editor."
@@ -402,10 +430,12 @@
 						"order": 27,
 						"type": "number",
 						"default": 0.5,
-						"step": 0.05,
-						"cssUnit": "s",
 						"description": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
-						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds."
+						"markdownDescription": "The duration of the transition from entirely in-focus to the fully unfocused state described by the `shortTermUnfocusEffectFilter` property, in seconds.",
+						"inBloomEditor": {
+							"cssUnit": "s",
+							"stepSize": 0.05
+						}
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusEffectFilter": {
 						"order": 28,
@@ -418,27 +448,33 @@
 						"order": 29,
 						"type": "number",
 						"default": 30,
-						"cssUnit": "s",
 						"description": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
-						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds."
+						"markdownDescription": "The duration of the transition from the 'short term' unfocused state described by the `shortTermUnfocusEffectFilter` property to the 'long term' unfocused state described by the `longTermUnfocusEffectFilter` property, in seconds.",
+						"inBloomEditor": {
+							"cssUnit": "s"
+						}
 					},
 					"vsbloom.windowFocusEffects.windowRefocusEffectTransitionDuration": {
 						"order": 30,
 						"type": "number",
 						"default": 0.618,
-						"step": 0.05,
-						"cssUnit": "s",
 						"description": "The duration of the transition from either the short or long-term unfocused state to the fully in-focus state once the window is refocused, in seconds.",
-						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**."
+						"markdownDescription": "The duration of the transition from either the short **OR** long-term unfocused state to the fully **in-focus** state once the window is refocused, in **seconds**.",
+						"inBloomEditor": {
+							"cssUnit": "s",
+							"stepSize": 0.05
+						}
 					},
 					"vsbloom.windowFocusEffects.longTermUnfocusTransitionThreshold": {
 						"order": 31,
 						"type": "number",
 						"default": 120,
-						"step": 5,
-						"cssUnit": "s",
 						"description": "There are two different types of unfocus effect: Short Term and Long Term - This is the number of seconds without focus which will make the window transition to its long-term unfocus effect.",
-						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect."
+						"markdownDescription": "There are two different types of unfocus effect: **Short Term** and **Long Term** - This is the number of ***seconds*** without focus which will make the window transition to its *long-term* unfocus effect.",
+						"inBloomEditor": {
+							"cssUnit": "s",
+							"stepSize": 5
+						}
 					},
 					"vsbloom.quick-InputOverhaul.enabled": {
 						"order": 32,
@@ -451,17 +487,21 @@
 						"order": 33,
 						"type": "number",
 						"default": 5,
-						"cssUnit": "px",
 						"description": "The width of the added border around the Quick-Input Menu widget, in pixels.",
-						"markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels."
+						"markdownDescription": "The width of the added border around the Quick-Input Menu widget, in pixels.",
+						"inBloomEditor": {
+							"cssUnit": "px"
+						}
 					},
 					"vsbloom.quick-InputOverhaul.initialWidgetRotation": {
 						"order": 34,
 						"type": "number",
 						"default": 5,
-						"cssUnit": "deg",
 						"description": "The initial rotation of the Quick-Input Menu widget when it appears, in degrees.",
-						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**."
+						"markdownDescription": "The initial rotation of the Quick-Input Menu widget when it appears, in **degrees**.",
+						"inBloomEditor": {
+							"cssUnit": "deg"
+						}
 					},
 					"vsbloom.dynamicInteractables.enabled": {
 						"order": 35,

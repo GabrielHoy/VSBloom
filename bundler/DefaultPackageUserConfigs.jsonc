@@ -26,9 +26,11 @@
                 "order": 1,
                 "type": "boolean",
                 "default": false,
-                "hideFromCustomEditor": true,
                 "description": "VS: Bloom has a lot of configuration options! Modifying them here in the default VS Code settings view will work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated settings page within the VS: Bloom Menu, which can be accessed at any time with the 'VSBloom: Open Menu' command - it provides a better experience. Setting this to true triggers a redirect into the VS: Bloom Menu's settings page!",
-                "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**"
+                "markdownDescription": "VS: Bloom has a **__lot__** of configuration options!\n\nModifying them here in the default VS Code settings view **will** work just fine, but the recommended way to tweak VS: Bloom's configurations is to use the dedicated **Settings Editor** within the VS: Bloom Menu, which can be accessed at any time with the `VSBloom: Open Menu` command - it provides a better experience.\n\n**Checking this box will take you directly to the VS: Bloom Menu's Settings Editor!**",
+                "inBloomEditor": {
+                    "hide": true
+                }
             },
             "vsbloom.statusBarIcon.enabled": {
                 "order": 2,
@@ -45,7 +47,9 @@
                 "markdownDescription": "The port on which the 'Electron Bridge' server will listen for connections on from the VSBloom Client. This is used to communicate between the extension and the client running within the Electron Renderer itself. **A re-patch is required for changes to this setting to take effect!**",
                 "minimum": 1,
                 "maximum": 65535,
-                "step": 1
+                "inBloomEditor": {
+                    "stepSize": 1
+                }
             },
             "vsbloom.nativeRuntime.enabled": {
                 "order": 4,

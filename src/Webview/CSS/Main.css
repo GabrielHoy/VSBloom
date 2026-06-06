@@ -141,3 +141,18 @@ button[data-slot='dialog-trigger'] {
 
 	animation: scrollNoise 16.18s linear infinite;
 }
+/* 5) "tooltip" popup content */
+[data-slot='tooltip-content'] {
+    --bg-size-scaled: calc((160px / var(--scale-factor)) * 2.1);
+    --scroll-anim-offset-x: calc(
+        var(--bg-size-scaled) * var(--scroll-anim-parallaxed-progress-x)
+    );
+    
+    --scroll-anim-offset-y: calc(
+        var(--bg-size-scaled) * var(--scroll-anim-parallaxed-progress-y)
+    );
+    
+	background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
+	background-repeat: repeat;
+    background-position: var(--scroll-anim-offset-x) var(--scroll-anim-offset-y);
+}

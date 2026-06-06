@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import * as jsonc from 'jsonc-parser';
 import * as Colorful from "../src/Debug/Colorful.ts";
+import type { PropertySettingsEditorConfiguration } from "../src/Webview/Global/Settings.svelte.ts";
 
 const OUTPUT_PACKAGE_FILE: string = "package.json";
 const DEFAULT_PACKAGE_USER_CONFIGS_FILE: string = "bundler/DefaultPackageUserConfigs.jsonc";
@@ -9,23 +10,15 @@ const EFFECT_CONFIG_ORDERING_FILE: string = "src/Effects/EffectConfigOrdering.js
 
 const prettyLogPrefix: string = Colorful.ConstructNonBrandedLogPrefix("PackageBuilder", "info") + " ";
 
-interface SettingsEditorDisplayName {
-    text: string;
-    useMarkdown: boolean;
-}
-
 interface PackagePropertyDefinition {
     order: number;
     type: string;
     default: unknown;
     enum?: string[];
-    step?: number;
     isColor?: boolean;
-    cssUnit?: string;
     description: string;
     markdownDescription: string;
-    hideFromCustomEditor?: boolean;
-    settingsEditorDisplayName?: string | SettingsEditorDisplayName;
+    inBloomEditor?: PropertySettingsEditorConfiguration;
 }
 
 interface PackageConfigurationCategory {
@@ -42,10 +35,9 @@ interface ConfigurableProperty {
     enum?: string[];
     step?: number;
     isColor?: boolean;
-    cssUnit?: string;
     description: string;
     markdownDescription: string;
-    settingsEditorDisplayName?: string | SettingsEditorDisplayName;
+    inBloomEditor?: PropertySettingsEditorConfiguration;
 }
 
 export interface EffectConfig {
@@ -175,12 +167,10 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
                     type: configurableProp.type,
                     enum: configurableProp.enum,
                     default: configurableProp.default,
-                    step: configurableProp.step,
                     isColor: configurableProp.isColor,
-                    cssUnit: configurableProp.cssUnit,
                     description: configurableProp.description,
                     markdownDescription: configurableProp.markdownDescription,
-                    settingsEditorDisplayName: configurableProp.settingsEditorDisplayName,
+                    inBloomEditor: configurableProp.inBloomEditor,
                 };
             }
         }

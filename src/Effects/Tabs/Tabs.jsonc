@@ -18,7 +18,9 @@
                 "dotted",
                 "solid"
             ],
-            "cssUnit": "",
+            "inBloomEditor": {
+                "cssUnit": ""
+            },
             "default": "dashed",
             "description": "The style of a separator border that appears between two open tabs.",
             "markdownDescription": "The style of a separator border that appears between two open tabs."
@@ -26,7 +28,9 @@
         {
             "name": "glowSize",
             "type": "number",
-            "cssUnit": "px",
+            "inBloomEditor": {
+                "cssUnit": "px"
+            },
             "default": 1,
             "description": "The size of a glow effect that appears on the text of a tab when it is active, in pixels.",
             "markdownDescription": "The size of a glow effect that appears on the text of a tab when it is active, in **pixels**."

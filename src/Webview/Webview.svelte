@@ -13,7 +13,10 @@
 	import { mount, onDestroy } from 'svelte';
 	import { vscode } from './Util/VSCodeAPI';
 	import * as Dialog from '$webview-svelte-lib/components/ui/dialog/index';
+	import * as Tooltip from '$webview-svelte-lib/components/ui/tooltip/index';
 	import type { ExternalPageSwapMessage } from './WebviewNetworking';
+	import MouseLocationProvider from './Components/UX/MouseLocationProvider.svelte';
+	import NoiseScrollTicker from './Components/UX/NoiseScrollTicker.svelte';
 
 	//Load up any VSCode persistent state for the webview
 	//first so we can restore certain stateful items in
@@ -186,21 +189,26 @@
 	and just need to exist in the background on the DOM "somewhere".
 -->
 <ScaleReflectionSingleton />
+<MouseLocationProvider />
 
 <!--
 	This is the main container which renders the
 	current "page" component and its content.
 -->
 <div class="page-content-container">
-	{#if pageData.pages.has(pageData.currentPage)}
-		<svelte:component this={pageData.pages.get(pageData.currentPage)?.component} />
-	{:else}
-		<!--
-			if we can't find a page descriptor for the 'currentPage' key,
-			fall back to the 'Unknown' page as a sort of '404'.
-		-->
-		<Unknown />
-	{/if}
+	<NoiseScrollTicker>
+		<Tooltip.Provider>
+			{#if pageData.pages.has(pageData.currentPage)}
+				<svelte:component this={pageData.pages.get(pageData.currentPage)?.component} />
+			{:else}
+				<!--
+                    if we can't find a page descriptor for the 'currentPage' key,
+                    fall back to the 'Unknown' page as a sort of '404'.
+                -->
+				<Unknown />
+			{/if}
+		</Tooltip.Provider>
+	</NoiseScrollTicker>
 </div>
 
 <!-- View-wide radial gradient 'shadow' to add a bit of depth -->

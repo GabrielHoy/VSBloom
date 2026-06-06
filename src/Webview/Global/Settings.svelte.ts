@@ -8,10 +8,18 @@ import { vscode } from '../Util/VSCodeAPI';
 
 const defaultEffectSettings = extensionPackageJSON.contributes.configuration;
 
+export interface PropertySettingsEditorConfiguration {
+    hide?: boolean;
+    displayName?: string | { text: string; useMarkdown?: boolean };
+    tooltip?: string | { text: string; useMarkdown?: boolean };
+    stepSize?: number;
+    cssUnit?: string;
+}
+
 export type PropertyEntry =
 	(typeof defaultEffectSettings)[number]['properties'][keyof (typeof defaultEffectSettings)[number]['properties']] & {
-		hideFromCustomEditor?: boolean;
-	};
+        inBloomEditor?: PropertySettingsEditorConfiguration
+    };
 export type EffectSettingLeafValue = Exclude<VSBloomConfigValue, VSBloomConfigObject>;
 
 export const effectSettings = $state({

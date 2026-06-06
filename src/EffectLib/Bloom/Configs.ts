@@ -24,6 +24,7 @@ import {
 	GetInternalPathForEffectProperty,
 } from '../../ExtensionBridge/API';
 import type { VSBloomConfigUpdateEvent } from '../../ExtensionBridge/ElectronGlobals';
+import type { PropertySettingsEditorConfiguration } from '../../Webview/Global/Settings.svelte';
 import type { Janitor } from './Janitors';
 
 export type ExtensionConfigPathResolver =
@@ -52,7 +53,7 @@ export type EffectConfigJSON = {
 	configurableProperties: {
 		name: string;
 		default: unknown;
-		cssUnit?: string;
+		inBloomEditor?: PropertySettingsEditorConfiguration;
 	}[];
 };
 
@@ -198,11 +199,7 @@ export function GetReducedEffectConfigJSONToConfigKeyToCSSVariables(
 			cfgVars: ReducedEffectConfigKeyToCSSVariableDataRecord,
 			property: EffectConfigJSON['configurableProperties'][number],
 		) => {
-			if (
-				!('cssUnit' in property) ||
-				!property.cssUnit ||
-				typeof property.cssUnit !== 'string'
-			) {
+			if (typeof property.inBloomEditor?.cssUnit !== 'string') {
 				return cfgVars;
 			}
 			if (
@@ -217,7 +214,7 @@ export function GetReducedEffectConfigJSONToConfigKeyToCSSVariables(
 
 			cfgVars[property.name as keyof typeof cfgVars] = {
 				cssVarName: `--vsbloom-${(effectCfgJSON.cssVarPrefix.length > 0 ? `${effectCfgJSON.cssVarPrefix}-` : '') + property.name.replace(/([A-Z])/g, '-$1').toLowerCase()}`,
-				cssVarUnit: property.cssUnit,
+				cssVarUnit: property.inBloomEditor.cssUnit,
 			};
 
 			return cfgVars;

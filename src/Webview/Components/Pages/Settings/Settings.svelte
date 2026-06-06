@@ -7,6 +7,7 @@
 	import * as Accordion from '$webview-svelte-lib/components/ui/accordion/index';
 	import * as Select from '$webview-svelte-lib/components/ui/select/index';
 	import * as Dialog from '$webview-svelte-lib/components/ui/dialog/index';
+	import * as Tooltip from '$webview-svelte-lib/components/ui/tooltip/index';
 	import { buttonVariants } from '$webview-svelte-lib/components/ui/button';
 	import { Separator } from '$webview-svelte-lib/components/ui/separator';
 	import { Checkbox } from '$webview-svelte-lib/components/ui/checkbox';
@@ -19,6 +20,7 @@
 	import { backIn, backOut } from 'svelte/easing';
 	import Markdown from 'svelte-exmarkdown';
 	import BadgeInfoIcon from '@lucide/svelte/icons/badge-info';
+	import TooltipIcon from '@lucide/svelte/icons/info';
 	import type { Snippet } from 'svelte';
 	import ColorWrapper from './ColorWrapper.svelte';
 	import ColorPicker from '$webview-svelte-lib/components/ui/ColorPicker';
@@ -27,7 +29,9 @@
 		effectSettings,
 		UpdateEffectSetting,
 		type PropertyEntry,
+		type PropertySettingsEditorConfiguration,
 	} from '../../../Global/Settings.svelte';
+	import { cn } from '$webview-svelte-lib/utils';
 
 	function GetPrettifiedPropertyPathSegments(internalPath: string): string[] {
 		// skip `vsbloom.` prefix, capitalize first letter, insert space before each capital letter
@@ -90,11 +94,9 @@
 		settingPath: string;
 		minimum?: number;
 		maximum?: number;
-		step?: number;
-		cssUnit?: string;
 		enum?: (string | number)[];
 		isColor?: boolean;
-		settingsEditorDisplayName?: string | { text: string; useMarkdown?: boolean };
+		inBloomEditor?: PropertySettingsEditorConfiguration;
 	};
 
 	let subcategoriesExpanded: Map<string, string[]> = $state(
@@ -127,7 +129,7 @@
 					subcategories[pathCategory].push({
 						...propData,
 						settingPath: propPath,
-						hideFromCustomEditor: propData.hideFromCustomEditor,
+						inBloomEditor: propData.inBloomEditor,
 					});
 				}
 
@@ -218,6 +220,7 @@
 	}
 
 	let currentEnumOpen = $state('');
+	let currentTooltipOpen = $state('');
 	function IsValidEnum(
 		toCheck: string | number | boolean,
 		enumArray: (string | number | boolean)[],
@@ -261,7 +264,7 @@
 			<Input
 				type="number"
 				value={effectSettings.values[propData.settingPath] ?? propData.default}
-				step={propData.step ?? undefined}
+				step={propData.inBloomEditor?.stepSize ?? undefined}
 				placeholder={propData.default.toLocaleString()}
 				onchange={(e) => {
 					// if the value is a valid number(not NaN) and within the constrained range(if it has one), then it's a valid value
@@ -320,9 +323,9 @@
 					}
 				}}
 			/>
-			{#if propData.cssUnit}
+			{#if propData.inBloomEditor?.cssUnit}
 				<span class="translate-y-4 text-sm absolute left-full">
-					{propData.cssUnit}
+					{propData.inBloomEditor.cssUnit}
 				</span>
 			{/if}
 		</div>
@@ -343,9 +346,9 @@
 					}
 				}}
 			/>
-			{#if propData.cssUnit}
+			{#if propData.inBloomEditor?.cssUnit}
 				<span class="translate-y-4 text-sm absolute left-full">
-					{propData.cssUnit}
+					{propData.inBloomEditor.cssUnit}
 				</span>
 			{/if}
 		</div>
@@ -621,7 +624,38 @@
 	</div>
 {/snippet}
 
+{#snippet RenderTooltipContent(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isMarkdownDescription = propData.markdownDescription}
+
+	{#if isMarkdownDescription}
+		<p class="min-w-5 max-w-[25vw] text-center leading-normal whitespace-pre-wrap">
+			<Markdown md={propData.markdownDescription} />
+		</p>
+	{:else}
+		<p class="min-w-5 max-w-[25vw] text-center leading-snug whitespace-pre-wrap">
+			{propData.description
+				? propData.description
+				: 'No description is available for this property yet.'}
+		</p>
+	{/if}
+{/snippet}
 {#snippet ConfigurableProperty(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const bloomCfgForProp = propData.inBloomEditor}
+	{@const editorDisplayNameStrOrObject = bloomCfgForProp?.displayName}
+	{@const displayNameShouldBeMarkdown =
+		editorDisplayNameStrOrObject &&
+		typeof bloomCfgForProp.displayName === 'object' &&
+		'text' in bloomCfgForProp.displayName &&
+		'useMarkdown' in bloomCfgForProp.displayName &&
+		bloomCfgForProp.displayName.useMarkdown == true}
+	{@const editorDisplayNameStr =
+		typeof editorDisplayNameStrOrObject === 'string'
+			? editorDisplayNameStrOrObject
+			: typeof editorDisplayNameStrOrObject === 'object' &&
+				  typeof editorDisplayNameStrOrObject.text === 'string'
+				? editorDisplayNameStrOrObject.text
+				: undefined}
+
 	<div
 		class="config-property {disabledProps.has(propData.settingPath)
 			? 'disabled-config-property'
@@ -629,25 +663,45 @@
 	>
 		<p class="config-property-entry mx-50 text-center flex justify-between items-center">
 			<!-- <p class="config-property-entry"> -->
-			<span
-				class="config-property-name-text"
-				title={propData.description
-					? propData.description
-					: 'No description is available for this property yet.'}
+			<Tooltip.Root
+				onOpenChange={(isNowOpen) => {
+					if (isNowOpen) {
+						currentTooltipOpen = propData.settingPath;
+					} else if (currentTooltipOpen === propData.settingPath) {
+						currentTooltipOpen = '';
+					}
+				}}
 			>
-				{#if propData.settingsEditorDisplayName && typeof propData.settingsEditorDisplayName === 'object' && 'text' in propData.settingsEditorDisplayName && 'useMarkdown' in propData.settingsEditorDisplayName && propData.settingsEditorDisplayName.useMarkdown === true}
-					<!-- Display name for this property exists and is markdown -->
-					<Markdown md={propData.settingsEditorDisplayName.text} />
-				{:else if propData.settingsEditorDisplayName && (typeof propData.settingsEditorDisplayName === 'string' || 'text' in propData.settingsEditorDisplayName)}
-					<!-- Display name for this property exists and is not markdown -->
-					{typeof propData.settingsEditorDisplayName === 'string'
-						? propData.settingsEditorDisplayName
-						: propData.settingsEditorDisplayName.text}
-				{:else}
-					<!-- No display name for this property explicitly provided -->
-					{GetPrettifiedPropertyPathSegments(propData.settingPath).slice(1).join(' > ')}:
-				{/if}
-			</span>
+				<Tooltip.Trigger payload={propData.settingPath}>
+					<span class="config-property-name-text flex items-start gap-0">
+						<div class="relative w-0 h-auto -ms-4">
+							<TooltipIcon
+								class={cn(
+									`size-4 absolute left-0 top-1/2 -translate-x-full translate-y-[calc(100%/8)] scale-110 ${currentTooltipOpen === propData.settingPath ? 'scale-125' : ''}`,
+									'hover:scale-125 transition-all duration-500',
+								)}
+							/>
+						</div>
+						<div class="relative w-auto h-auto ms-4">
+							{#if displayNameShouldBeMarkdown}
+								<!-- Display name for this property exists and is markdown -->
+								<Markdown md={editorDisplayNameStr ?? '<NoMDSpecifiedERR!>'} />
+							{:else if editorDisplayNameStr}
+								<!-- Display name for this property exists and is not markdown -->
+								{editorDisplayNameStr}
+							{:else}
+								<!-- No display name for this property explicitly provided -->
+								{GetPrettifiedPropertyPathSegments(propData.settingPath)
+									.slice(1)
+									.join(' > ')}:
+							{/if}
+						</div>
+					</span>
+				</Tooltip.Trigger>
+				<Tooltip.Content>
+					{@render RenderTooltipContent(propData, topLevelCatIdx)}
+				</Tooltip.Content>
+			</Tooltip.Root>
 
 			{#if propData.enum}
 				{@render EnumInput(propData, topLevelCatIdx)}
@@ -772,7 +826,7 @@
 										>
 											<!-- min-w-max -->
 											{#each properties as propertyData, propIdx}
-												{#if !propertyData.hideFromCustomEditor}
+												{#if !propertyData.inBloomEditor?.hide}
 													{@render ConfigurableProperty(
 														propertyData,
 														catIdx,
