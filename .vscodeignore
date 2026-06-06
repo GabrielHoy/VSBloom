@@ -55,3 +55,11 @@ imagery/CorruptExample.png
 
 #Notifications
 README_LOGO.md
+
+#Test infra
+test/
+tsconfig.test-host.json
+tsconfig.test.json
+vitest.config.ts
+CLAUDE.md
+.vscode-test.mjs
