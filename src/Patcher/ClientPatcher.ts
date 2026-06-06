@@ -368,7 +368,7 @@ function PatchElectronWorkbenchCSPElement(wbHtmlSource: string) {
 		/<meta\s+[^>]*http-equiv\s*=\s*(["'])Content-Security-Policy\1[^>]*content\s*=\s*(["'])(.*?)\2[^>]*\/?>/ims;
 
 	const cspElementMatch = wbHtmlSource.match(cspMetaElementExtractionRegex);
-	if (!cspElementMatch || !cspElementMatch.index) {
+	if (!cspElementMatch?.index) {
 		//no CSP element found, the regex either doesn't work anymore
 		//or the workbench file no longer uses CSP meta elements
 		return wbHtmlSource;
@@ -483,7 +483,7 @@ export async function PatchElectronHTMLFile(
 	//find the <head> tag and patch appropriate scripts *directly* after it is defined
 	//order matters here: sharedLibsPayload first, then clientPayload
 	const headTagMatch = patchedFileContents.match(/<head([^>]*)>/i);
-	if (!headTagMatch || !headTagMatch.index) {
+	if (!headTagMatch?.index) {
 		throw new Error(
 			Common.RaiseError(
 				`Unable to find the <head> tag in the Electron init file at '${initFilePath}'. This is likely a bug in the VSBloom extension.`,
@@ -554,7 +554,7 @@ export async function SuppressWorkbenchClientModificationWarning(
 ): Promise<boolean> {
 	const wbScriptContents = await fs.promises.readFile(wbScriptPath, 'utf8');
 	const purityCheckConditionExtractionRegex =
-		/if\s?\((\w+)\)\s?return;\s?\w+\.[\w.]+\.warn\([`"'].*has been modified/is;
+		/if\s?\(([\w(|&!) .]+)\)\s?return;\s?\w+\.[\w.]+\.warn\([`"'].*has been modified/is;
 
 	const purityCheckRegexMatch = wbScriptContents.match(purityCheckConditionExtractionRegex);
 	if (!purityCheckRegexMatch) {
@@ -569,14 +569,14 @@ export async function SuppressWorkbenchClientModificationWarning(
 	const fullMatch = purityCheckRegexMatch[0];
 
 	//Extra layer of validation to make sure the exact pattern we're going to replace is known
-	const ifParenRegex = /if\s?\((\w+)\)/;
+	const ifParenRegex = /if\s?\(([\w(|&!) .]+)\)/;
 	const ifParenMatch = fullMatch.match(ifParenRegex);
 
-	if (!ifParenMatch || !ifParenMatch[0] || !ifParenMatch[1]) {
+	if (!ifParenMatch?.[0] || !ifParenMatch[1]) {
 		return false; //shouldn't occur, just being defensive
 	}
 
-	const replacedFullIfExpr = fullMatch.replace(ifParenRegex, `if($1||true)`);
+	const replacedFullIfExpr = fullMatch.replace(ifParenRegex, `if(true)`);
 
 	const patchedWbScriptContents = 
 	JS_FILE_PATCH_INDICATOR +
