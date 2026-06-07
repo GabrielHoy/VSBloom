@@ -245,9 +245,10 @@
 		user-select: none;
 
 		background-image: radial-gradient(
-			circle,
-			var(--vscode-editor-background) 0%,
-			var(--vsbloom-shadowing-color) 100%
+			circle at center center,
+			var(--vscode-editor-background) 0% 0%,
+			var(--vsbloom-shadowing-color) 50% 50%,
+			var(--vsbloom-shadowing-color) 100% 100%
 		);
 	}
 
@@ -260,7 +261,7 @@
 		width: 100%;
 		height: 100%;
 		z-index: -10;
-		opacity: 0.2;
+		opacity: 0.215;
 		pointer-events: none;
 		user-select: none;
 
