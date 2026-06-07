@@ -44,7 +44,7 @@ export class MenuPanel {
 			this.disposables,
 		);
 		this.panel.webview.html = this.GetWebviewContent(this.panel.webview, uri, pageNameOpenTo);
-		this.panel.iconPath = Uri.joinPath(uri, 'imagery', 'logo.png');
+		this.panel.iconPath = Uri.joinPath(uri, 'imagery', 'logo', 'logo.png');
 		this.SetWebviewMessageListener(this.panel.webview);
 		this.SetupPanelChangeListeners();
 	}
@@ -104,7 +104,7 @@ export class MenuPanel {
 	public GetWebviewContent(webview: vscode.Webview, uri: Uri, initialPageName?: string) {
 		const scriptUri = GetWebviewURI(webview, uri, ['build', 'Webview', 'view.js']);
 		const styleUri = GetWebviewURI(webview, uri, ['build', 'Webview', 'view.css']);
-		const iconUri = GetWebviewURI(webview, uri, ['imagery', 'logo.png']);
+		const iconUri = GetWebviewURI(webview, uri, ['imagery', 'logo', 'logo.png']);
 		const nonce = GetScriptNOnce();
 
 		/**

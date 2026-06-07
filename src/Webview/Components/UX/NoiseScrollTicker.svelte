@@ -45,6 +45,15 @@
 				'--scroll-anim-parallaxed-progress-y',
 				(curScrollValue + mouseLocation.normalized.y * parallaxFactor).toString(),
 			);
+
+			container.element.style.setProperty(
+				'--mouse-parallax-x',
+				(mouseLocation.normalized.x * parallaxFactor).toString(),
+			);
+			container.element.style.setProperty(
+				'--mouse-parallax-y',
+				(mouseLocation.normalized.y * parallaxFactor).toString(),
+			);
 		}
 
 		requestAnimationFrame(TickNoiseScrollCSS);
@@ -67,7 +76,7 @@
 	} = $props();
 
 	function RegisterNoiseScrollTicker(node: HTMLElement) {
-		const nodeID = node.id;
+		const nodeID = crypto.randomUUID();
 
 		const scrollTickContainer: ScrollTickContainer = {
 			element: node,

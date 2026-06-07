@@ -16,7 +16,8 @@ node_modules
 src/
 
 #High-Quality Imagery, unnecessary for extension & just adds unnecessary package size bloat
-imagery/logoHQ.png
+imagery/logo/logoHQ.png
+imagery/logo/components/uncompressed/
 
 #TypeScript Configurations
 tsconfig.json
@@ -48,8 +49,7 @@ imagery/glyphs/*.svg
 README_LOGO.md
 
 #Unused Imagery
-imagery/logoBlackAndWhiteSemiSimple.png
-imagery/logoBlackAndWhiteSimple.png
+imagery/logo/logoBlackAndWhiteSimple.png
 imagery/CorruptionSuppressionSetting.png
 imagery/CorruptExample.png
 

@@ -25,7 +25,7 @@ const pageList: SvelteMap<PageDescriptor['name'], PageDescriptor> = $state(
 			'Getting Started',
 			{
 				name: 'Getting Started',
-				icon: 'logo.png',
+				icon: 'logo/logo.png',
 				description:
 					'Provides an overview and introduction to the VS: Bloom extension and what it has to offer.',
 				component: GettingStarted,
@@ -36,7 +36,7 @@ const pageList: SvelteMap<PageDescriptor['name'], PageDescriptor> = $state(
 			'Main Menu',
 			{
 				name: 'Main Menu',
-				icon: 'logo.png',
+				icon: 'logo/logo.png',
 				description: 'The main page of VS: Bloom.',
 				component: Main,
 			},
@@ -56,7 +56,7 @@ const pageList: SvelteMap<PageDescriptor['name'], PageDescriptor> = $state(
 			'Unknown',
 			{
 				name: 'Unknown',
-				icon: 'logo.png',
+				icon: 'logo/logo.png',
 				description:
 					'Unknown/Non-existant page...if you see this you should probably report it as a bug!',
 				hideFromUser: true,

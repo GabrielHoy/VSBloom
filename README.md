@@ -5,9 +5,9 @@
 ---
 
 <h1 align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="imagery/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i><strong>VS: Bloom</strong></i>
-  <img src="imagery/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo/logo64.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 64px; width: 64px; max-height: 64px; max-width: 64px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </h1>
 
 ## What is VS: Bloom?
@@ -132,9 +132,9 @@ VSBloom is provided under the terms of the [MIT License](LICENSE).
 ---
 
 <p align="center" style="padding-bottom: 0px; margin-bottom: 0px; font-size: 15px;">
-  <img src="imagery/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
   <i>TamperedReality 2026</i>
-  <img src="imagery/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
+  <img src="imagery/logo/logo20.png" align="center" alt="VSBloom Logo" style="display: inline-block; height: 20px; width: 20px; max-height: 20px; max-width: 20px; margin-top: auto; margin-bottom: auto; padding-top: 0px; padding-bottom: 0px;">
 </p>
 
 ---

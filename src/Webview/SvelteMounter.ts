@@ -12,7 +12,6 @@ import WebviewPage from './Webview.svelte';
 
 // Hookup Bloom -> Svelte message listeners for general state management
 vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
-	console.log('Syncing settings list', data);
 	AssignCurrentEffectSettings(data);
 });
 

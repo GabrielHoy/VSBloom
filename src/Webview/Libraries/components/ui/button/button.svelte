@@ -3,6 +3,7 @@
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import { type VariantProps, tv } from 'tailwind-variants';
 	import { directories } from '../../../../Global/Directories.svelte';
+	import NoiseBG from '../../../../Components/UX/NoiseBG.svelte';
 
 	export const buttonVariants = tv({
 		base: "shad-button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -89,12 +90,31 @@
 			className,
 			disabled ? 'shad-disabled' : 'shad-enabled',
 			variant ? `${variant}-variant` : undefined,
+			'relative',
 		)}
-		style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); {btnStyling}"
+		style={btnStyling}
 		onclick={disabled ? ondisabledclick : onclick}
 		{type}
 		{...restProps}
 	>
+		<div
+			class="bg-transparent -z-10 w-full h-full absolute top-0 left-0 pointer-events-none select-none"
+		>
+			<NoiseBG
+				opacity={0.45}
+				useChromaBG={false}
+				doDefaultAnimation={false}
+				scaleFactor={1}
+				scrollSpeed={1}
+				class={cn(
+					'noise-bg button-noise-bg w-full h-full absolute top-0 left-0 pointer-events-none select-none ',
+					buttonVariants({ variant, size }),
+					disabled ? 'shad-disabled' : 'shad-enabled',
+					variant ? `${variant}-variant` : undefined,
+				)}
+				style="filter: blur(calc((1.0px / var(--scale-factor)) * 2.1));"
+			/>
+		</div>
 		{@render children?.()}
 	</button>
 {/if}

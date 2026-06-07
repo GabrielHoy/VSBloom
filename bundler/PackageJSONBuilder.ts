@@ -99,11 +99,12 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
         fs.readFileSync(DEFAULT_PACKAGE_USER_CONFIGS_FILE, "utf8")
     );
     const userConfigsArray: PackageConfigurationCategory[] = [];
+    const negativeOrderedUserConfigs: PackageConfigurationCategory[] = [];
 
     let categoryIndex = 1;
     let propertyIndex = 1;
 
-    for (const defaultUserConfig of defaultUserConfigs) {
+    function ProcessDefaultUserConfig(defaultUserConfig: PackageConfigurationCategory): void {
         defaultUserConfig.order = categoryIndex++;
 
         const orderedCatProps: [string, PackagePropertyDefinition][] = [];
@@ -116,6 +117,18 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
         }
 
         userConfigsArray.push(defaultUserConfig);
+    }
+
+    defaultUserConfigs.sort((a, b) => a.order - b.order);
+    for (const defaultUserConfig of defaultUserConfigs) {
+        if (defaultUserConfig.order < 0) {
+            //this is a negative-ordered config, so we'll process it later
+            //once the effect config orderings have been processed
+            negativeOrderedUserConfigs.push(defaultUserConfig);
+            continue;
+        }
+
+        ProcessDefaultUserConfig(defaultUserConfig);
     }
 
     const effectConfigOrdering: EffectConfigOrderingFile = jsonc.parse(
@@ -176,6 +189,13 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
         }
 
         userConfigsArray.push(newEffectCategory);
+    }
+
+    //now let's go through all of the negative-ordered user configs
+    //we took note of earlier and process them accordingly
+    negativeOrderedUserConfigs.sort((a, b) => b.order - a.order); //intentionally reversed since working w/ negative numbers counting from highest -> lowest
+    for (const negativeOrderedUserConfig of negativeOrderedUserConfigs) {
+        ProcessDefaultUserConfig(negativeOrderedUserConfig);
     }
 
     return userConfigsArray;

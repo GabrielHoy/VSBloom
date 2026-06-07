@@ -215,7 +215,7 @@
 <div class="view-shadow"></div>
 <div
 	class="noise-layer"
-	style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono.png');"
+	style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_rgba.png');"
 ></div>
 
 <!--
@@ -252,7 +252,7 @@
 	}
 
 	.noise-layer {
-		--bg-size-scaled: calc((128px / var(--scale-factor)) * 2.8);
+		--bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1);
 
 		position: fixed;
 		top: 0;
@@ -260,11 +260,12 @@
 		width: 100%;
 		height: 100%;
 		z-index: -10;
-		opacity: 0.075;
+		opacity: 0.2;
 		pointer-events: none;
 		user-select: none;
+
 		background-size: var(--bg-size-scaled) var(--bg-size-scaled);
-		background-repeat: repeat;
-		background-blend-mode: color;
+
+		filter: blur(calc((1.25px / var(--scale-factor)) * 2.1)) brightness(75%) saturate(15%);
 	}
 </style>

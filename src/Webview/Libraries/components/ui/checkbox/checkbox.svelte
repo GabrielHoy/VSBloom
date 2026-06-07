@@ -7,6 +7,7 @@
 	import { directories } from '../../../../Global/Directories.svelte';
 	import { fade, scale } from 'svelte/transition';
 	import { cubicInOut, cubicOut, linear } from 'svelte/easing';
+	import NoiseBG from '../../../../Components/UX/NoiseBG.svelte';
 
 	let {
 		ref = $bindable(null),
@@ -29,11 +30,19 @@
 	{...restProps}
 >
 	{#snippet children({ checked, indeterminate })}
-		<div
-			data-slot="checkbox-indicator"
-			class="checkbox-indicator transition-none"
-			style="background-image: url('{directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png');"
-		>
+		<NoiseBG
+			opacity={0.45}
+			useChromaBG={false}
+			doDefaultAnimation={false}
+			scaleFactor={1 / 1.47887323943662}
+			scrollSpeed={1 / 1.47887323943662}
+			class={cn(
+				'noise-bg checkbox-noise-bg w-full h-full absolute top-0 left-0 pointer-events-none select-none ',
+				!checked ? 'shad-disabled' : 'shad-enabled',
+			)}
+			style="filter: blur(calc((0.618px / var(--scale-factor)) * 2.1));"
+		/>
+		<div data-slot="checkbox-indicator" class="checkbox-indicator transition-none">
 			{#key checked || indeterminate}
 				<div
 					class="checkbox-icon-container icon-{checked

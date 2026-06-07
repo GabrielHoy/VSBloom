@@ -56,6 +56,7 @@
 		'Effect Rendering': 'Renderer',
 		'Editor Effects': 'Editor',
 		'Window Effects': 'Window',
+		'Native Runtime': 'Native',
 	};
 	const blacklistedPathsForWebviewSettingsDisplay: string[] = [
 		'vsbloom.extensionConfigurationsNote', //this just brings the user to the menu when clicked - and they'd already be here if they're on this page
@@ -243,6 +244,8 @@
 </script>
 
 {#snippet BooleanInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
+
 	<div class="inline-block align-middle px-2.5">
 		<Checkbox
 			style="transform: scale(1.618);"
@@ -259,6 +262,8 @@
 	</div>
 {/snippet}
 {#snippet NumberInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
+
 	<div class="inline-flex align-middle px-1" use:resizeToTextContent>
 		<div class="inline-flex relative align-middle">
 			<Input
@@ -266,6 +271,8 @@
 				value={effectSettings.values[propData.settingPath] ?? propData.default}
 				step={propData.inBloomEditor?.stepSize ?? undefined}
 				placeholder={propData.default.toLocaleString()}
+				bgScrollSpeedMult={isPropertyDisabled ? 0 : 1}
+				bgNoiseBlurAdjustment={isPropertyDisabled ? '1px' : '0px'}
 				onchange={(e) => {
 					// if the value is a valid number(not NaN) and within the constrained range(if it has one), then it's a valid value
 					let hasValidValue = !Number.isNaN(e.currentTarget.valueAsNumber);
@@ -332,12 +339,16 @@
 	</div>
 {/snippet}
 {#snippet StringInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
+
 	<div class="inline-flex align-middle px-1" use:resizeToTextContent>
 		<div class="inline-flex relative align-middle">
 			<Input
 				type="text"
 				value={effectSettings.values[propData.settingPath] ?? propData.default}
 				placeholder={propData.default.toLocaleString()}
+				bgScrollSpeedMult={isPropertyDisabled ? 0 : 1}
+				bgNoiseBlurAdjustment={isPropertyDisabled ? '1px' : '0px'}
 				onchange={(e) => {
 					if (e.currentTarget.value === propData.default) {
 						UpdateEffectSetting(propData.settingPath, undefined);
@@ -355,6 +366,8 @@
 	</div>
 {/snippet}
 {#snippet ColorInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
+
 	<div class="inline-block align-middle px-1">
 		<div class="inline-flex relative align-middle">
 			<Dialog.Root
@@ -424,6 +437,8 @@
 						'block hover:scale-110 active:scale-95 dark:hover:border-foreground \
                         self-center p-1 ps-1 pbe-1 pbs-1 pe-1',
 					]}
+					bgScrollSpeedMult={isPropertyDisabled ? 0 : 1}
+					bgNoiseBlurAdjustment={isPropertyDisabled ? '1px' : '0px'}
 				>
 					<ColorPickerPreview
 						color={colord(
@@ -459,6 +474,8 @@
 	</div>
 {/snippet}
 {#snippet EnumInput(propData: ProcessedPropertyEntry, topLevelCatIdx: number)}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
+
 	{#key effectSettings.values[propData.settingPath]}
 		{#key currentEnumOpen === propData.settingPath || currentEnumOpen === ''}
 			<div class="inline-flex align-middle px-0.5">
@@ -534,6 +551,8 @@
 								? 'invalid-enum-value'
 								: ''
 							: ''}
+						bgScrollSpeedMult={isPropertyDisabled ? 0 : 1}
+						bgNoiseBlurAdjustment={isPropertyDisabled ? '1px' : '0px'}
 					>
 						{propData.enum?.find(
 							(enumVal) => enumVal === effectSettings.values[propData.settingPath],
@@ -655,11 +674,11 @@
 				  typeof editorDisplayNameStrOrObject.text === 'string'
 				? editorDisplayNameStrOrObject.text
 				: undefined}
+	{@const isPropertyDisabled = disabledProps.has(propData.settingPath)}
 
 	<div
-		class="config-property {disabledProps.has(propData.settingPath)
-			? 'disabled-config-property'
-			: ''}"
+		class="config-property {isPropertyDisabled ? 'disabled-config-property' : ''}"
+		{@attach (el) => {}}
 	>
 		<p class="config-property-entry mx-50 text-center flex justify-between items-center">
 			<!-- <p class="config-property-entry"> -->

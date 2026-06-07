@@ -50,13 +50,6 @@
                 "inBloomEditor": {
                     "stepSize": 1
                 }
-            },
-            "vsbloom.nativeRuntime.enabled": {
-                "order": 4,
-                "type": "boolean",
-                "default": false,
-                "description": "Whether or not to enable the VSBloom Native Runtime: This is a native C++ binary used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript, when enabled it will start and stop as a sub-process tied to the VSCode window.",
-                "markdownDescription": "Whether or not to enable the **__VSBloom Native Runtime__**: This is a *native C++ binary* used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript alone. When enabled, a process named `VSBloomNativeRuntime` will start and stop as a sub-process tied to the VSCode window."
             }
         }
     },
@@ -98,6 +91,20 @@
                 "default": true,
                 "description": "Whether or not to enable anti-aliasing for canvas-based effect rendering. May slightly affect performance.",
                 "markdownDescription": "Whether or not to enable anti-aliasing for canvas-based effect rendering. *May slightly affect performance*"
+            }
+        }
+    },
+    {
+        "title": "Native Runtime",
+        "order": -1,
+        "categoryDescription": "Configurations that apply to the VSBloom Native Runtime, if it's enabled.",
+        "properties": {
+            "vsbloom.nativeRuntime.enabled": {
+                "order": 1,
+                "type": "boolean",
+                "default": false,
+                "description": "Whether or not to enable the VSBloom Native Runtime: This is a native C++ binary used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript, when enabled it will start and stop as a sub-process tied to the VSCode window.",
+                "markdownDescription": "Whether or not to enable the **__VSBloom Native Runtime__**: This is a *native C++ binary* used to augment the functionality of VSBloom with operating-specific features that are not normally possible in NodeJS and JavaScript alone. When enabled, a process named `VSBloomNativeRuntime` will start and stop as a sub-process tied to the VSCode window."
             }
         }
     }

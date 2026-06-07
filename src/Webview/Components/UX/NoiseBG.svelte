@@ -3,6 +3,7 @@
 
 	let {
 		scrollSpeed = 1,
+		scrollParallaxFactor = 1,
 		scaleFactor = 1,
 		opacity = 1,
 		doDefaultAnimation = true,
@@ -20,7 +21,9 @@
 		: 'mono'}.png'); --bg-size-scaled: calc(({128 *
 		scaleFactor}px / var(--scale-factor)) * 2.1); {doDefaultAnimation
 		? `animation: scrollNoise ${16.18 * scrollSpeed}s linear infinite; `
-		: ''}opacity: {opacity}{reverseDirection ? '; transform: rotate(180deg)' : ''}; {nsStyling}"
+		: ''}opacity: {opacity}{reverseDirection
+		? '; transform: rotate(180deg)'
+		: ''}; --bg-scroll-speed-mult: {scrollSpeed}; --noisebg-scroll-parallax-factor: {scrollParallaxFactor}; {nsStyling}"
 	{...restProps}
 ></div>
 
@@ -33,13 +36,23 @@
 
 		--bg-size-scaled: calc((160px / var(--scale-factor)) * 2.1);
 		--scroll-anim-offset-x: calc(
-			var(--bg-size-scaled) * var(--scroll-anim-parallaxed-progress-x)
+			var(--bg-size-scaled) *
+				(
+					var(--scroll-anim-progress) +
+						(var(--mouse-parallax-x) * var(--noisebg-scroll-parallax-factor))
+				) *
+				var(--bg-scroll-speed-mult)
 		);
 
 		background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px);
 		background-repeat: repeat;
 		--scroll-anim-offset-y: calc(
-			var(--bg-size-scaled) * var(--scroll-anim-parallaxed-progress-y)
+			var(--bg-size-scaled) *
+				(
+					var(--scroll-anim-progress) +
+						(var(--mouse-parallax-y) * var(--noisebg-scroll-parallax-factor))
+				) *
+				var(--bg-scroll-speed-mult)
 		);
 
 		background-position: var(--scroll-anim-offset-x) var(--scroll-anim-offset-y);

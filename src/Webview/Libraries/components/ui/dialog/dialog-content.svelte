@@ -1,12 +1,14 @@
 <script lang="ts">
-	import { Dialog as DialogPrimitive } from "bits-ui";
-	import DialogPortal from "./dialog-portal.svelte";
-	import XIcon from "@lucide/svelte/icons/x";
-	import type { Snippet } from "svelte";
-	import * as Dialog from "./index.js";
-	import { cn, type WithoutChildrenOrChild } from "$webview-svelte-lib/utils.js";
-	import type { ComponentProps } from "svelte";
-	import { directories } from "../../../../Global/Directories.svelte";
+	import { Dialog as DialogPrimitive } from 'bits-ui';
+	import DialogPortal from './dialog-portal.svelte';
+	import XIcon from '@lucide/svelte/icons/x';
+	import type { Snippet } from 'svelte';
+	import * as Dialog from './index.js';
+	import { cn, type WithoutChildrenOrChild } from '$webview-svelte-lib/utils.js';
+	import type { ComponentProps } from 'svelte';
+	import { directories } from '../../../../Global/Directories.svelte';
+	import NoiseBG from '../../../../Components/UX/NoiseBG.svelte';
+	import NoiseScrollTicker from '../../../../Components/UX/NoiseScrollTicker.svelte';
 
 	let {
 		ref = $bindable(null),
@@ -28,15 +30,29 @@
 		bind:ref
 		data-slot="dialog-content"
 		class={cn(
-			"bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-0 data-[state=open]:zoom-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg p-6 shadow-lg duration-200",
-			className
+			'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-0 data-[state=open]:zoom-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg p-6 shadow-lg duration-200',
+			className,
 		)}
 		{...restProps}
 	>
 		<div
 			class="bg-background rounded-lg border dialog-background absolute top-0 left-0 w-full h-full select-none pointer-events-none scroll-noise"
-			style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1); background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px); background-repeat: repeat;`}
-		></div>
+			// style={`background-image: url('${directories.imagery}/webview/bluenoise/opaque_mono_90p_transparent.png'); --bg-size-scaled: calc((128px / var(--scale-factor)) * 2.1); background-size: var(--bg-size-scaled, 128px) var(--bg-size-scaled, 128px); background-repeat: repeat;`}
+		>
+			<NoiseScrollTicker>
+				<NoiseBG
+					opacity={0.314}
+					useChromaBG={false}
+					doDefaultAnimation={false}
+					scaleFactor={1.1618}
+					scrollSpeed={1}
+					class={cn(
+						'noise-bg dialog-content-noise-bg w-full h-full absolute top-0 left-0 pointer-events-none select-none ',
+					)}
+					style="filter: blur(calc((1.25px / var(--scale-factor)) * 2.1)) brightness(75%) saturate(50%);"
+				/>
+			</NoiseScrollTicker>
+		</div>
 		{@render children?.()}
 		{#if showCloseButton}
 			<DialogPrimitive.Close

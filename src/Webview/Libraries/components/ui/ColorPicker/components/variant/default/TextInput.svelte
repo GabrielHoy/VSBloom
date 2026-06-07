@@ -1,9 +1,11 @@
 <script lang="ts">
-    import { fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import type { Texts } from '../../../utils/texts.js';
 	import type { RgbaColor, HsvaColor } from '../../colord';
-    import { backOut, linear } from 'svelte/easing';
+	import { backOut, linear } from 'svelte/easing';
 	import { Separator } from '../../../../separator';
+	import NoiseBG from '../../../../../../../Components/UX/NoiseBG.svelte';
+	import NoiseScrollTicker from '../../../../../../../Components/UX/NoiseScrollTicker.svelte';
 
 	interface Props {
 		/** if set to false, disables the alpha channel */
@@ -29,15 +31,17 @@
 		hex = $bindable(),
 		textInputModes,
 		texts,
-		onInput
+		onInput,
 	}: Props = $props();
 
 	const HEX_COLOR_REGEX = /^#?([A-F0-9]{6}|[A-F0-9]{8})$/i;
 
 	// svelte-ignore state_referenced_locally
-let mode: 'hex' | 'rgb' | 'hsv' = $state(textInputModes[0] || 'hex');
+	let mode: 'hex' | 'rgb' | 'hsv' = $state(textInputModes[0] || 'hex');
 
-	let nextMode = $derived(textInputModes[(textInputModes.indexOf(mode) + 1) % textInputModes.length]);
+	let nextMode = $derived(
+		textInputModes[(textInputModes.indexOf(mode) + 1) % textInputModes.length],
+	);
 
 	let h = $derived(Math.round(hsv.h));
 	let s = $derived(Math.round(hsv.s));
@@ -71,58 +75,172 @@ let mode: 'hex' | 'rgb' | 'hsv' = $state(textInputModes[0] || 'hex');
 	}
 </script>
 
-<div class="text-input">
-	<div class="input-container">
-		{#if mode === 'hex'}
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }}
-				aria-label={texts.label.hex} value={hex} oninput={updateHex} style:flex={4} />
-		{:else if mode === 'rgb'}
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.r} value={rgb.r} type="number" min="0" max="255" oninput={updateRgb('r')} />
-			<Separator orientation="vertical" class="-mx-2" style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "/>
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.g} value={rgb.g} type="number" min="0" max="255" oninput={updateRgb('g')} />
-			<Separator orientation="vertical" class="-mx-2" style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "/>
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.b} value={rgb.b} type="number" min="0" max="255" oninput={updateRgb('b')} />
-		{:else}
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.h} value={h} type="number" min="0" max="360" oninput={updateHsv('h')} />
-			<Separator orientation="vertical" class="-mx-2" style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "/>
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.s} value={s} type="number" min="0" max="100" oninput={updateHsv('s')} />
-			<Separator orientation="vertical" class="-mx-2" style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "/>
-			<input
-			in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }} aria-label={texts.label.v} value={v} type="number" min="0" max="100" oninput={updateHsv('v')} />
-		{/if}
-		{#if isAlpha}
-			{#key mode}
-			<Separator orientation="vertical" class="-mx-2" style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "/>
-				<input
-				in:fly={{ y: "-25%", duration: 250, easing: backOut, opacity: 0 }}
-					aria-label={texts.label.a}
-					value={a}
-					type="number"
-					min="0"
-					max="1"
-					step="0.01"
-					oninput={mode === 'hsv' ? updateHsv('a') : updateRgb('a')}
+{#snippet NoiseBackdrop()}
+	<NoiseBG
+		opacity={0.45}
+		useChromaBG={true}
+		doDefaultAnimation={false}
+		scaleFactor={1.618}
+		scrollSpeed={0.618}
+		scrollParallaxFactor={0.5}
+		class={'noise-bg button-clrpkr-noise-bg w-[calc(100%-4px)] h-[calc(100%-4px)] absolute top-0 left-0 pointer-events-none select-none '}
+		style="
+            filter: blur(calc((1.25px / var(--scale-factor)) * 2.1)) brightness(75%) saturate(50%);
+            inset: 2px;
+            border-radius: inherit;
+        "
+	/>
+{/snippet}
+
+<NoiseScrollTicker>
+	<div class="text-input">
+		<div class="input-container">
+			{#if mode === 'hex'}
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.hex}
+						value={hex}
+						oninput={updateHex}
+						style:flex={4}
+					/>
+				</div>
+			{:else if mode === 'rgb'}
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.r}
+						value={rgb.r}
+						type="number"
+						min="0"
+						max="255"
+						oninput={updateRgb('r')}
+					/>
+				</div>
+				<Separator
+					orientation="vertical"
+					class="-mx-2"
+					style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "
 				/>
-			{/key}
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.g}
+						value={rgb.g}
+						type="number"
+						min="0"
+						max="255"
+						oninput={updateRgb('g')}
+					/>
+				</div>
+				<Separator
+					orientation="vertical"
+					class="-mx-2"
+					style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "
+				/>
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.b}
+						value={rgb.b}
+						type="number"
+						min="0"
+						max="255"
+						oninput={updateRgb('b')}
+					/>
+				</div>
+			{:else}
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.h}
+						value={h}
+						type="number"
+						min="0"
+						max="360"
+						oninput={updateHsv('h')}
+					/>
+				</div>
+				<Separator
+					orientation="vertical"
+					class="-mx-2"
+					style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "
+				/>
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.s}
+						value={s}
+						type="number"
+						min="0"
+						max="100"
+						oninput={updateHsv('s')}
+					/>
+				</div>
+				<Separator
+					orientation="vertical"
+					class="-mx-2"
+					style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "
+				/>
+				<div class="bg-transparent relative w-full h-full">
+					{@render NoiseBackdrop()}
+					<input
+						in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+						aria-label={texts.label.v}
+						value={v}
+						type="number"
+						min="0"
+						max="100"
+						oninput={updateHsv('v')}
+					/>
+				</div>
+			{/if}
+			{#if isAlpha}
+				{#key mode}
+					<Separator
+						orientation="vertical"
+						class="-mx-2"
+						style="background: linear-gradient(to bottom, transparent, var(--vscode-editor-foreground), transparent); "
+					/>
+					<div class="bg-transparent relative w-full h-full">
+						{@render NoiseBackdrop()}
+						<input
+							in:fly={{ y: '-25%', duration: 250, easing: backOut, opacity: 0 }}
+							aria-label={texts.label.a}
+							value={a}
+							type="number"
+							min="0"
+							max="1"
+							step="0.01"
+							oninput={mode === 'hsv' ? updateHsv('a') : updateRgb('a')}
+						/>
+					</div>
+				{/key}
+			{/if}
+		</div>
+
+		{#if textInputModes.length > 1}
+			<Separator
+				orientation="horizontal"
+				class="translate-y-1"
+				style="background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), var(--vscode-editor-foreground), transparent); "
+			/>
+			<button type="button" onclick={() => (mode = nextMode)}>
+				{@render NoiseBackdrop()}
+				<span class="disappear" aria-hidden="true">{texts.color[mode]}</span>
+				<span class="appear">{texts.changeTo} {texts.color[nextMode]}</span>
+			</button>
+		{:else}
+			<div class="button-like">{texts.color[mode]}</div>
 		{/if}
 	</div>
-
-	{#if textInputModes.length > 1}
-	<Separator orientation="horizontal" class="translate-y-1" style="background: linear-gradient(to right, transparent, var(--vscode-editor-foreground), var(--vscode-editor-foreground), transparent); "/>
-		<button type="button" onclick={() => (mode = nextMode)}>
-			<span class="disappear" aria-hidden="true">{texts.color[mode]}</span>
-			<span class="appear">{texts.changeTo} {texts.color[nextMode]}</span>
-		</button>
-	{:else}
-		<div class="button-like">{texts.color[mode]}</div>
-	{/if}
-</div>
+</NoiseScrollTicker>
 
 <!-- 
 @component text inputs for the hex, rgb and hsv colors. This component cannot be imported
@@ -168,13 +286,14 @@ _N.A._
 	button,
 	.button-like {
 		flex: 2;
-		border: calc(var(--spacing) * 0.25) solid color-mix(in srgb, var(--input) 50%, transparent);
-		background-color: var(--cp-input-color, #eee);
+		border: calc(var(--spacing) * 0.25) solid
+			color-mix(in srgb, var(--color-border) 33%, transparent);
+		background-color: color-mix(in srgb, var(--color-border) 5%, transparent);
 		color: var(--cp-text-color, var(--cp-border-color));
 		padding: 0;
 		border-radius: calc(var(--spacing) * 2);
 		height: calc(var(--spacing) * 7.5);
-		line-height: 1;/*calc(var(--spacing) * 7.5);*/
+		line-height: 1; /*calc(var(--spacing) * 7.5);*/
 		text-align: center;
 		transition: scale 0.618s var(--vsbloom-bouncy-ease);
 		user-select: none;
@@ -194,7 +313,9 @@ _N.A._
 		height: calc(var(--spacing) * 10);
 		color: var(--foreground);
 		width: 75%;
-		transition: background-color 0.2s, scale 0.618s var(--vsbloom-bouncy-ease);
+		transition:
+			background-color 0.2s,
+			scale 0.618s var(--vsbloom-bouncy-ease);
 		cursor: pointer;
 		font-family: inherit;
 	}

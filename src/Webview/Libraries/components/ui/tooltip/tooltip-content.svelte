@@ -56,7 +56,8 @@
 					useChromaBG={true}
 					doDefaultAnimation={false}
 					scaleFactor={1}
-					scrollSpeed={16.18}
+					scrollSpeed={1}
+					scrollParallaxFactor={13.14159}
 					class="noise-bg blur-[1px] brightness-75 saturate-50 tooltip-noise-bg w-full h-full rounded-md absolute top-0 left-0 pointer-events-none select-none "
 				/>
 			</div>
@@ -75,7 +76,8 @@
 						doDefaultAnimation={false}
 						scaleFactor={1}
 						reverseDirection={true}
-						scrollSpeed={16.18}
+						scrollSpeed={1}
+						scrollParallaxFactor={13.14159}
 						class="noise-bg blur-[1px] brightness-75 saturate-50 tooltip-noise-bg w-[calc(100%+10px)] h-[calc(100%+10px)] translate-x-[-5px] translate-y-[-5px] absolute top-0 left-0 pointer-events-none select-none "
 					/>
 				</div>
@@ -121,7 +123,8 @@
 								useChromaBG={true}
 								doDefaultAnimation={false}
 								scaleFactor={1}
-								scrollSpeed={16.18}
+								scrollSpeed={1}
+								scrollParallaxFactor={13.14159}
 								class="noise-bg blur-[1px] brightness-75 saturate-50 tooltip-noise-bg w-[calc(100%+10px)] h-[calc(100%+10px)] translate-x-[-5px] translate-y-[-5px] absolute top-0 left-0 pointer-events-none select-none "
 							/>
 						</div>
@@ -148,7 +151,6 @@
 		--scroll-anim-offset-y: calc(
 			var(--bg-size-scaled) * (var(--scroll-anim-parallaxed-progress-y) * 0.7071067)
 		);
-		/* animation: scrollNoise 16.18s linear infinite; */
 	}
 
 	.shad-tooltip-arrow {
@@ -157,8 +159,6 @@
 		);
 
 		background-position: var(--scroll-anim-offset-x) var(--scroll-anim-offset-y);
-
-		/* animation: scrollNoiseOffsetNeg45Deg 16.18s linear infinite; */
 	}
 
 	.bloom-image {
