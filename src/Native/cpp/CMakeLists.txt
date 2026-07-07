@@ -65,6 +65,7 @@ set_target_properties(VSBloomNativeRuntime PROPERTIES OUTPUT_NAME "VSBloomNative
 
 target_include_directories(VSBloomNativeRuntime PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/miniaudio
 )
 
 target_link_libraries(VSBloomNativeRuntime PRIVATE
@@ -84,6 +85,11 @@ if(WIN32)
         NOMINMAX
         UNICODE
         _UNICODE
+
+        # DirectSound/WinMM don't support loopback capture,
+        # no reason to compile them in as fallback backends.
+        MA_NO_DSOUND
+        MA_NO_WINMM
     )
     target_link_libraries(VSBloomNativeRuntime PRIVATE
         ole32   # COM initialisation: CoInitializeEx, CoCreateInstance

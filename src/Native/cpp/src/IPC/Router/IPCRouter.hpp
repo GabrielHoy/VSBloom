@@ -25,6 +25,7 @@
 #include "../Cryptography/IPCCryptography.hpp"
 #include "../IPCSendables.hpp"
 #include "../Methods/IPCMethods.hpp"
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -38,6 +39,7 @@ namespace VSBloom::IPC {
       private:
         const methodHandlerMap_t&                  methodRequestHandlers;
         const messageSubmissionCallback_t          messageSubmissionCallback;
+        std::mutex                                 messageSubmittingMutex;
         std::optional<Cryptography::EncryptionKey> encryptionKey;
 
       public:

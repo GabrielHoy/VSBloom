@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace VSBloom::IPC::Cryptography {
 
@@ -31,6 +32,13 @@ namespace VSBloom::IPC::Cryptography {
     EncryptionKey                GenerateSessionEncryptionKey();
     std::string                  KeyToHex(const EncryptionKey& key);
     std::optional<EncryptionKey> KeyFromHex(const std::string& hex);
+
+    namespace Base64 {
+
+        std::string                              Encode(const std::uint8_t* data, std::size_t len);
+        std::optional<std::vector<std::uint8_t>> Decode(const std::string& s);
+
+    } // namespace Base64
 
     /**
      * Encrypts plaintext with AES-256-GCM encryption.

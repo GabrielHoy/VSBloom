@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "Audio/AudioDevice.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
@@ -124,5 +125,32 @@ namespace VSBloom::IPC {
     };
 
     static_assert(IsConceptuallySendableMessage<SecureAcknowledgementMessage>);
+
+    struct DebugOutputMessage {
+        static constexpr const char* name = "debug-output";
+        const json_t                 dbgOutput;
+
+        json_t DataToJSON() const noexcept {
+            return {{"message", dbgOutput.dump()}};
+        }
+    };
+
+    static_assert(IsConceptuallySendableMessage<DebugOutputMessage>);
+
+    struct AudioDeviceEnumerationMessage {
+        static constexpr const char*                   name = "audio-device-enumeration";
+        const std::vector<VSBloom::Audio::AudioDevice> devices;
+
+        json_t DataToJSON() const noexcept {
+            json_t audioDeviceList = json_t::array();
+            for (const VSBloom::Audio::AudioDevice& device : devices) {
+                audioDeviceList.push_back(device.ToJSON());
+            }
+
+            return {{"devices", audioDeviceList}};
+        }
+    };
+
+    static_assert(IsConceptuallySendableMessage<AudioDeviceEnumerationMessage>);
 
 } // namespace VSBloom::IPC

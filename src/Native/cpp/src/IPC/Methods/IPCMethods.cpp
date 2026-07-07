@@ -1,6 +1,11 @@
 #include "IPCMethods.hpp"
+#include "Audio/AudioDevice.hpp"
+#include "Audio/DeviceEnumeration.hpp"
 #include "IPC/IPCSendables.hpp"
 #include <iostream>
+#ifdef DEBUG
+    #include "IPC/Debug/DebugCallable.hpp"
+#endif
 
 /**
  * Helper macro to expand a method's name to the key-value
@@ -37,8 +42,30 @@ namespace VSBloom::IPC {
         return SecureAcknowledgementMessage{stringifiedMessage};
     }
 
+    DebugOutputMessage OnDebugTestMessageInvoked(const methodRequest_t& message) {
+#ifdef DEBUG
+        DebugCallable(message);
+        return DebugOutputMessage{{{"acknowledgement", "true"}}};
+#else
+        return DebugOutputMessage{
+            {{"invalid_invocation",
+              "The VSBloom Native Host was not built in DEBUG mode. You cannot use DebugTestMessage in Release builds."}}
+        };
+#endif
+    }
+
+    AudioDeviceEnumerationMessage OnAudioDeviceEnumerationInvoked(const methodRequest_t& message) {
+        message.contains("unused");
+
+        const std::vector<VSBloom::Audio::AudioDevice> curDevices = VSBloom::Audio::EnumerateAudioDevices();
+
+        return AudioDeviceEnumerationMessage{curDevices};
+    }
+
     methodHandlerMap_t methodRequestHandlers = {
         EXPOSE_METHOD("test-secure-message", OnTestSecureMessageInvoked),
+        EXPOSE_METHOD("debug-test-message", OnDebugTestMessageInvoked),
+        EXPOSE_METHOD("audio-device-enumeration", OnAudioDeviceEnumerationInvoked),
     };
 
 } // namespace VSBloom::IPC

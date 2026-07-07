@@ -3,15 +3,14 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <stdexcept>
-#include <vector>
 
 namespace VSBloom::IPC::Cryptography {
 
-    namespace {
+    namespace Base64 {
 
         constexpr char kB64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-        std::string Base64Encode(const std::uint8_t* data, std::size_t len) {
+        std::string Encode(const std::uint8_t* data, std::size_t len) {
             std::string out;
             out.reserve(((len + 2u) / 3u) * 4u);
             for (std::size_t i = 0; i < len; i += 3) {
@@ -30,7 +29,7 @@ namespace VSBloom::IPC::Cryptography {
             return out;
         }
 
-        std::optional<std::vector<std::uint8_t>> Base64Decode(const std::string& s) {
+        std::optional<std::vector<std::uint8_t>> Decode(const std::string& s) {
             if (s.size() % 4 != 0) {
                 return std::nullopt;
             }
@@ -76,7 +75,7 @@ namespace VSBloom::IPC::Cryptography {
             return out;
         }
 
-    } // namespace
+    } // namespace Base64
 
     EncryptionKey GenerateSessionEncryptionKey() {
         EncryptionKey key{};
@@ -173,11 +172,11 @@ namespace VSBloom::IPC::Cryptography {
         packed.insert(packed.end(), ciphertext.data(), ciphertext.data() + ciphertextSize);
         packed.insert(packed.end(), tag, tag + TAG_SIZE);
 
-        return Base64Encode(packed.data(), packed.size());
+        return Base64::Encode(packed.data(), packed.size());
     }
 
     std::optional<std::string> Decrypt(const EncryptionKey& key, const std::string& encryptedBase64) {
-        auto packed = Base64Decode(encryptedBase64);
+        auto packed = Base64::Decode(encryptedBase64);
         if (!packed.has_value() || packed->size() < NONCE_SIZE + TAG_SIZE) {
             return std::nullopt;
         }

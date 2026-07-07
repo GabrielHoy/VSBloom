@@ -42,7 +42,6 @@ namespace VSBloom {
             }
         }
 
-        std::cout << "Parent process terminated(test?)" << std::endl;
         // Process dead; invoke our termination callback.
         onProcessShutdownCallback();
     }

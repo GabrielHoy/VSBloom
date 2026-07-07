@@ -106,6 +106,20 @@ int main() {
     // to utilize for all subsequent traffic accordingly.
     ipcRouter.SetEncryptionKey(encryptionKey);
 
+#ifdef DEBUG
+    // When in debug mode, we'll simulate a quick invocation of the 'debug-test-message' IPC method for testing purposes
+    nlohmann::json initialDebugMessage = {{"type", "audio-device-enumeration"}, {"data", {{"unused", "42"}}}};
+
+    const std::string dbgMsgStr = initialDebugMessage.dump();
+    ipcRouter.OnNewMessageReceived(
+        nlohmann::json{
+            {"_dbg", true},
+            {"enc", VSBloom::IPC::Cryptography::Base64::Encode((uint8_t*)dbgMsgStr.data(), dbgMsgStr.size())}
+        }.dump()
+        // "{\"_dbg\": true, \"enc\": \"eyJ0eXBlIjogImRlYnVnLXRlc3QtbWVzc2FnZSIsICJkYXRhIjogeyJ1bnVzZWQiOiAiNDIifX0=\"}"
+    );
+#endif
+
     // We're now completely setup and ready to go, so we'll wait upon the
     // procShutdownFuture to be fulfilled signalling that we should exit
     // the process accordingly.

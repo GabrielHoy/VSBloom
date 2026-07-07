@@ -53,14 +53,34 @@ namespace VSBloom::IPC {
                           << std::endl;
                 return;
             }
-            std::optional<std::string> decrypted =
-                Cryptography::Decrypt(*encryptionKey, outer["enc"].get<std::string>());
-            if (!decrypted.has_value()) {
-                std::cerr << "Message decryption failed (auth tag mismatch or malformed input), rejecting..."
-                          << std::endl;
-                return;
+
+            std::string encMsgStr = outer["enc"].get<std::string>();
+// If the program was build in debug mode,
+// accept non-encrypted NDJSON messages:
+// these will have a `_dbg` key present.
+#ifdef DEBUG
+            if (outer.contains("_dbg")) {
+                auto b64DecodedMsg = Cryptography::Base64::Decode(encMsgStr);
+                if (!b64DecodedMsg.has_value()) {
+                    std::cerr << "Failed to decode base64 _dbg message, skipping..." << std::endl;
+                    return;
+                }
+
+                messageToProcess = std::string(b64DecodedMsg->begin(), b64DecodedMsg->end());
             }
-            messageToProcess = std::move(*decrypted);
+#endif
+
+            // If the message didn't get pre-set from the above debug block,
+            // attempt to decrypt it using the session key.
+            if (messageToProcess.empty()) {
+                std::optional<std::string> decrypted = Cryptography::Decrypt(*encryptionKey, encMsgStr);
+                if (!decrypted.has_value()) {
+                    std::cerr << "Message decryption failed (auth tag mismatch or malformed input), rejecting..."
+                              << std::endl;
+                    return;
+                }
+                messageToProcess = std::move(*decrypted);
+            }
         } else {
             messageToProcess = message;
         }
@@ -93,6 +113,13 @@ namespace VSBloom::IPC {
         // exists that we need to invoke with the message payload to actually *do* what
         // the message wants done.
         const methodHandler_t handler = methodRequestHandlers.at(messageType);
+
+        // Only last thing to verify is the message payload containing a 'data' key of an
+        // object type, so we know that we have *something* to actually invoke our handler with.
+        if (!parsedMessage.contains("data") || parsedMessage["data"].type() != nlohmann::json::value_t::object) {
+            std::cerr << "A message was received that did not contain a 'data' object, skipping..." << std::endl;
+            return;
+        }
 
         // Go ahead and invoke the handler with our message payload; keep note of its return
         try {
@@ -143,6 +170,9 @@ namespace VSBloom::IPC {
             wireMessage = serializedPayload;
         }
 
+        // Lock our message submission mutex and invoke the submission callback with the message we
+        // want to send 'down the wire'
+        std::lock_guard<std::mutex> msgSubmissionLock(messageSubmittingMutex);
         messageSubmissionCallback(wireMessage);
     }
 
