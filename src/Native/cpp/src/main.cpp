@@ -108,7 +108,7 @@ int main() {
 
 #ifdef DEBUG
     // When in debug mode, we'll simulate a quick invocation of the 'debug-test-message' IPC method for testing purposes
-    nlohmann::json initialDebugMessage = {{"type", "audio-device-enumeration"}, {"data", {{"unused", "42"}}}};
+    nlohmann::json initialDebugMessage = {{"type", "debug-test-message"}, {"data", {{"unused", "42"}}}};
 
     const std::string dbgMsgStr = initialDebugMessage.dump();
     ipcRouter.OnNewMessageReceived(

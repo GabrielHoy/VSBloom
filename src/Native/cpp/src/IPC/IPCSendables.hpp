@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Audio/AudioDevice.hpp"
+#include "Audio/Device/AudioDevice.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>

@@ -39,3 +39,5 @@ CMakeUserPresets.json
 src/Native/cpp/build/
 #Native vcpkg cached files
 vcpkg_installed/
+#Native debug files
+imgui.ini

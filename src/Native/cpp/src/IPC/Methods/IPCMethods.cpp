@@ -1,10 +1,10 @@
 #include "IPCMethods.hpp"
-#include "Audio/AudioDevice.hpp"
-#include "Audio/DeviceEnumeration.hpp"
+#include "Audio/Device/AudioDevice.hpp"
+#include "Audio/Device/DeviceEnumeration.hpp"
 #include "IPC/IPCSendables.hpp"
 #include <iostream>
 #ifdef DEBUG
-    #include "IPC/Debug/DebugCallable.hpp"
+    #include "Debug/DebugCallable.hpp"
 #endif
 
 /**

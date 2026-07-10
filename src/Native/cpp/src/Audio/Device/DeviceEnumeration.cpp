@@ -4,30 +4,13 @@
  * Implements `VSBloom::Audio::EnumerateAudioDevices()` on top of miniaudio
  */
 #include "DeviceEnumeration.hpp"
+#include "DeviceId.hpp"
 #include "miniaudio.h"
 #include <stdexcept>
 
 namespace VSBloom::Audio {
 
     namespace {
-
-        /**
-         * `ma_device_id` is a union of <backend-specific representations>
-         * so without a reliable way to interpret it, we'll keep the raw
-         * bytes behind it as a hex-encoded string.
-         */
-        std::string DeviceIdToHex(const ma_device_id& id) {
-            static constexpr char kHex[] = "0123456789abcdef";
-            const auto*           bytes  = reinterpret_cast<const unsigned char*>(&id);
-
-            std::string hex;
-            hex.reserve(sizeof(ma_device_id) * 2u);
-            for (std::size_t i = 0; i < sizeof(ma_device_id); ++i) {
-                hex += kHex[bytes[i] >> 4u];
-                hex += kHex[bytes[i] & 0xFu];
-            }
-            return hex;
-        }
 
         AudioDevice ToAudioDevice(const ma_device_info& info, DeviceDataFlowType deviceDataFlowType) {
             return AudioDevice{

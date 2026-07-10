@@ -1,8 +1,22 @@
 {
-  "name": "vsbloom-native-runtime",
-  "version": "1.0.0",
-  "dependencies": [
-    "nlohmann-json",
-    "openssl"
-  ]
+    "name": "vsbloom-native-runtime",
+    "version": "1.0.0",
+    "dependencies": [
+        "nlohmann-json",
+        "openssl"
+    ],
+    "features": {
+        "debug-tools": {
+            "description": "Debug-Build specific tooling",
+            "dependencies": [
+                {
+                    "name": "imgui",
+                    "features": [
+                        "win32-binding",
+                        "dx11-binding"
+                    ]
+                }
+            ]
+        }
+    }
 }

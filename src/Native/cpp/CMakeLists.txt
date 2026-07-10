@@ -7,6 +7,14 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment target")
 endif()
 
+# We never install ImGui on Release configures, this needs declared before
+# project() below since manifest install hooks run at that point.
+# (Currently Win32-only since the DX11 ImGui bindings we currently use
+# are Windows-only...)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)
+    set(VCPKG_MANIFEST_FEATURES "debug-tools")
+endif()
+
 # Grab the version string for CMake to use from the `vcpkg.json`
 # sibling file in this directory - we'll use its value for our build
 # versioning accordingly.
@@ -72,6 +80,26 @@ target_link_libraries(VSBloomNativeRuntime PRIVATE
     nlohmann_json::nlohmann_json
     OpenSSL::Crypto
 )
+
+# Forward the DEBUG compile definition to the target if we're building
+# a Debug-"flavored" build.
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG)
+
+    # If we're on Win32 as well, link our debug-specific libraries / bindings
+    # and define that the Debug Window should be compiled into the build accordingly
+    if(WIN32)
+        find_package(imgui CONFIG REQUIRED)
+        target_link_libraries(VSBloomNativeRuntime PRIVATE
+            imgui::imgui
+            d3d11         # D3D11CreateDeviceAndSwapChain
+            dxgi          # swap chain / DXGI interfaces
+            d3dcompiler   # imgui_impl_dx11's runtime shader compilation (D3DCompile)
+        )
+        
+        target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG_WINDOW_ENABLED)
+    endif()
+endif()
 
 # Platform-specific audio backend(s) and metadata
 if(WIN32)
