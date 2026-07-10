@@ -142,11 +142,11 @@ namespace VSBloom::Debug {
             }
 
           public:
-            std::mutex                   latestSnapshotMutex;
-            Audio::AudioAnalysisSnapshot latestSnapshot;
+            std::mutex                latestSnapshotMutex;
+            Audio::AnalyzedAudioFrame latestSnapshot;
 
             AudioDebugState() {
-                captureManager.SetOnFrameAggregatedCallback([this](const Audio::AudioAnalysisSnapshot& snapshot) {
+                captureManager.SetOnFrameAggregatedCallback([this](const Audio::AnalyzedAudioFrame& snapshot) {
                     std::lock_guard<std::mutex> lock(latestSnapshotMutex);
                     latestSnapshot = snapshot;
                 });
@@ -163,15 +163,11 @@ namespace VSBloom::Debug {
             }
 
             void DrawUI() {
-                Audio::AudioAnalysisSnapshot aggregatedSnapshot;
+                Audio::AnalyzedAudioFrame aggregatedSnapshot;
                 {
                     ImGui::Begin("Audio Device Enumeration");
 
-                    ImGui::Separator();
-
-                    ImGui::Text("Render Devices:");
-
-                    ImGui::Spacing();
+                    ImGui::SeparatorText("Render Devices");
                     if (ImGui::Button("Refresh")) {
                         RefreshDeviceList();
                     }
@@ -198,20 +194,28 @@ namespace VSBloom::Debug {
                 {
                     ImGui::Begin("Audio Aggregation");
 
-                    ImGui::Text("Merged avg. amplitude: %.4f", aggregatedSnapshot.avgAmplitude);
+                    ImGui::SeparatorText("Amplitude");
+
+                    ImGui::CenteredText(std::format("Merged Average: {:.4f}", aggregatedSnapshot.avgAmplitude).c_str());
                     ImGui::ProgressBar(std::clamp(aggregatedSnapshot.avgAmplitude, 0.0f, 1.0f), ImVec2(-1.0f, 0.0f));
 
-                    ImGui::Text("Merged FFT bins (placeholder):");
+                    ImGui::Spacing();
+                    ImGui::Spacing();
+                    ImGui::SeparatorText("Merged FFT Bins");
+
                     ImGui::PlotHistogram(
                         "##fftBins",
                         aggregatedSnapshot.fftBins.data(),
                         static_cast<int>(aggregatedSnapshot.fftBins.size()),
                         0,
-                        nullptr,
+                        "20Hz - 22.5kHz",
                         0.0f,
                         1.0f,
                         ImVec2(0, 120)
                     );
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
 
                     ImGui::End();
                 }

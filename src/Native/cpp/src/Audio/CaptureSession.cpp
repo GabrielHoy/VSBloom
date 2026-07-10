@@ -1,5 +1,4 @@
 #include "CaptureSession.hpp"
-#include <cmath>
 #include <stdexcept>
 
 namespace VSBloom::Audio {
@@ -35,7 +34,7 @@ namespace VSBloom::Audio {
         ma_device_uninit(&device);
     }
 
-    AudioAnalysisSnapshot CaptureSession::GetLatestAnalysisSnapshot() const {
+    AnalyzedAudioFrame CaptureSession::GetLatestAnalysisSnapshot() const {
         std::lock_guard<std::mutex> lock(snapshotMutex);
         return latestSnapshot;
     }
@@ -51,17 +50,19 @@ namespace VSBloom::Audio {
     }
 
     void CaptureSession::OnAudioData(const float* samples, ma_uint32 frameCount) {
-        // TODO: Placeholder analysis; just RMS amplitude over this callback's
-        // samples. Real FFT analysis (bin computation) slots in here later.
-        // The `fftBins` field will stay zeroed until that point.
-        float sumSquares = 0.0f;
-        for (ma_uint32 i = 0; i < frameCount; ++i) {
-            sumSquares += samples[i] * samples[i];
+        // most calls here won't produce a fresh snapshot,
+        // since WASAPI callback sizes don't line up with the analysis
+        // frame size. When `AccumulateSamples` returns true, a new analysis frame gets produced.
+        if (analyzer.AccumulateSamples(samples, frameCount)) {
+            // TODO: Could make this a little better by only actually producing a snapshot
+            //  when we need it instead of every time there's enough samples for an analysis frame.
+            AnalyzedAudioFrame freshSnapshot;
+            analyzer.ProduceAnalysisFrame(freshSnapshot);
+            {
+                std::lock_guard<std::mutex> lock(snapshotMutex);
+                latestSnapshot = std::move(freshSnapshot); // Atomic update of the latest snapshot
+            }
         }
-        const float rms = frameCount > 0 ? std::sqrt(sumSquares / static_cast<float>(frameCount)) : 0.0f;
-
-        std::lock_guard<std::mutex> lock(snapshotMutex);
-        latestSnapshot.avgAmplitude = rms;
     }
 
 } // namespace VSBloom::Audio

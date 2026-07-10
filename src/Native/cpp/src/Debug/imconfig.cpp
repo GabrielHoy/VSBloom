@@ -168,7 +168,7 @@ namespace ImGui {
         style->WindowTitleAlign   = ImVec2(0.5f, 0.5f);
         style->SeparatorTextAlign = ImVec2(0.5f, 0.5f);
 
-        style->ItemSpacing = ImVec2(5.0f, 2.0f);
+        style->ItemSpacing = ImVec2(5.0f, 4.5f);
 
         style->WindowPadding    = ImVec2(8.0f, 8.0f);
         style->WindowRounding   = 5.0f;

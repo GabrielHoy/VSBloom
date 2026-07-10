@@ -69,7 +69,7 @@ namespace VSBloom::Audio {
         }
     }
 
-    void CaptureManager::SetOnFrameAggregatedCallback(std::function<void(const AudioAnalysisSnapshot&)> callback) {
+    void CaptureManager::SetOnFrameAggregatedCallback(std::function<void(const AnalyzedAudioFrame&)> callback) {
         std::lock_guard<std::mutex> lock(frameAgregCbMutex);
         onFrameAggregatedCallback = std::move(callback);
     }
@@ -96,12 +96,12 @@ namespace VSBloom::Audio {
         while (aggregatorShouldRun.load()) {
             nextTick += std::chrono::duration_cast<std::chrono::steady_clock::duration>(pollInterval);
 
-            AudioAnalysisSnapshot mergedSnapshot;
+            AnalyzedAudioFrame mergedSnapshot;
             {
                 std::lock_guard<std::mutex> lock(sessionsMutex);
                 for (const auto& sessionEntry : sessions) {
                     // NOTE: this whole analysis step is a placeholder pending real FFT.
-                    const AudioAnalysisSnapshot sessionSnapshot = sessionEntry.second->GetLatestAnalysisSnapshot();
+                    const AnalyzedAudioFrame sessionSnapshot = sessionEntry.second->GetLatestAnalysisSnapshot();
                     mergedSnapshot.avgAmplitude += sessionSnapshot.avgAmplitude;
                     for (std::size_t i = 0; i < mergedSnapshot.fftBins.size() && i < sessionSnapshot.fftBins.size();
                          ++i) {

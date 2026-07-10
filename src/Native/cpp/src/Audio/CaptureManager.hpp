@@ -61,7 +61,7 @@ namespace VSBloom::Audio {
          * nightmares. Marshal any resulting work on the CaptureManager to
          * another thread instead.
          */
-        void SetOnFrameAggregatedCallback(std::function<void(const AudioAnalysisSnapshot&)> callback);
+        void SetOnFrameAggregatedCallback(std::function<void(const AnalyzedAudioFrame&)> callback);
 
       private:
         void StartAggregationThreadIfNeeded();
@@ -73,8 +73,8 @@ namespace VSBloom::Audio {
         mutable std::mutex                                               sessionsMutex;
         std::unordered_map<std::string, std::unique_ptr<CaptureSession>> sessions;
 
-        std::mutex                                        frameAgregCbMutex;
-        std::function<void(const AudioAnalysisSnapshot&)> onFrameAggregatedCallback;
+        std::mutex                                     frameAgregCbMutex;
+        std::function<void(const AnalyzedAudioFrame&)> onFrameAggregatedCallback;
 
         std::thread       aggregatorThread;
         std::atomic<bool> aggregatorShouldRun{false};
