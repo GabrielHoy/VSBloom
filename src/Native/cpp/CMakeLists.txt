@@ -23,7 +23,7 @@ string(REGEX MATCH "\"version\"[ \t\r\n]*:[ \t\r\n]*\"([^\"]+)\"" _VERSTR "${VCP
 set(VSBLOOM_NATIVE_VERSION "${CMAKE_MATCH_1}")
 project(VSBloomNativeRuntime
     VERSION ${VSBLOOM_NATIVE_VERSION}
-    LANGUAGES CXX
+    LANGUAGES C CXX # C is required for vendor/pffft
 )
 
 # Our RC file on Windows requires some variables to be set for versioning & file metadata:
@@ -64,6 +64,22 @@ endif()
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
+# pffft (hayguen/pffft, pinned commit 08f5ed2618ac06d7dcc83d209d7253dc215274d5)
+# gets its own tiny static library rather than joining the main SOURCES glob below:
+# it's a raw vendored C library with no warning guards etc. - this allows us to build it
+# without having to patch the vendored source and maintain our own fork...
+add_library(VSBloomPFFFT STATIC
+    vendor/pffft/pffft.c
+    vendor/pffft/pffft_common.c
+)
+target_include_directories(VSBloomPFFFT PUBLIC vendor/pffft)
+set_target_properties(VSBloomPFFFT PROPERTIES C_STANDARD 11)
+if(MSVC)
+    target_compile_options(VSBloomPFFFT PRIVATE /W0)
+else()
+    target_compile_options(VSBloomPFFFT PRIVATE -w)
+endif()
+
 #Target sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
@@ -79,6 +95,7 @@ target_include_directories(VSBloomNativeRuntime PRIVATE
 target_link_libraries(VSBloomNativeRuntime PRIVATE
     nlohmann_json::nlohmann_json
     OpenSSL::Crypto
+    VSBloomPFFFT
 )
 
 # Forward the DEBUG compile definition to the target if we're building
