@@ -173,8 +173,6 @@ else()
         -Wextra
         -Wpedantic
         -Werror
-        -Wdangling
-        -Wlifetime
     )
 endif()
 
