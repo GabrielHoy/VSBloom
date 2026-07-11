@@ -9,8 +9,8 @@
  * to invoke some action on our part.
  */
 
-import type * as NativeReceivables from './NativeReceivableMessages';
-import type * as NativeSendables from './NativeSendableMessages';
+import type * as NativeReceivables from './MessageTypes/NativeReceivableMessages';
+import type * as NativeSendables from './MessageTypes/NativeSendableMessages';
 
 //Forward declarations along so we don't have to individually
 //import sendables/receivables separately

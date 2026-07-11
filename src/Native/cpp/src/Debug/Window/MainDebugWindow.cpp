@@ -1,10 +1,12 @@
+#include "Debug/Window/Panels/BasePanel.hpp"
 #if defined(DEBUG_WINDOW_ENABLED)
 
-    #include "MainDebugWindow.hpp"
     #include "Debug/Spring.hpp"
+    #include "ImGui/imconfig.hpp"
+    #include "MainDebugWindow.hpp"
     #include "Panels/AudioDebugPanel.hpp"
     #include "Panels/GLFWDebugPanel.hpp"
-    #include "imconfig.hpp"
+    #include "Panels/IPCDebugPanel.hpp"
     #include <GLFW/glfw3.h>
     #include <algorithm>
     #include <cmath>
@@ -13,9 +15,32 @@
     #include <imgui_impl_opengl3.h>
     #include <mutex>
 
+
+    /**
+     * Defines a macro for creating a panel factory function that
+     * can be used to create a panel of the given type and return
+     * a unique_ptr to it.
+     *
+     * The macro will expand to a map entry for the `initialPanelFactories` map,
+     * which is used to create the initial panels when the debug window is created.
+     *
+     * @param PANEL_NAME The name of the panel.
+     * @param PANEL_CLASS The class of the panel.
+     *
+     * @return A map entry for the `initialPanelFactories` map.
+     */
+    #define INITIAL_PANEL_FACTORY(PANEL_NAME, PANEL_CLASS)                                                             \
+        {PANEL_NAME, []() -> std::unique_ptr<VSBloom::Debug::PANEL_CLASS> { return std::make_unique<PANEL_CLASS>(); }}
+
 namespace VSBloom::Debug {
 
     namespace {
+
+        std::unordered_map<std::string, std::function<std::unique_ptr<BasePanel>()>> initialPanelFactories{
+            INITIAL_PANEL_FACTORY("audio", AudioDebugPanel),
+            INITIAL_PANEL_FACTORY("glfw", GLFWDebugPanel),
+            INITIAL_PANEL_FACTORY("ipc", IPCDebugPanel),
+        };
 
         void GlfwErrorCallback(int /*error*/, const char* /*description*/) {
             // Intentionally a no-op, nice spot to drop a breakpoint
@@ -59,8 +84,10 @@ namespace VSBloom::Debug {
     DebugWindow::DebugWindow() {
         // Must emplace - or insert with a moved unique_ptr - a braced
         // initializer_list would try to copy the unique_ptrs and fail to compile
-        panels.emplace("audio", std::make_unique<AudioDebugPanel>());
-        panels.emplace("window", std::make_unique<GLFWDebugPanel>());
+
+        for (const auto& [panelName, panelFactory] : initialPanelFactories) {
+            panels.emplace(panelName, panelFactory());
+        }
     }
 
     DebugWindow::~DebugWindow() {

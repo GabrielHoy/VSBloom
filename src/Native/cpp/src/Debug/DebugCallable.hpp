@@ -5,7 +5,6 @@
 */
 #pragma once
 
-#include <iostream>
 #include <nlohmann/json.hpp>
 #if defined(DEBUG_WINDOW_ENABLED)
     #include "Debug/Window/MainDebugWindow.hpp"
@@ -24,6 +23,4 @@ inline void DebugCallable(const nlohmann::json& message) {
     std::thread debugWindowThread = std::thread(DebugWindowThread);
     debugWindowThread.detach();
 #endif
-
-    std::cerr << "DebugCallable Invoked" << std::endl;
 }

@@ -5,6 +5,10 @@
 
 #if defined(DEBUG_WINDOW_ENABLED)
 
+    // Whether or not to automatically select the default audio device on 'startup'
+    // for loopback capture.
+    #define SELECT_DEFAULT_AUDIO_DEVICE_ON_STARTUP true
+
     #include "Audio/CaptureManager.hpp"
     #include "Audio/Device/AudioDevice.hpp"
     #include "BasePanel.hpp"

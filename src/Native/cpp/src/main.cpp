@@ -70,10 +70,12 @@ int main() {
     // The IPCRouter will be responsible for correctly parsing and routing
     // any incoming messages from the parent process it receives into their
     // correct handler methods, defined by the `methodRequestHandlers` map.
-    VSBloom::IPC::IPCRouter ipcRouter(
+    VSBloom::IPC::IPCRouter::InitializeSingleton(
         VSBloom::IPC::methodRequestHandlers,
         VSBloom::IPC::DefaultMessageSubmissionCallback
     );
+
+    VSBloom::IPC::IPCRouter& ipcRouter = VSBloom::IPC::IPCRouter::GetInstance();
 
     // Now that we have a valid IPC Router to work with, we can setup the
     // IPC Listener in order to start listening for messages from the parent
@@ -106,8 +108,9 @@ int main() {
     // to utilize for all subsequent traffic accordingly.
     ipcRouter.SetEncryptionKey(encryptionKey);
 
-#ifdef DEBUG
-    // When in debug mode, we'll simulate a quick invocation of the 'debug-test-message' IPC method for testing purposes
+#if defined(DEBUG) && defined(EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP)
+    // When in debug mode with the right CMake configs, we'll simulate a quick invocation of the 'debug-test-message'
+    // IPC method for testing purposes
     nlohmann::json initialDebugMessage = {{"type", "debug-test-message"}, {"data", {{"unused", "42"}}}};
 
     const std::string dbgMsgStr = initialDebugMessage.dump();

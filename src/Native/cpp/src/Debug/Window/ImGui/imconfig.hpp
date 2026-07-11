@@ -19,6 +19,10 @@ namespace ImGui {
     float  SameLineRightSide(float objectSizeOffsetFromRight);
     void   StyleTrueDark(ImGuiStyle* dst);
 
+    void HelpMarker(const char* desc);
+    void ExplanationMarker(const char* desc);
+    void ColoredHelpMarker(ImVec4 textColor, const char* desc);
+
 } // namespace ImGui
 
 #endif // defined(DEBUG_WINDOW_ENABLED)

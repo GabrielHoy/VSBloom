@@ -24,7 +24,7 @@ namespace VSBloom::Debug {
     void GLFWDebugPanel::WindowPositionChangedGLFWCallback(GLFWwindow* window, int x, int y) {
         DebugWindow* debugWindow = static_cast<DebugWindow*>(glfwGetWindowUserPointer(window));
 
-        GLFWDebugPanel* debugPanelForWindow = dynamic_cast<GLFWDebugPanel*>(debugWindow->panels["window"].get());
+        GLFWDebugPanel* debugPanelForWindow = dynamic_cast<GLFWDebugPanel*>(debugWindow->panels["glfw"].get());
         if (debugPanelForWindow == nullptr) {
             return;
         }
@@ -36,7 +36,7 @@ namespace VSBloom::Debug {
     void GLFWDebugPanel::WindowSizeChangedGLFWCallback(GLFWwindow* window, int width, int height) {
         DebugWindow* debugWindow = static_cast<DebugWindow*>(glfwGetWindowUserPointer(window));
 
-        GLFWDebugPanel* debugPanelForWindow = dynamic_cast<GLFWDebugPanel*>(debugWindow->panels["window"].get());
+        GLFWDebugPanel* debugPanelForWindow = dynamic_cast<GLFWDebugPanel*>(debugWindow->panels["glfw"].get());
         if (debugPanelForWindow == nullptr) {
             return;
         }

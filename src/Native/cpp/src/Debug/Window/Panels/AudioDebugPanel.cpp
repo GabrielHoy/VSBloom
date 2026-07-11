@@ -2,7 +2,7 @@
 
     #include "AudioDebugPanel.hpp"
     #include "Audio/Device/DeviceEnumeration.hpp"
-    #include "Debug/Window/imconfig.hpp"
+    #include "Debug/Window/ImGui/imconfig.hpp"
     #include <algorithm>
     #include <format>
     #include <imgui.h>
@@ -54,10 +54,17 @@ namespace VSBloom::Debug {
             }
             ImGui::Spacing();
 
+            static bool hasAutoSelectedDefaultAudioDevice = false;
             for (const Audio::AudioDevice& device : devices) {
                 bool&             selected = selectedDeviceIds[device.id];
                 const std::string label    = device.name + (device.isDefault ? " (default)" : "");
-                if (ImGui::Checkbox(label.c_str(), &selected)) {
+                if (ImGui::Checkbox(label.c_str(), &selected)
+                    || (SELECT_DEFAULT_AUDIO_DEVICE_ON_STARTUP && device.isDefault && !selected
+                        && !hasAutoSelectedDefaultAudioDevice && ([&selected]() -> bool {
+                    hasAutoSelectedDefaultAudioDevice = true;
+                    selected                          = true;
+                    return true;
+                })())) {
                     ApplySelectionToCaptureManager();
                 }
             }

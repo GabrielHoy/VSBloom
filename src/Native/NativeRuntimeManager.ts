@@ -21,7 +21,32 @@ import { VSBloomPseudoServer } from '../ExtensionBridge/BridgeServer/PseudoServe
 import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import { GetPathToNativeBinary, IsNativeCapable, PLATFORM_SLUG } from './NativeCompatibility';
 import type * as NativeMessages from './NativeMessages';
-import type * as NativeReceivables from './NativeReceivableMessages';
+import type * as NativeReceivables from './MessageTypes/NativeReceivableMessages';
+
+export const NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES = [
+    'new-audio-analysis-frame',
+    'available-audio-device-list',
+] as const satisfies readonly (NativeMessages.NativeReceivableMessage["type"])[];
+
+type NativeReceivableEventMessageName = (typeof NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES)[number]
+
+/**
+ * The `data` payload carried by the receivable message whose `type` is `MSG_TYPE`.
+ * */
+type NativeReceivableEventPayload<MSG_TYPE extends NativeReceivableEventMessageName> =
+    Extract<NativeMessages.NativeReceivableMessage, { type: MSG_TYPE }>['data'];
+
+type NativeReceivableEventEmitterList = {
+    [MSG_TYPE in NativeReceivableEventMessageName]: vscode.EventEmitter<NativeReceivableEventPayload<MSG_TYPE>>;
+}
+
+/**
+ * The publicly observable `.event` side of {@link NativeReceivableEventEmitterList}.
+ * */
+type NativeReceivableEventList = {
+    [MSG_TYPE in NativeReceivableEventMessageName]: vscode.Event<NativeReceivableEventPayload<MSG_TYPE>>;
+}
+
 export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private static instance: VSBloomNativeRuntimeManager | null = null;
 
@@ -42,6 +67,18 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 */
 	public readonly OnNativeRuntimeStateChanged: vscode.Event<boolean> =
 		this._onNativeRuntimeStateChanged.event;
+    
+    private readonly receivableMessageEventEmitters: NativeReceivableEventEmitterList =
+        NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES.reduce((accum, msgName) => {
+            accum[msgName] = new vscode.EventEmitter();
+            return accum;
+        }, {} as Record<NativeReceivableEventMessageName, vscode.EventEmitter<unknown>>) as NativeReceivableEventEmitterList;
+
+    public readonly receivableMessageEvents: NativeReceivableEventList =
+        NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES.reduce((accum, msgName) => {
+            accum[msgName] = this.receivableMessageEventEmitters[msgName].event;
+            return accum;
+        }, {} as Record<NativeReceivableEventMessageName, vscode.Event<unknown>>) as NativeReceivableEventList;
 
 	private constructor() {
 		MainOutputChannel.Log('info', 'Native Runtime Manager initialized');
@@ -117,7 +154,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 
         const nativeBinPath = await GetPathToNativeBinary();
 
-        this.Log('debug', `The native runtime binary was found at ${nativeBinPath}.`);
+        this.Log('debug', `Located the Native Runtime binary!`);
 
         this.childProc = childProcess.spawn(nativeBinPath, [], {
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -386,6 +423,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 				this.Log(
 					'error',
 					`Received an unknown message type from the native runtime: ${messageType}`,
+                    IsDevelopmentEnvironment() ? message : undefined
 				);
 				break;
 			}
@@ -413,7 +451,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private NativeRuntimeAliveMessageHandler(
 		message: NativeReceivables.NativeReceivableStartupSuccessMessage,
 	): void {
-		this.encryptionKey = Buffer.from(message.data.encryptionKey, 'hex');
+		this.encryptionKey = Buffer.from(message.data.k, 'hex');
 
 		// All messages sent from here onward are AES-256-GCM encrypted.
 		// We'll test this fact by sending a 'test-secure-message' payload
@@ -422,7 +460,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		// will immediately prompt a 'secure-acknowledgement' message from the
 		// Native Runtime - completing the secure session establishment handshake.
 		this.SendMessageToNativeRuntime('test-secure-message', {
-			message: '<secure message functionality probe string>',
+			message: '<probe>',
 		});
 	}
 

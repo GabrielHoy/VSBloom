@@ -37,15 +37,15 @@ namespace VSBloom::IPC {
             std::cerr << "Test secure message method invoked without a valid string 'message' field" << std::endl;
             throw std::invalid_argument("Test secure message method invoked without a valid string 'message' field");
         }
-        const std::string stringifiedMessage = message.value("message", "");
+        const std::string stringifiedMessage = std::string("echo: ") + message.value("message", "");
 
         return SecureAcknowledgementMessage{stringifiedMessage};
     }
 
-    DebugOutputMessage OnDebugTestMessageInvoked(const methodRequest_t& message) {
+    std::optional<DebugOutputMessage> OnDebugTestMessageInvoked(const methodRequest_t& message) {
 #ifdef DEBUG
         DebugCallable(message);
-        return DebugOutputMessage{{{"acknowledgement", "true"}}};
+        return std::nullopt;
 #else
         return DebugOutputMessage{
             {{"invalid_invocation",
@@ -54,18 +54,16 @@ namespace VSBloom::IPC {
 #endif
     }
 
-    AudioDeviceEnumerationMessage OnAudioDeviceEnumerationInvoked(const methodRequest_t& message) {
-        message.contains("unused");
-
+    AvailableAudioDeviceListMessage OnGetAvailableAudioDevicesInvoked(const methodRequest_t&) {
         const std::vector<VSBloom::Audio::AudioDevice> curDevices = VSBloom::Audio::EnumerateAudioDevices();
 
-        return AudioDeviceEnumerationMessage{curDevices};
+        return AvailableAudioDeviceListMessage{curDevices};
     }
 
     methodHandlerMap_t methodRequestHandlers = {
         EXPOSE_METHOD("test-secure-message", OnTestSecureMessageInvoked),
         EXPOSE_METHOD("debug-test-message", OnDebugTestMessageInvoked),
-        EXPOSE_METHOD("audio-device-enumeration", OnAudioDeviceEnumerationInvoked),
+        EXPOSE_METHOD("get-available-audio-devices", OnGetAvailableAudioDevicesInvoked),
     };
 
 } // namespace VSBloom::IPC

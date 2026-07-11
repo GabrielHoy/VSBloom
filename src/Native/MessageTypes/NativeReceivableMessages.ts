@@ -12,6 +12,9 @@
  * communication mechanism. Currently this is a manual process.
  */
 
+import { AnalyzedAudioFrame } from "../Audio/AnalysisFrames";
+import { AudioDevice } from "../Audio/AudioDevice";
+
 export interface NativeReceivableMethodExceptionRaisedMessage {
     type: 'method-exception';
     data: {
@@ -26,7 +29,7 @@ export interface NativeReceivableStartupSuccessMessage {
         // This will be a hex-encoded 32-byte AES-256 key.
         // Every message sent after this one is received from the
         // Native Runtime should be AES-256-GCM encrypted with it.
-        encryptionKey: string;
+        k: string;
     };
 }
 
@@ -37,4 +40,19 @@ export interface NativeReceivableSecureAcknowledgementMessage {
     };
 }
 
-export type NativeReceivableMessage = NativeReceivableStartupSuccessMessage | NativeReceivableMethodExceptionRaisedMessage | NativeReceivableSecureAcknowledgementMessage;
+export interface NativeReceivableAvailableAudioDeviceListMessage {
+    type: 'available-audio-device-list';
+    data: AudioDevice[];
+}
+
+export interface NativeReceivableNewAudioAnalysisFrameMessage {
+    type: 'new-audio-analysis-frame';
+    data: AnalyzedAudioFrame;
+}
+
+export type NativeReceivableMessage =
+    NativeReceivableStartupSuccessMessage |
+    NativeReceivableMethodExceptionRaisedMessage |
+    NativeReceivableSecureAcknowledgementMessage |
+    NativeReceivableAvailableAudioDeviceListMessage | 
+    NativeReceivableNewAudioAnalysisFrameMessage;

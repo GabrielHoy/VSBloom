@@ -36,8 +36,9 @@ namespace VSBloom::Debug {
         ~DebugWindow();
 
         // Polymorphic panel map, populated in the constructor via emplace
-        // since brace-init with unique_ptr's makes initializer list move
-        // attempts scream from deep within `xmemory`.
+        // based upon the entries in `panelFactories` since brace-init with
+        // unique_ptr's directly makes initializer list move attempts scream
+        // from deep within `xmemory`.
         std::unordered_map<std::string, std::unique_ptr<BasePanel>> panels;
 
         /**

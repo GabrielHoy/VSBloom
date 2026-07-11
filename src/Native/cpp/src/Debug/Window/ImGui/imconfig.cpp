@@ -1,8 +1,8 @@
 #if defined(DEBUG_WINDOW_ENABLED)
 
     #include "imconfig.hpp"
-    #include "imgui.h"
     #include <cmath>
+    #include <imgui.h>
 
 namespace ImGui {
 
@@ -136,10 +136,10 @@ namespace ImGui {
         colors[ImGuiCol_PlotHistogram]             = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
         colors[ImGuiCol_PlotHistogramHovered]      = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
         colors[ImGuiCol_TableHeaderBg]             = ImVec4(0.19f, 0.19f, 0.20f, 0.00f);
-        colors[ImGuiCol_TableBorderStrong]         = ImVec4(0.5f, 0.00f, 0.0f, 1.00f);
-        colors[ImGuiCol_TableBorderLight]          = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
+        colors[ImGuiCol_TableBorderStrong]         = ImVec4(0.80f, 0.80f, 0.80f, 1.00f);
+        colors[ImGuiCol_TableBorderLight]          = ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
         colors[ImGuiCol_TableRowBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-        colors[ImGuiCol_TableRowBgAlt]             = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+        colors[ImGuiCol_TableRowBgAlt]             = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
         colors[ImGuiCol_TextLink]                  = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
         colors[ImGuiCol_TextSelectedBg]            = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
         colors[ImGuiCol_DragDropTarget]            = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);

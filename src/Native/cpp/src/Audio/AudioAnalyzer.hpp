@@ -16,6 +16,7 @@
 #include "FFTWindowing.hpp"
 #include <array>
 #include <cstddef>
+#include <nlohmann/json.hpp>
 #include <vector>
 
 struct PFFFT_Setup; // only AudioAnalyzer.cpp needs pffft.h itself; this can remain opaque in header land

@@ -27,6 +27,7 @@
 #include "../Methods/IPCMethods.hpp"
 #include <mutex>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 namespace VSBloom::IPC {
@@ -37,18 +38,46 @@ namespace VSBloom::IPC {
 
     class IPCRouter {
       private:
-        const methodHandlerMap_t&                  methodRequestHandlers;
-        const messageSubmissionCallback_t          messageSubmissionCallback;
+        static bool                                isSingletonInitialized;
+        static methodHandlerMap_t*                 methodRequestHandlers;
+        static messageSubmissionCallback_t         messageSubmissionCallback;
         std::mutex                                 messageSubmittingMutex;
         std::optional<Cryptography::EncryptionKey> encryptionKey;
 
-      public:
+        IPCRouter();
 
-        IPCRouter(
-            const methodHandlerMap_t&         methodRequestHandlers,
-            const messageSubmissionCallback_t messageSubmissionCallback = DefaultMessageSubmissionCallback
-        );
-        ~IPCRouter();
+      public:
+        /**
+         * Gets the singleton instance of the IPCRouter for use in the Native Runtime.
+         */
+        static IPCRouter& GetInstance() {
+            if (!IPCRouter::isSingletonInitialized) {
+                throw std::runtime_error("IPCRouter::GetInstance() called before singleton was initialized");
+            }
+
+            static IPCRouter instance;
+
+            return instance;
+        }
+
+        /**
+         * Constructs the IPCRouter singleton instance.
+         */
+        static void InitializeSingleton(
+            methodHandlerMap_t&         methodRequestHandlerMapping,
+            messageSubmissionCallback_t messageSubmissionCallbackFunction = DefaultMessageSubmissionCallback
+        ) {
+            if (IPCRouter::isSingletonInitialized) {
+                throw std::runtime_error(
+                    "IPCRouter::InitializeSingleton() called again after singleton was already initialized"
+                );
+            }
+
+            IPCRouter::methodRequestHandlers     = &methodRequestHandlerMapping;
+            IPCRouter::messageSubmissionCallback = std::move(messageSubmissionCallbackFunction);
+
+            IPCRouter::isSingletonInitialized = true;
+        }
 
         /**
          * Enables encryption for all subsequent sends and requires all

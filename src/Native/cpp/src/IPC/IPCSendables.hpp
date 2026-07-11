@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "Audio/AudioAnalyzer.hpp"
 #include "Audio/Device/AudioDevice.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
@@ -17,7 +18,11 @@
 
 namespace VSBloom::IPC {
 
-    using json_t = nlohmann::json;
+    namespace {
+
+        using json_t = nlohmann::json;
+
+    } // namespace
 
     /**
      * A concept representing the minimum structural requirements
@@ -109,7 +114,7 @@ namespace VSBloom::IPC {
         const std::string            encryptionKey;
 
         json_t DataToJSON() const noexcept {
-            return {{"encryptionKey", encryptionKey}};
+            return {{"k", encryptionKey}};
         }
     };
 
@@ -137,8 +142,8 @@ namespace VSBloom::IPC {
 
     static_assert(IsConceptuallySendableMessage<DebugOutputMessage>);
 
-    struct AudioDeviceEnumerationMessage {
-        static constexpr const char*                   name = "audio-device-enumeration";
+    struct AvailableAudioDeviceListMessage {
+        static constexpr const char*                   name = "available-audio-device-list";
         const std::vector<VSBloom::Audio::AudioDevice> devices;
 
         json_t DataToJSON() const noexcept {
@@ -147,10 +152,21 @@ namespace VSBloom::IPC {
                 audioDeviceList.push_back(device.ToJSON());
             }
 
-            return {{"devices", audioDeviceList}};
+            return audioDeviceList;
         }
     };
 
-    static_assert(IsConceptuallySendableMessage<AudioDeviceEnumerationMessage>);
+    static_assert(IsConceptuallySendableMessage<AvailableAudioDeviceListMessage>);
+
+    struct NewAudioAnalysisFrameMessage {
+        static constexpr const char*             name = "new-audio-analysis-frame";
+        const VSBloom::Audio::AnalyzedAudioFrame frame;
+
+        json_t DataToJSON() const noexcept {
+            return {{"fftBins", frame.fftBins}, {"avgAmplitude", frame.avgAmplitude}};
+        }
+    };
+
+    static_assert(IsConceptuallySendableMessage<NewAudioAnalysisFrameMessage>);
 
 } // namespace VSBloom::IPC

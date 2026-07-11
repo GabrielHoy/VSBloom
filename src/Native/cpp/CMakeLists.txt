@@ -7,10 +7,17 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment target")
 endif()
 
+option(EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP "Emulate the Native Runtime receiving a `debug-test-message` IPC method invocation at startup, used for testing and iterating on the Native Runtime" OFF)
+
 # We never install ImGui on Release configures, this needs declared before
 # project() below since manifest install hooks run at that point.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(VCPKG_MANIFEST_FEATURES "debug-tools")
+else()
+    if(EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP)
+        message(WARNING "EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP is enabled, but the Native Runtime is not being built in Debug mode; this option will be ignored.")
+        set(EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP OFF)
+    endif()
 endif()
 
 # Grab the version string for CMake to use from the `vcpkg.json`
@@ -112,6 +119,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 
     target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG_WINDOW_ENABLED)
+
+    if(EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP)
+        target_compile_definitions(VSBloomNativeRuntime PRIVATE EMULATE_DEBUG_TEST_MESSAGE_ON_STARTUP)
+    endif()
 endif()
 
 # Platform-specific audio backend(s) and metadata

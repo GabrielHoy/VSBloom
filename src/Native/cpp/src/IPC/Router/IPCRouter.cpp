@@ -7,19 +7,17 @@
 
 namespace VSBloom::IPC {
 
+    // Non-inline static members "must have one out-of-line definition"
+    // since the header only declares them, without this we get lovely
+    // and confusing linker error waterfalls while the clangd LSP reports 'A-OK!'.
+    bool                        IPCRouter::isSingletonInitialized    = false;
+    methodHandlerMap_t*         IPCRouter::methodRequestHandlers     = nullptr;
+    messageSubmissionCallback_t IPCRouter::messageSubmissionCallback = nullptr;
+
+    IPCRouter::IPCRouter() = default;
+
     void DefaultMessageSubmissionCallback(const std::string& messageToPush) {
         std::cout << messageToPush << std::endl;
-    }
-
-    IPCRouter::IPCRouter(
-        const methodHandlerMap_t&         methodRequestHandlerList,
-        const messageSubmissionCallback_t customMessageSubmissionCallback
-    )
-        : methodRequestHandlers(methodRequestHandlerList)
-        , messageSubmissionCallback(customMessageSubmissionCallback) {
-    }
-
-    IPCRouter::~IPCRouter() {
     }
 
     void IPCRouter::SetEncryptionKey(const Cryptography::EncryptionKey& key) {
@@ -34,6 +32,13 @@ namespace VSBloom::IPC {
      * @param message The message to handle.
      */
     void IPCRouter::OnNewMessageReceived(const std::string& message) {
+        if (!IPCRouter::isSingletonInitialized) {
+            std::cerr
+                << "IPCRouter::OnNewMessageReceived() called before singleton was initialized, this is illegal; skipping..."
+                << std::endl;
+            return;
+        }
+
         if (message.size() > MAX_RECEIVED_MESSAGE_PAYLOAD_SIZE_BYTES) {
             std::cerr << "A message was received that was too large to process, skipping..." << std::endl;
             return;
@@ -102,7 +107,7 @@ namespace VSBloom::IPC {
         }
 
         const methodName_t messageType = parsedMessage["type"].get<methodName_t>();
-        if (!methodRequestHandlers.contains(messageType)) {
+        if (!IPCRouter::methodRequestHandlers->contains(messageType)) {
             std::cerr
                 << "A message was received with a message type that does not have a corresponding native IPC handler registered for it: "
                 << messageType << ", skipping..." << std::endl;
@@ -112,7 +117,7 @@ namespace VSBloom::IPC {
         // Awesome, we've properly validated that a reference to the handler function
         // exists that we need to invoke with the message payload to actually *do* what
         // the message wants done.
-        const methodHandler_t handler = methodRequestHandlers.at(messageType);
+        const methodHandler_t handler = IPCRouter::methodRequestHandlers->at(messageType);
 
         // Only last thing to verify is the message payload containing a 'data' key of an
         // object type, so we know that we have *something* to actually invoke our handler with.
@@ -173,7 +178,7 @@ namespace VSBloom::IPC {
         // Lock our message submission mutex and invoke the submission callback with the message we
         // want to send 'down the wire'
         std::lock_guard<std::mutex> msgSubmissionLock(messageSubmittingMutex);
-        messageSubmissionCallback(wireMessage);
+        IPCRouter::messageSubmissionCallback(wireMessage);
     }
 
 } // namespace VSBloom::IPC
