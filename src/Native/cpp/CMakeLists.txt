@@ -146,7 +146,17 @@ elseif(APPLE)
     target_compile_definitions(VSBloomNativeRuntime PRIVATE VSBLOOM_AUDIO_BACKEND_COREAUDIO)
     target_link_libraries(VSBloomNativeRuntime PRIVATE ${COREAUDIO_LIB} ${AUDIOTOOLBOX_LIB})
 else()
-    target_compile_definitions(VSBloomNativeRuntime PRIVATE VSBLOOM_AUDIO_BACKEND_PIPEWIRE)
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE
+        VSBLOOM_AUDIO_BACKEND_PULSEAUDIO
+
+        # ALSA/JACK compile into miniaudio by default on Linux, but only
+        # PulseAudio's monitor-source model actually works with our capture
+        # strategy (see MonitorSourceResolver.cpp) - for now we'll disable
+        # the other two backends rather than risk a silent fallback to a
+        # backend with no monitor-source concept
+        MA_NO_ALSA
+        MA_NO_JACK
+    )
 endif()
 
 # Hardening & Warnings

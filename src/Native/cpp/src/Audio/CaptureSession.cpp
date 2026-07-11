@@ -1,19 +1,31 @@
 #include "CaptureSession.hpp"
+#include "Device/PulseAudio/MonitorSourceResolver.hpp"
 #include <stdexcept>
 
 namespace VSBloom::Audio {
 
     CaptureSession::CaptureSession(const ma_device_id& deviceId) {
+#if defined(VSBLOOM_AUDIO_BACKEND_PULSEAUDIO)
+        // No WASAPI-style loopback mode exists on PulseAudio, so instead
+        // we'll resolve the chosen playback (sink) device to its ".monitor"
+        // source and open that as an ordinary capture device instead.
+        // `resolvedDeviceId` must outlive `ma_device_init` below, same
+        // lifetime rule as `deviceId` on the WASAPI path.
+        const ma_device_id resolvedDeviceId = ResolveMonitorSourceForPlaybackDevice(deviceId);
+        ma_device_config   config           = ma_device_config_init(ma_device_type_capture);
+        config.capture.pDeviceID            = &resolvedDeviceId;
+#else
         ma_device_config config = ma_device_config_init(ma_device_type_loopback);
         // `pDeviceID` only needs to stay valid for the duration of
         // `ma_device_init` below - it gets copied into the device's own
         // descriptor internally, not retained by pointer!
         config.capture.pDeviceID = &deviceId;
-        config.capture.format    = ma_format_f32;
-        config.capture.channels  = ANALYSIS_CHANNELS;
-        config.sampleRate        = ANALYSIS_SAMPLE_RATE;
-        config.dataCallback      = &CaptureSession::InternalProcessDataCallback;
-        config.pUserData         = this;
+#endif
+        config.capture.format   = ma_format_f32;
+        config.capture.channels = ANALYSIS_CHANNELS;
+        config.sampleRate       = ANALYSIS_SAMPLE_RATE;
+        config.dataCallback     = &CaptureSession::InternalProcessDataCallback;
+        config.pUserData        = this;
 
         if (ma_device_init(nullptr, &config, &device) != MA_SUCCESS) {
             throw std::runtime_error("Failed to initialize a loopback capture device");
