@@ -110,57 +110,15 @@ namespace VSBloom::Debug {
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 330");
 
-        static float           clrColHue               = 0.60;
-        static float           clrColSaturation        = 0.58;
-        float                  clrColBaseValue         = 0.075;
-        static constexpr float clrColHueChangePerSec   = 0.016f;
-        static constexpr float clrColSatAudioAmpEffect = 0.314f;
-        Spring                 clrColValueSpring       = Spring::SnappyPreset(0.0f);
-
         // Prepare all panels for display -- this is basically their constructor, long-story-short
         for (const auto& [panelName, panel] : panels) {
             panel->PreparePanelForDisplay(this);
         }
 
-        AudioDebugPanel* audioPanel = dynamic_cast<AudioDebugPanel*>(panels["audio"].get());
+        audioPanel = dynamic_cast<AudioDebugPanel*>(panels["audio"].get());
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            for (const auto& [panelName, panel] : panels) {
-                panel->DrawUI();
-            }
-
-            ImGui::Render();
-
-            clrColHue = std::fmod(clrColHue + clrColHueChangePerSec * ImGui::GetIO().DeltaTime, 1.0f);
-            if (audioPanel != nullptr) {
-                std::lock_guard<std::mutex> snapshotLock(audioPanel->latestSnapshotMutex);
-                clrColValueSpring.SetTarget(
-                    std::clamp(
-                        clrColBaseValue + (audioPanel->latestSnapshot.avgAmplitude * clrColSatAudioAmpEffect),
-                        0.0f,
-                        1.0f
-                    )
-                );
-            }
-            clrColValueSpring.Update(ImGui::GetIO().DeltaTime);
-            const float clrColCurValue = std::clamp(clrColValueSpring.Value(), 0.0f, 1.0f);
-
-            float clrColR = 0.0f, clrColG = 0.0f, clrColB = 0.0f;
-            ImGui::ColorConvertHSVtoRGB(clrColHue, clrColSaturation, clrColCurValue, clrColR, clrColG, clrColB);
-
-            int displayWidth = 0, displayHeight = 0;
-            glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
-            glViewport(0, 0, displayWidth, displayHeight);
-            glClearColor(clrColR, clrColG, clrColB, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            glfwSwapBuffers(window);
+            RenderFrame();
         }
 
         ImGui_ImplOpenGL3_Shutdown();
@@ -169,6 +127,47 @@ namespace VSBloom::Debug {
 
         glfwDestroyWindow(window);
         glfwTerminate();
+    }
+
+    void DebugWindow::RenderFrame() {
+        static constexpr float clrColHueChangePerSec   = 0.016f;
+        static constexpr float clrColSatAudioAmpEffect = 0.314f;
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        for (const auto& [panelName, panel] : panels) {
+            panel->DrawUI();
+        }
+
+        ImGui::Render();
+
+        clrColHue = std::fmod(clrColHue + clrColHueChangePerSec * ImGui::GetIO().DeltaTime, 1.0f);
+        if (audioPanel != nullptr) {
+            std::lock_guard<std::mutex> snapshotLock(audioPanel->latestSnapshotMutex);
+            clrColValueSpring.SetTarget(
+                std::clamp(
+                    clrColBaseValue + (audioPanel->latestSnapshot.avgAmplitude * clrColSatAudioAmpEffect),
+                    0.0f,
+                    1.0f
+                )
+            );
+        }
+        clrColValueSpring.Update(ImGui::GetIO().DeltaTime);
+        const float clrColCurValue = std::clamp(clrColValueSpring.Value(), 0.0f, 1.0f);
+
+        float clrColR = 0.0f, clrColG = 0.0f, clrColB = 0.0f;
+        ImGui::ColorConvertHSVtoRGB(clrColHue, clrColSaturation, clrColCurValue, clrColR, clrColG, clrColB);
+
+        int displayWidth = 0, displayHeight = 0;
+        glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
+        glViewport(0, 0, displayWidth, displayHeight);
+        glClearColor(clrColR, clrColG, clrColB, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
     }
 
 } // namespace VSBloom::Debug

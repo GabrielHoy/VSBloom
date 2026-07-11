@@ -6,7 +6,6 @@
  */
 #pragma once
 
-#include <type_traits>
 #if defined(DEBUG_WINDOW_ENABLED)
 
 struct GLFWwindow;
