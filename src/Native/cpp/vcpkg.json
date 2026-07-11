@@ -12,10 +12,11 @@
                 {
                     "name": "imgui",
                     "features": [
-                        "win32-binding",
-                        "dx11-binding"
+                        "glfw-binding",
+                        "opengl3-binding"
                     ]
-                }
+                },
+                "glfw3"
             ]
         }
     }

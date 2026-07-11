@@ -8,16 +8,21 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #if defined(DEBUG_WINDOW_ENABLED)
-    #include "Debug/DebugWindow.hpp"
+    #include "Debug/Window/MainDebugWindow.hpp"
     #include <thread>
 #endif
+
+inline void DebugWindowThread() {
+    VSBloom::Debug::DebugWindow debugWindow;
+    debugWindow.Run();
+}
 
 inline void DebugCallable(const nlohmann::json& message) {
     message.contains("unused");
 
 #if defined(DEBUG_WINDOW_ENABLED)
-    std::thread audioDbgWindowThread = std::thread(VSBloom::Debug::RunAudioDebugWindow);
-    audioDbgWindowThread.detach();
+    std::thread debugWindowThread = std::thread(DebugWindowThread);
+    debugWindowThread.detach();
 #endif
 
     std::cerr << "DebugCallable Invoked" << std::endl;

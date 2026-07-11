@@ -9,9 +9,7 @@ endif()
 
 # We never install ImGui on Release configures, this needs declared before
 # project() below since manifest install hooks run at that point.
-# (Currently Win32-only since the DX11 ImGui bindings we currently use
-# are Windows-only...)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(VCPKG_MANIFEST_FEATURES "debug-tools")
 endif()
 
@@ -103,19 +101,17 @@ target_link_libraries(VSBloomNativeRuntime PRIVATE
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG)
 
-    # If we're on Win32 as well, link our debug-specific libraries / bindings
-    # and define that the Debug Window should be compiled into the build accordingly
-    if(WIN32)
-        find_package(imgui CONFIG REQUIRED)
-        target_link_libraries(VSBloomNativeRuntime PRIVATE
-            imgui::imgui
-            d3d11         # D3D11CreateDeviceAndSwapChain
-            dxgi          # swap chain / DXGI interfaces
-            d3dcompiler   # imgui_impl_dx11's runtime shader compilation (D3DCompile)
-        )
-        
-        target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG_WINDOW_ENABLED)
-    endif()
+    # GLFW/OpenGL3 debug tooling
+    find_package(imgui CONFIG REQUIRED)
+    find_package(glfw3 CONFIG REQUIRED)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(VSBloomNativeRuntime PRIVATE
+        imgui::imgui
+        glfw
+        OpenGL::GL
+    )
+
+    target_compile_definitions(VSBloomNativeRuntime PRIVATE DEBUG_WINDOW_ENABLED)
 endif()
 
 # Platform-specific audio backend(s) and metadata
