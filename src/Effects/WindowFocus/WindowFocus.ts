@@ -17,7 +17,7 @@ const effectConfig = {
 	windowRefocusEffectTransitionDuration: 1,
 };
 
-const vsbloom = window.__VSBLOOM__;
+// const vsbloom = window.__VSBLOOM__;
 let janitor: Janitor;
 
 let currentUnfocusUUID: string | null = null;
@@ -120,10 +120,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 	const longTermUnfocusThresholdMutator = await bloom.configs.RegisterEffectConfigMutator({
 		pathResolver: configResolver.GetPropertyPath('longTermUnfocusTransitionThreshold'),
 		internalValueMutator: (changedValue) => {
-			vsbloom.Log(
-				'debug',
-				`long term unfocus transition threshold changed to ${changedValue}`,
-			);
 			effectConfig.longTermUnfocusTransitionThreshold = (changedValue as number) * 1000;
 			if (currentUnfocusUUID) {
 				OnWindowFocused(new Event('focus'));
@@ -136,7 +132,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 	const shortTermUnfocusEffectFilterMutator = await bloom.configs.RegisterEffectConfigMutator({
 		pathResolver: configResolver.GetPropertyPath('shortTermUnfocusEffectFilter'),
 		internalValueMutator: (changedValue) => {
-			vsbloom.Log('debug', `short term unfocus effect filter changed to ${changedValue}`);
 			effectConfig.shortTermUnfocusEffectFilter = changedValue as string;
 			document.documentElement.style.setProperty(
 				'--vsbloom-window-short-term-unfocus-filter',
@@ -150,7 +145,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 	const longTermUnfocusEffectFilterMutator = await bloom.configs.RegisterEffectConfigMutator({
 		pathResolver: configResolver.GetPropertyPath('longTermUnfocusEffectFilter'),
 		internalValueMutator: (changedValue) => {
-			vsbloom.Log('debug', `long term unfocus effect filter changed to ${changedValue}`);
 			effectConfig.longTermUnfocusEffectFilter = changedValue as string;
 			document.documentElement.style.setProperty(
 				'--vsbloom-window-long-term-unfocus-filter',
@@ -169,10 +163,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 				'shortTermUnfocusEffectTransitionDuration',
 			),
 			internalValueMutator: (changedValue) => {
-				vsbloom.Log(
-					'debug',
-					`short term unfocus effect transition duration changed to ${changedValue}`,
-				);
 				effectConfig.shortTermUnfocusEffectTransitionDuration = changedValue as number;
 				document.documentElement.style.setProperty(
 					'--vsbloom-window-short-term-unfocus-anim-duration',
@@ -189,10 +179,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 		await bloom.configs.RegisterEffectConfigMutator({
 			pathResolver: configResolver.GetPropertyPath('longTermUnfocusEffectTransitionDuration'),
 			internalValueMutator: (changedValue) => {
-				vsbloom.Log(
-					'debug',
-					`long term unfocus effect transition duration changed to ${changedValue}`,
-				);
 				effectConfig.longTermUnfocusEffectTransitionDuration = changedValue as number;
 				document.documentElement.style.setProperty(
 					'--vsbloom-window-long-term-unfocus-anim-duration',
@@ -209,10 +195,6 @@ export async function Start(configResolver: EffectConfigResolver) {
 		await bloom.configs.RegisterEffectConfigMutator({
 			pathResolver: configResolver.GetPropertyPath('windowRefocusEffectTransitionDuration'),
 			internalValueMutator: (changedValue) => {
-				vsbloom.Log(
-					'debug',
-					`window refocus effect transition duration changed to ${changedValue}`,
-				);
 				effectConfig.windowRefocusEffectTransitionDuration = changedValue as number;
 				document.documentElement.style.setProperty(
 					'--vsbloom-window-refocus-anim-duration',

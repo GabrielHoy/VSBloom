@@ -4,7 +4,7 @@
  * Shared type definitions for the VSBloom runtime environment.
  * This file serves as a single source of truth for the global API
  * available in the Electron Renderer after the VSBloom client has
- * been patched in, and is utilized by both  Client.ts and effect
+ * been patched in, and is utilized by both Client.ts and effect
  * scripts.
  */
 
@@ -13,6 +13,8 @@
 
 import type { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
 import type { VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue } from './API';
+import type { VSBloomSharedState } from './SharedState';
+import type { RemoteState } from './SynchronizedState';
 
 //we'll re-export config types for convenience(laziness) here
 export type { EffectConfigResolver, VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue };
@@ -69,6 +71,11 @@ export interface VSBloomGlobals {
 	 * Direct reference to an instance of the VSBloom Client.
 	 */
 	client: IVSBloomClient | undefined;
+
+    /**
+     * Globally Synchronized State across all VSBloom transport boundaries
+     */
+    sharedState: RemoteState<VSBloomSharedState>;
 
 	/**
 	 * Send a log message to the VSBloom extension's output channel.

@@ -1,4 +1,6 @@
 import type { VSBloomClientConfig } from '../ExtensionBridge/API';
+import type { VSBloomSharedState } from '../ExtensionBridge/SharedState';
+import type { SyncPayload } from '../ExtensionBridge/SynchronizedState';
 import type { PageDescriptor } from './Global/Pages.svelte';
 
 //Bloom Extension -> Svelte
@@ -21,10 +23,17 @@ export interface ExternalPageSwapMessage {
 		newPage: PageDescriptor['name'];
 	};
 }
+
+export interface ReplicateSharedStateMessage {
+    type: 'replicate-shared-state';
+    data: SyncPayload<VSBloomSharedState>;
+}
+
 export type BloomToSveltePayload =
 	| SyncSettingsListMessage
 	| UpdateMetadataMessage
-	| ExternalPageSwapMessage;
+	| ExternalPageSwapMessage
+	| ReplicateSharedStateMessage;
 
 //Svelte -> Bloom Extension
 export interface SendWindowNotificationMessage {
@@ -55,9 +64,14 @@ export interface RequestSettingsSyncMessage {
 	type: 'request-settings-sync';
 	data: undefined;
 }
+export interface RequestSharedStateSnapshotMessage {
+    type: 'request-shared-state-snapshot';
+    data: undefined;
+}
 export type SvelteToBloomPayload =
 	| SendWindowNotificationMessage
 	| WebviewReadyMessage
 	| ChangeWebviewTitleMessage
 	| UpdateSettingMessage
-	| RequestSettingsSyncMessage;
+	| RequestSettingsSyncMessage
+	| RequestSharedStateSnapshotMessage;

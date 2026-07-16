@@ -11,6 +11,7 @@
  */
 
 /// <reference lib="dom" />
+import type { VSBloomGlobals } from '../ExtensionBridge/ElectronGlobals';
 import {
 	CustomBounce,
 	CustomEase,
@@ -47,11 +48,7 @@ import * as pixi from './PixiJS/index';
 //Initialize __VSBLOOM__ if not present,
 //this should always be the case since SharedLibs loads before Client.
 if (!(window as Window).__VSBLOOM__) {
-	(window as Window).__VSBLOOM__ = {} as unknown as {
-		Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => void;
-		extensionConfig: undefined;
-		client: undefined;
-	};
+	(window as Window).__VSBLOOM__ = {} as unknown as VSBloomGlobals;
 }
 gsap.registerPlugin(
 	Draggable,

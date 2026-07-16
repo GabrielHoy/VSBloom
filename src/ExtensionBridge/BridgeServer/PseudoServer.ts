@@ -41,6 +41,9 @@ import {
 } from '../API';
 import type { VSBloomBridgeServerContract } from './BloomServerContract';
 import { HandleMarshalledMessageFromPseudoServer, VSBloomBridgeServer } from './Server';
+import { RemoteState, SyncPayload } from '../SynchronizedState';
+import { defaultVSBloomSharedState, VSBloomSharedState } from '../SharedState';
+import { MenuPanel } from '../../Extension/WebviewMenuPanel';
 
 export const MAX_PSEUDO_SERVER_PAYLOAD_SIZE_BYTES = 1024 * 1024;
 export const MAX_PSEUDO_SERVER_IDENTIFIER_LENGTH = 1000;
@@ -77,6 +80,9 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 	 */
 	public readonly OnServerDisconnected: vscode.Event<void> = this._onServerDisconnected.event;
 
+    public readonly sharedState: RemoteState<VSBloomSharedState> = new RemoteState(defaultVSBloomSharedState);
+    private _sharedStateOnDesyncSubscription: (() => void) | null = null;
+
 	private myIdentifier: string;
 	private authToken: string;
 
@@ -90,6 +96,10 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 			this.authToken = crypto.randomBytes(32).toString('hex');
 			context.globalState.update('vsbloom.bridge.authToken', this.authToken);
 		}
+
+        this._sharedStateOnDesyncSubscription = this.sharedState.OnDesync(() => {
+            this.RequestSharedStateSnapshotFromMainServer();
+        });
 	}
 
 	public static GetInstance(context: vscode.ExtensionContext): VSBloomPseudoServer {
@@ -173,7 +183,7 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 		return new Promise<void>((resolve, reject) => {
 			this._startResolve = resolve;
 			this._startReject = reject;
-			this.ConnectToWebsocketServer();
+			this.ConnectToWebSocketServer();
 		});
 	}
 
@@ -181,7 +191,7 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 	 * Opens the WebSocket to the main bridge server and wires up all event handlers.
 	 * Called by Start() for the initial attempt and by ScheduleReconnect() on retry.
 	 */
-	private ConnectToWebsocketServer(): void {
+	private ConnectToWebSocketServer(): void {
 		if (this.isStopping) {
 			return;
 		}
@@ -300,7 +310,7 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 
 		this.reconnectTimeout = setTimeout(() => {
 			this.reconnectTimeout = null;
-			this.ConnectToWebsocketServer();
+			this.ConnectToWebSocketServer();
 		}, delay);
 	}
 
@@ -320,8 +330,27 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 					message.isRunning,
 				);
 				break;
+            case 'replicate-shared-state':
+                this.ApplySharedStateUpdateFromMainServer(message.data);
+                break;
 		}
 	}
+
+    private ApplySharedStateUpdateFromMainServer(payload: SyncPayload<VSBloomSharedState>): void {
+        this.sharedState.ApplyPayload(payload);
+
+        MenuPanel.currentPanel?.PostToSvelte({
+            type: 'replicate-shared-state',
+            data: payload,
+        });
+    }
+
+    private RequestSharedStateSnapshotFromMainServer(): void {
+        this.FireServer({
+            type: 'request-shared-state-snapshot',
+            id: this.myIdentifier
+        });
+    }
 
 	/**
 	 * Returns the native runtime running state as last reported by the master bridge server.
@@ -439,6 +468,12 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 	}
 
 	public dispose(): void {
+        const sharedStateDesyncUnsubscriber = this._sharedStateOnDesyncSubscription;
+        if (sharedStateDesyncUnsubscriber) {
+            this._sharedStateOnDesyncSubscription = null;
+            sharedStateDesyncUnsubscriber();
+        }
+
 		this._onServerDisconnected.dispose();
 		void this.Stop();
 		VSBloomPseudoServer.outputChannel?.dispose();

@@ -24,6 +24,8 @@ import type {
 	VSBloomClientConfig,
 	VSBloomEffectModule,
 } from './ElectronGlobals';
+import { defaultVSBloomSharedState, VSBloomSharedState } from './SharedState';
+import { RemoteState, SyncPayload } from './SynchronizedState';
 
 //these constants are replaced during the esbuild
 //compilation step with their 'actual' values
@@ -314,10 +316,12 @@ class VSBloomClient implements IVSBloomClient {
 					this.UpdateClientConfig(message.settings);
 				}
 				break;
-
 			case 'are-u-alive':
 				this.FireServer({ type: 'i-am-alive' });
 				break;
+            case 'replicate-shared-state':
+                this.UpdateClientSharedState(message.data);
+                break;
 
 			default:
 				this.Log('warn', 'Received an unknown message type from the extension', {
@@ -635,6 +639,17 @@ class VSBloomClient implements IVSBloomClient {
 		window.dispatchEvent(event);
 	}
 
+    private UpdateClientSharedState(payload: SyncPayload<VSBloomSharedState>): void {
+        window.__VSBLOOM__.sharedState.ApplyPayload(payload);
+    }
+
+    private RequestNewSharedStateSnapshot(): void {
+        this.FireServer({
+            type: 'request-shared-state-snapshot',
+            windowId: this.windowId,
+        });
+    }
+
 	/**
 	 * Sends a log message over to the actual
 	 * VSC extension's websocket server, ensuring
@@ -694,10 +709,16 @@ class VSBloomClient implements IVSBloomClient {
 		//contains the `libs` field
 		const existingLibs = (window as Window).__VSBLOOM__?.libs;
 
+        const sharedState = new RemoteState(defaultVSBloomSharedState);
+        sharedState.OnDesync(() => {
+            this.RequestNewSharedStateSnapshot();
+        });
+
 		window.__VSBLOOM__ = {
 			libs: existingLibs,
 			extensionConfig: undefined,
 			client: this,
+            sharedState,
 
 			Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => {
 				this.Log(level, message, data);

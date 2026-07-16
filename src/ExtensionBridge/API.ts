@@ -5,8 +5,14 @@
  * message type/interface definitions for
  * communication between the VSC extension
  * and the patched VSBloom client running
- * within the Electron Renderer process
+ * within the Electron Renderer process, as
+ * well as the message types for communication
+ * between the main Bridge server and any current
+ * Pseudo-Servers that are connected to it.
  */
+
+import { VSBloomSharedState } from "./SharedState";
+import { SyncPayload } from "./SynchronizedState";
 
 //Extension -> Client Message
 export interface EffectEnableRequestMessage {
@@ -32,12 +38,17 @@ export interface ConfigMessage {
 export interface KeepAliveRequestMessage {
 	type: 'are-u-alive';
 }
+export interface ReplicateSharedStateMessage {
+    type: 'replicate-shared-state';
+    data: SyncPayload<VSBloomSharedState>;
+}
 export type ExtensionToClientMessage =
 	| EffectEnableRequestMessage
 	| EffectReloadRequestMessage
 	| EffectStopRequestMessage
 	| ConfigMessage
-	| KeepAliveRequestMessage;
+	| KeepAliveRequestMessage
+    | ReplicateSharedStateMessage;
 
 //Client -> Extension Message
 export interface ReadyMessage {
@@ -57,11 +68,16 @@ export interface WindowIdChangeMessage {
 	type: 'change-window-id';
 	newWindowId: string;
 }
+export interface RequestSharedStateSnapshotMessage {
+    type: 'request-shared-state-snapshot';
+    windowId: string;
+}
 export type ClientToExtensionMessage =
 	| ReadyMessage
 	| KeepAliveResponseMessage
 	| LogMessage
-	| WindowIdChangeMessage;
+	| WindowIdChangeMessage
+    | RequestSharedStateSnapshotMessage;
 
 //Pseudo-Server -> Extension Message
 export interface PseudoServerReadyMessage {
@@ -72,7 +88,10 @@ export interface PseudoServerReadyMessage {
 export interface PseudoServerKeepAliveResponseMessage {
     type: 'i-am-alive';
 }
-
+export interface PseudoServerRequestSharedStateSnapshotMessage {
+    type: 'request-shared-state-snapshot';
+    id: string;
+}
 export interface PseudoServerMarshalledMessage {
     type: 'marshalled-message';
     id: string;
@@ -112,7 +131,7 @@ export type PseudoServerMarshalledSetNativeRuntimeActiveData = {
     };
 }
 
-export type PseudoServerToExtensionMessage = PseudoServerReadyMessage | PseudoServerMarshalledMessage | PseudoServerKeepAliveResponseMessage;
+export type PseudoServerToExtensionMessage = PseudoServerReadyMessage | PseudoServerMarshalledMessage | PseudoServerKeepAliveResponseMessage | PseudoServerRequestSharedStateSnapshotMessage;
 export type PseudoServerMarshalledMessageDecodedData = PseudoServerMarshalledFireAllClientsData | PseudoServerMarshalledFireClientData | PseudoServerMarshalledReplicateExtensionConfigData | PseudoServerMarshalledReloadAllEffectsData | PseudoServerMarshalledSetNativeRuntimeActiveData;
 
 //Server -> Pseudo-Server Message
@@ -129,7 +148,15 @@ export interface ExtensionToPseudoServerNativeRuntimeStateMessage {
     type: 'native-runtime-state';
     isRunning: boolean;
 }
-export type ServerToPseudoServerMessage = ExtensionToPseudoServerKeepAliveQueryMessage | ExtensionToPseudoServerLogReplicationMessage | ExtensionToPseudoServerNativeRuntimeStateMessage;
+export interface ExtensionToPseudoServerReplicateSharedStateMessage {
+    type: 'replicate-shared-state';
+    data: SyncPayload<VSBloomSharedState>;
+}
+export type ServerToPseudoServerMessage =
+    ExtensionToPseudoServerKeepAliveQueryMessage |
+    ExtensionToPseudoServerLogReplicationMessage |
+    ExtensionToPseudoServerNativeRuntimeStateMessage |
+    ExtensionToPseudoServerReplicateSharedStateMessage;
 
 //General Pseudo-Server Datatypes
 export interface PseudoServerMarshalledMessageEventPayload {

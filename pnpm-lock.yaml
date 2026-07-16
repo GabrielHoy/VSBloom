@@ -92,6 +92,9 @@ importers:
       gsap:
         specifier: ^3.14.2
         version: 3.14.2
+      immer:
+        specifier: ^11.1.11
+        version: 11.1.11
       jsonc-parser:
         specifier: ^3.3.1
         version: 3.3.1
@@ -1706,6 +1709,9 @@ packages:
   immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
 
+  immer@11.1.11:
+    resolution: {integrity: sha512-qzXuyXAkPySAGYkfsAwodDPWT8Zm7/Uo5BNt4BjhMhG5WlWyZZ4wQqnWwdS8kjlQ1Cwu6gjw3A6+0gTQwlyYtw==}
+
   import-fresh@2.0.0:
     resolution: {integrity: sha512-eZ5H8rcgYazHbKC3PG4ClHNykCSxtAhxSSEM+2mb+7evD2CKF5V7c0dNum7AdpDh0ZdICwZY9sRSn8f+KH96sg==}
     engines: {node: '>=4'}
@@ -2994,6 +3000,7 @@ packages:
   webfont@11.2.26:
     resolution: {integrity: sha512-ms9abzcJGMBj5yVTpNfAcyQB0SNzmi10aBlKLC7kAt1TQ5eZqieRhvhxN1BrXaizWV0nksp6vLqBfaJmBWmF7Q==}
     engines: {node: '>= 12.0.0'}
+    deprecated: 'This release contains no functional changes (empty release). Please upgrade to the latest version: npm install webfont@latest'
     hasBin: true
 
   which@2.0.2:
@@ -4582,6 +4589,8 @@ snapshots:
       '@types/node': 16.9.1
 
   immediate@3.0.6: {}
+
+  immer@11.1.11: {}
 
   import-fresh@2.0.0:
     dependencies:

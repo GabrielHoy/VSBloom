@@ -7,7 +7,7 @@
  */
 
 function Log(type: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown): void {
-	if (window.__VSBLOOM__) {
+	if (typeof window !== 'undefined' && window.__VSBLOOM__) {
 		window.__VSBLOOM__.Log(type, message, data);
 	} else {
 		console[type](`[VSBloom]: ${message}`, data ?? '');

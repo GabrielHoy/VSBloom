@@ -131,6 +131,12 @@ async function ExtensionActivatedAndClientPatchingVerified(
 				'info',
 				`The native runtime is supported on this platform - platform-specific functionality will be available if enabled.`,
 			);
+            // Trigger an update of the Native Runtime's state so that if anything
+            // ended up initializing the NRT before we did above(particularly looking
+            // at singletons like the bridge server), it can properly bootstrap the
+            // actual runtime's binaries here etc. now that everything is properly
+            // setup and initialized
+            nativeRuntimeManager.UpdateNativeRuntimeEnabledState();
 		} else {
 			MainOutputChannel.Log(
 				'warn',

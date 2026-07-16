@@ -24,7 +24,9 @@ import {
 	type PseudoServerMarshalledMessage,
 	type PseudoServerMarshalledMessageDecodedData,
 	type PseudoServerMarshalledMessageEventPayload,
+	PseudoServerRequestSharedStateSnapshotMessage,
 	type PseudoServerToExtensionMessage,
+	RequestSharedStateSnapshotMessage,
 	type ServerToPseudoServerMessage,
 	type VSBloomClientConfig,
 	type VSBloomConfigObject,
@@ -37,6 +39,10 @@ import {
 	MAX_PSEUDO_SERVER_PAYLOAD_SIZE_BYTES,
 } from './PseudoServer';
 import { StatefulVSCodeContext } from './StatefulContext';
+import { SynchronizedState, SyncPayload } from '../SynchronizedState';
+import { defaultVSBloomSharedState, VSBloomSharedState } from '../SharedState';
+import { MenuPanel } from '../../Extension/WebviewMenuPanel';
+import Janitor from '../../EffectLib/Bloom/Janitors';
 
 interface ConnectedClient {
 	ws: WebSocket;
@@ -60,7 +66,12 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	private clients: Map<string, ConnectedClient> = new Map();
 	private pseudoServers: Map<string, ConnectedPseudoServer> = new Map();
 	private pingInterval: NodeJS.Timeout | null = null;
+    // Janitor for the lifetime of a single Bridge Server instance upon Start()'ing,
+    // lasting until it gets `Stop()`'d by VSCode deactivating the extension
+    private serverJanitor: Janitor = new Janitor();
+    // Janitor for the entire lifetime of the class, until it gets `dispose()`'d by VSCode deactivating the extension
 	private configChangeDisposable: vscode.Disposable | null = null;
+    private extensionDisposalJanitor: Janitor;
 	protected authToken: string;
 
 	/**
@@ -79,6 +90,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	private readonly _onPseudoServerMarshalledMessage =
 		new vscode.EventEmitter<PseudoServerMarshalledMessageEventPayload>();
 	// Event emitter for when the server disconnects
+    // TODO: Look into this event when time permits, doesn't seem like it's actually being fired anywhere
 	private readonly _onServerDisconnected = new vscode.EventEmitter<void>();
 
 	public static outputChannel: vscode.OutputChannel | null = null;
@@ -145,6 +157,11 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	 */
 	public readonly OnServerDisconnected: vscode.Event<void> = this._onServerDisconnected.event;
 
+    /**
+     * Globally Synchronized State
+     */
+    public readonly sharedState: SynchronizedState<VSBloomSharedState> = new SynchronizedState(defaultVSBloomSharedState, this.ReplicateSharedStatePayload.bind(this));
+
 	/**
 	 *   Methods
 	 */
@@ -158,6 +175,18 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			this.authToken = crypto.randomBytes(32).toString('hex');
 			context.globalState.update('vsbloom.bridge.authToken', this.authToken);
 		}
+        
+        this.extensionDisposalJanitor = new Janitor();
+        this.extensionDisposalJanitor.Add(() => {
+            // Dispose of all our event emitters when the bridge server is stopped
+            this._onClientReady.dispose();
+            this._onClientDisconnected.dispose();
+            this._onPseudoServerReady.dispose();
+            this._onPseudoServerDisconnected.dispose();
+            this._onPseudoServerMarshalledMessage.dispose();
+            this._onServerDisconnected.dispose();
+        });
+        
 	}
 
 	public static GetInstance(context: vscode.ExtensionContext): VSBloomBridgeServer {
@@ -166,6 +195,32 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 		}
 		return VSBloomBridgeServer.instance;
 	}
+
+    /**
+     * Handles replicating general payloads across the various
+     * transport boundaries of VSBloom, representing either
+     * complete synchronizations or partial updates of the shared
+     * state.
+     */
+    private ReplicateSharedStatePayload(payload: SyncPayload<VSBloomSharedState>) {
+        //Replicate to all connected Clients
+        this.FireAllClients({
+            type: 'replicate-shared-state',
+            data: payload,
+        });
+
+        //Replicate to all connected Pseudo-Servers
+        this.FireAllPseudoServers({
+            type: 'replicate-shared-state',
+            data: payload,
+        });
+
+        //Replicate to the Svelte Webview if it currently exists
+        MenuPanel.currentPanel?.PostToSvelte({
+            type: 'replicate-shared-state',
+            data: payload,
+        });
+    }
 
 	private static SetServerListeningState(isNowListening: boolean): void {
 		VSBloomBridgeServer.isServerListening = isNowListening;
@@ -198,6 +253,18 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 		}
 	}
 
+    private SetupNativeRuntimeEventListeners(): void {
+        const nativeRuntime = VSBloomNativeRuntimeManager.GetInstance();
+
+        // Update the shared state whenever the native runtime gives us
+        // a new list of available audio devices
+        const audioDeviceUpdateDisposable = nativeRuntime.receivableMessageEvents['available-audio-device-list']((newAvailableDevices) => {
+            this.sharedState.state.audio.availableDevices = newAvailableDevices;
+            this.sharedState.Commit();
+        });
+        this.serverJanitor.Add(() => audioDeviceUpdateDisposable.dispose());
+    }
+
 	/**
 	 * Start the WebSocket server
 	 */
@@ -226,6 +293,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 					);
 					this.DispatchKeepAlivePingDaemon();
 					this.SetupExtensionConfigChangedListener();
+                    this.SetupNativeRuntimeEventListeners();
 					VSBloomBridgeServer.SetServerListeningState(true);
 
 					resolve();
@@ -295,6 +363,10 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			clearInterval(this.pingInterval);
 			this.pingInterval = null;
 		}
+
+        void this.serverJanitor.CleanAll().catch((err) => {
+            MainOutputChannel.Log("error", "An error occurred while cleaning up a Bridge Server's server-lifetime janitor", { error: err });
+        });
 
 		if (this.configChangeDisposable) {
 			this.configChangeDisposable.dispose();
@@ -569,6 +641,9 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			case 'marshalled-message':
 				this.PseudoServerMarshalledMessageReceived(ws, message);
 				break;
+			case 'request-shared-state-snapshot':
+				this.PseudoServerSharedStateSnapshotRequestReceived(ws, message);
+				break;
 		}
 	}
 
@@ -592,6 +667,10 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 
 		this._onPseudoServerReady.fire(identifier);
 		VSBloomBridgeServer.pseudoServerCountCtx.Add(identifier);
+
+        // Send a full snapshot of the current shared state to the pseudo-server
+        // upon them connecting to us
+        this.SendSharedStateSnapshotToPseudoServer(identifier);
 
 		this.Log(
 			'info',
@@ -680,6 +759,77 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 		}
 	}
 
+    private SendSharedStateSnapshotToPseudoServer(pseudoServerID: string): void {
+        this.FirePseudoServer(pseudoServerID, {
+            type: 'replicate-shared-state',
+            data: this.sharedState.Snapshot()
+        });
+    }
+
+    private SendSharedStateSnapshotToClient(windowId: string): void {
+        this.FireClient(windowId, {
+            type: 'replicate-shared-state',
+            data: this.sharedState.Snapshot()
+        });
+    }
+
+    protected ClientSharedStateSnapshotRequestReceived(message: RequestSharedStateSnapshotMessage): void {
+        if (typeof message.windowId !== 'string') {
+            this.Log(
+                'error',
+                'A client snapshot request was received with a windowId property that was not a string',
+            );
+            return;
+        }
+        if (message.windowId.length > 2048) {
+            this.Log(
+                'error',
+                'A client snapshot request was received with a windowId property that was too long',
+            );
+            return;
+        }
+
+        this.SendSharedStateSnapshotToClient(message.windowId);
+	}
+    
+    private PseudoServerSharedStateSnapshotRequestReceived(ws: WebSocket, message: PseudoServerRequestSharedStateSnapshotMessage): void {
+        //Sanity checks...
+        const pseudoServerIdentifier: unknown = typeof message.id === 'string' ? message.id : null;
+		if (typeof pseudoServerIdentifier !== 'string') {
+			this.Log(
+				'error',
+				'A pseudo-server snapshot request was received with an id property that was not a string',
+			);
+			return;
+		}
+		if (pseudoServerIdentifier.length > MAX_PSEUDO_SERVER_IDENTIFIER_LENGTH) {
+			this.Log(
+				'error',
+				'A pseudo-server snapshot request was received with an id property that was too long',
+			);
+			return;
+		}
+
+		const registeredPseudoServer = this.pseudoServers.get(pseudoServerIdentifier);
+		if (!registeredPseudoServer) {
+			this.Log(
+				'error',
+				'A pseudo-server snapshot request was received from a pseudo-server that was not registered with the bridge server',
+			);
+			return;
+		}
+		if (registeredPseudoServer.ws !== ws) {
+			this.Log(
+				'error',
+				'A pseudo-server snapshot request was received from a pseudo-server, but it sent an ID corresponding to a different pseudo-server: This is likely an attempt at impersonation.',
+			);
+			return;
+		}
+
+        //Send a full snapshot of the current shared state to the pseudo-server
+        this.SendSharedStateSnapshotToPseudoServer(pseudoServerIdentifier);
+    }
+
 	/**
 	 * Processes a new client attempting to connect to the server
 	 * and validates their authentication token
@@ -730,17 +880,17 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			case 'client-ready':
 				this.ClientReadyMessageReceived(ws, message.windowId);
 				break;
-
 			case 'i-am-alive':
 				break;
-
 			case 'replicate-log':
 				this.ReplicateLogMessageFromClient(message);
 				break;
-
 			case 'change-window-id':
 				this.ChangeClientWindowId(ws, message.newWindowId);
 				break;
+            case 'request-shared-state-snapshot':
+                this.ClientSharedStateSnapshotRequestReceived(message);
+                break;
 
 			default:
 				this.Log('error', `Unknown message type received`);
@@ -780,6 +930,10 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 				settings: config,
 			} as ExtensionToClientMessage),
 		);
+
+        // Send a full snapshot of the current shared state to the client
+        // upon them connecting to us
+        this.SendSharedStateSnapshotToClient(windowId);
 
 		//fire the onClientReady event so external code can react
 		//to the client being ready etc and do whatever they need
@@ -892,9 +1046,13 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	 * Dispose of the bridge; called when the extension is deactivated
 	 */
 	public dispose(): void {
-		this.Stop();
-		this._onClientReady.dispose();
-		this._onClientDisconnected.dispose();
+		this.Stop().catch((err) => {
+            MainOutputChannel.Log("error", "An error occurred while .Stop()'ing the bridge server", { error: err });
+        });
+        this.extensionDisposalJanitor.Destroy().catch((err) => {
+            MainOutputChannel.Log("error", "An error occurred while .Destroy()'ing the Bridge Server's extension-lifetime janitor", { error: err });
+        });
+
 		VSBloomBridgeServer.outputChannel?.dispose();
 		VSBloomBridgeServer.outputChannel = null;
 

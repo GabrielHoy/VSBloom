@@ -25,7 +25,7 @@ import type * as NativeReceivables from './MessageTypes/NativeReceivableMessages
 
 export const NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES = [
     'new-audio-analysis-frame',
-    'available-audio-device-list',
+    'available-audio-device-list'
 ] as const satisfies readonly (NativeMessages.NativeReceivableMessage["type"])[];
 
 type NativeReceivableEventMessageName = (typeof NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES)[number]
@@ -37,14 +37,14 @@ type NativeReceivableEventPayload<MSG_TYPE extends NativeReceivableEventMessageN
     Extract<NativeMessages.NativeReceivableMessage, { type: MSG_TYPE }>['data'];
 
 type NativeReceivableEventEmitterList = {
-    [MSG_TYPE in NativeReceivableEventMessageName]: vscode.EventEmitter<NativeReceivableEventPayload<MSG_TYPE>>;
+    [MSG_TYPE in (typeof NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES)[number]]: vscode.EventEmitter<NativeReceivableEventPayload<MSG_TYPE>>;
 }
 
 /**
  * The publicly observable `.event` side of {@link NativeReceivableEventEmitterList}.
  * */
 type NativeReceivableEventList = {
-    [MSG_TYPE in NativeReceivableEventMessageName]: vscode.Event<NativeReceivableEventPayload<MSG_TYPE>>;
+    readonly [MSG_TYPE in NativeReceivableEventMessageName]: vscode.Event<NativeReceivableEventPayload<MSG_TYPE>>;
 }
 
 export class VSBloomNativeRuntimeManager implements vscode.Disposable {
@@ -420,6 +420,25 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 				break;
 			}
 			default: {
+                /**
+                 * Some message types from the Native Runtime are 'event-emitters',
+                 * meaning they don't themselves invoke any behavior when received
+                 * from the Native Runtime, but rather simply raise an event on the
+                 * TypeScript side here in the Native Runtime Manager - This allows
+                 * for different parts of the codebase to subscribe to these events
+                 * and implement their own behavior w/o establishing dependencies to
+                 * them from within the Native Runtime Manager itself.
+                */
+                if (messageType in this.receivableMessageEventEmitters) {
+                    const eventMsgType = messageType as NativeReceivableEventMessageName;
+                    const eventEmitter = this.receivableMessageEventEmitters[eventMsgType];
+                    const eventPayload = message.data as NativeReceivableEventPayload<typeof eventMsgType>;
+
+                    eventEmitter.fire(eventPayload as Extract<NativeReceivableEventPayload<typeof eventMsgType>, typeof eventMsgType>);
+
+                    break;
+                }
+
 				this.Log(
 					'error',
 					`Received an unknown message type from the native runtime: ${messageType}`,
@@ -516,7 +535,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		}
 	}
 
-	private async UpdateNativeRuntimeEnabledState() {
+	public async UpdateNativeRuntimeEnabledState() {
         const config = vscode.workspace.getConfiguration();
         const isNativeRuntimeSettingEnabled = config.get<boolean>('vsbloom.nativeRuntime.enabled');
 

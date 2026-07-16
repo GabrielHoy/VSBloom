@@ -5,6 +5,10 @@ import * as ClientPatcher from '../Patcher/ClientPatcher';
 import type { BloomToSveltePayload, SvelteToBloomPayload } from '../Webview/WebviewNetworking';
 import * as ExtensionReflection from './ExtensionReflection';
 import * as VersionTracking from './VersionTracking';
+import { SyncSnapshotPayload } from '../ExtensionBridge/SynchronizedState';
+import { VSBloomSharedState } from '../ExtensionBridge/SharedState';
+import { VSBloomPseudoServer } from '../ExtensionBridge/BridgeServer/PseudoServer';
+import { MainOutputChannel } from './MainOutputChannel';
 
 function GetWebviewURI(webview: vscode.Webview, extensionUri: Uri, pathList: string[]) {
 	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
@@ -162,6 +166,29 @@ export class MenuPanel {
 		);
 	}
 
+    private SyncSharedStateSnapshotToSvelte() {
+        let payload: SyncSnapshotPayload<VSBloomSharedState>;
+        if (VSBloomBridgeServer.isServerListening) {
+            //We're the window with the Main Bridge Server running
+            const server = VSBloomBridgeServer.GetInstance(this.context);
+            payload = server.sharedState.Snapshot();
+        } else {
+            //We're a Pseudo-Server connected to the Main Bridge Server
+            const pseudo = VSBloomPseudoServer.GetInstanceIfExists();
+			if (pseudo?.IsRunning()) {
+                payload = pseudo.sharedState.Snapshot();
+            } else {
+                MainOutputChannel.Log("warn", "Attempted to replicate a shared state snapshot to the Svelte Webview, but no Pseudo-Server is running to accomodate it.");
+                return;
+            }
+        }
+
+        this.PostToSvelte({
+            type: 'replicate-shared-state',
+            data: payload
+        });
+    }
+
 	private SetWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
@@ -185,6 +212,7 @@ export class MenuPanel {
 					case 'webview-ready':
 						this.SendMetadataUpdateToSvelte();
 						this.SendSettingsListToSvelte();
+						this.SyncSharedStateSnapshotToSvelte();
 						break;
 					case 'request-settings-sync':
 						this.SendSettingsListToSvelte();
@@ -192,6 +220,9 @@ export class MenuPanel {
 					case 'update-setting':
 						this.UpdateSetting(message.data.internalSettingPath, message.data.newValue);
 						break;
+                    case 'request-shared-state-snapshot':
+                        this.SyncSharedStateSnapshotToSvelte();
+                        break;
 				}
 			},
 			undefined,

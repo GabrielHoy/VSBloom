@@ -9,6 +9,9 @@ import { mount } from 'svelte';
 import { AssignCurrentEffectSettings } from './Global/Settings.svelte';
 import { vscode } from './Util/VSCodeAPI';
 import WebviewPage from './Webview.svelte';
+import { nonReactiveWebviewSharedState } from './Util/WebviewSharedState.svelte';
+import type { SyncPayload } from '../ExtensionBridge/SynchronizedState';
+import type { VSBloomSharedState } from '../ExtensionBridge/SharedState';
 
 // Hookup Bloom -> Svelte message listeners for general state management
 vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
@@ -18,6 +21,10 @@ vscode.ObserveBloomToSvelteMessage('sync-settings-list', (data) => {
 const webviewPage = mount(WebviewPage, {
 	// biome-ignore lint/style/noNonNullAssertion: <we ensure this is always present in the DOM via the static HTML we generate, this non-null assertion is safe>
 	target: document.getElementById('mount-sentinel-element')!,
+});
+
+vscode.ObserveBloomToSvelteMessage('replicate-shared-state', (payload: SyncPayload<VSBloomSharedState>) => {
+    nonReactiveWebviewSharedState.ApplyPayload(payload);
 });
 
 //Once we've mounted the webview Svelte page,
