@@ -83,6 +83,18 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
     public readonly sharedState: RemoteState<VSBloomSharedState> = new RemoteState(defaultVSBloomSharedState);
     private _sharedStateOnDesyncSubscription: (() => void) | null = null;
 
+    /**
+     * Binary channels this window's webview currently wants. A pseudo-server has
+     * exactly one possible binary consumer - its local webview - since Electron
+     * clients connect to the main bridge server directly no matter which window
+     * they live in.
+     *
+     * Held locally (rather than just forwarding edges blindly) for two reasons: it
+     * collapses the webview's demand into one source from the main server's point of
+     * view, and it's what lets us re-announce after a reconnect.
+     */
+    private readonly localWebviewBinaryChannelDemand: Set<number> = new Set();
+
 	private myIdentifier: string;
 	private authToken: string;
 
@@ -221,6 +233,10 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 					type: 'pseudo-server-ready',
 					identifier: this.myIdentifier,
 				});
+
+				// The main server drops our demand when our socket does, so restate
+				// whatever our webview still holds (after the ready handshake of course)
+				this.AnnounceHeldBinaryChannels();
 
 				// Resolve the pending Start() promise; cleared so reconnects are silent
 				if (this._startResolve) {
@@ -363,6 +379,53 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
             type: 'request-shared-state-snapshot',
             id: this.myIdentifier
         });
+    }
+
+    /**
+     * Records this window's webview wanting (or dropping) a binary channel and
+     * relays the edge to the main bridge server. Called by MenuPanel, the only
+     * thing that can see its own webview's messages.
+     *
+     * Deduplicated against our local set, so a webview that re-announces or
+     * double-releases can't desync the main server's view of us.
+     */
+    public SetLocalWebviewBinaryChannelDemand(channelId: number, hasDemand: boolean): void {
+        if (hasDemand) {
+            if (this.localWebviewBinaryChannelDemand.has(channelId)) {
+                return;
+            }
+            this.localWebviewBinaryChannelDemand.add(channelId);
+        } else if (!this.localWebviewBinaryChannelDemand.delete(channelId)) {
+            return;
+        }
+
+        this.FireServer({
+            type: 'binary-channel-demand',
+            id: this.myIdentifier,
+            channelId,
+            hasDemand,
+        });
+    }
+
+    /**
+     * Revoke every channel our webview held - call when the panel is disposed, since
+     * a torn-down webview never gets to release its own holds.
+     */
+    public ClearLocalWebviewBinaryChannelDemand(): void {
+        for (const channelId of [...this.localWebviewBinaryChannelDemand]) {
+            this.SetLocalWebviewBinaryChannelDemand(channelId, false);
+        }
+    }
+
+    private AnnounceHeldBinaryChannels(): void {
+        for (const channelId of this.localWebviewBinaryChannelDemand) {
+            this.FireServer({
+                type: 'binary-channel-demand',
+                id: this.myIdentifier,
+                channelId,
+                hasDemand: true,
+            });
+        }
     }
 
 	/**

@@ -72,12 +72,28 @@ export interface RequestSharedStateSnapshotMessage {
     type: 'request-shared-state-snapshot';
     windowId: string;
 }
+/**
+ * Announces this client's demand for a binary data-plane channel (see
+ * BinaryTransport.ts). Sent only on 0<->1 hold edges within the client's stream
+ * hub - not per-subscriber - and re-announced for every held channel on reconnect,
+ * since the server drops a client's demand when its socket closes.
+ *
+ * The server fans a channel out only while *someone* wants it; with no demand the
+ * producer never even encodes a frame.
+ */
+export interface BinaryChannelDemandMessage {
+    type: 'binary-channel-demand';
+    windowId: string;
+    channelId: number;
+    hasDemand: boolean;
+}
 export type ClientToExtensionMessage =
 	| ReadyMessage
 	| KeepAliveResponseMessage
 	| LogMessage
 	| WindowIdChangeMessage
-    | RequestSharedStateSnapshotMessage;
+    | RequestSharedStateSnapshotMessage
+    | BinaryChannelDemandMessage;
 
 //Pseudo-Server -> Extension Message
 export interface PseudoServerReadyMessage {
@@ -96,6 +112,20 @@ export interface PseudoServerMarshalledMessage {
     type: 'marshalled-message';
     id: string;
     data: string;
+}
+/**
+ * Relays a binary channel demand edge on behalf of this pseudo-server's *local
+ * webview* - the only consumer behind a pseudo-server, since Electron clients
+ * connect to the main bridge server directly regardless of which window they're in.
+ *
+ * The pseudo-server aggregates its webview's demand rather than forwarding blindly,
+ * so the main server sees one source per window.
+ */
+export interface PseudoServerBinaryChannelDemandMessage {
+    type: 'binary-channel-demand';
+    id: string;
+    channelId: number;
+    hasDemand: boolean;
 }
 
 export type PseudoServerMarshalledFireAllClientsData = {
@@ -131,7 +161,7 @@ export type PseudoServerMarshalledSetNativeRuntimeActiveData = {
     };
 }
 
-export type PseudoServerToExtensionMessage = PseudoServerReadyMessage | PseudoServerMarshalledMessage | PseudoServerKeepAliveResponseMessage | PseudoServerRequestSharedStateSnapshotMessage;
+export type PseudoServerToExtensionMessage = PseudoServerReadyMessage | PseudoServerMarshalledMessage | PseudoServerKeepAliveResponseMessage | PseudoServerRequestSharedStateSnapshotMessage | PseudoServerBinaryChannelDemandMessage;
 export type PseudoServerMarshalledMessageDecodedData = PseudoServerMarshalledFireAllClientsData | PseudoServerMarshalledFireClientData | PseudoServerMarshalledReplicateExtensionConfigData | PseudoServerMarshalledReloadAllEffectsData | PseudoServerMarshalledSetNativeRuntimeActiveData;
 
 //Server -> Pseudo-Server Message

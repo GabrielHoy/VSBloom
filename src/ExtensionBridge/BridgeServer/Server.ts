@@ -16,6 +16,7 @@ import { IsDevelopmentEnvironment } from '../../Extension/ExtensionReflection';
 import { MainOutputChannel } from '../../Extension/MainOutputChannel';
 import { VSBloomNativeRuntimeManager } from '../../Native/NativeRuntimeManager';
 import {
+	type BinaryChannelDemandMessage,
 	type ClientToExtensionMessage,
 	DEFAULT_BRIDGE_PORT,
 	type ExtensionToClientMessage,
@@ -24,6 +25,7 @@ import {
 	type PseudoServerMarshalledMessage,
 	type PseudoServerMarshalledMessageDecodedData,
 	type PseudoServerMarshalledMessageEventPayload,
+	type PseudoServerBinaryChannelDemandMessage,
 	PseudoServerRequestSharedStateSnapshotMessage,
 	type PseudoServerToExtensionMessage,
 	RequestSharedStateSnapshotMessage,
@@ -50,6 +52,27 @@ interface ConnectedClient {
 	ws: WebSocket;
 	windowId: string;
 	connectedAt: Date;
+}
+
+/**
+ * Identity of one consumer that can express demand for a binary channel. Demand is
+ * tracked per *source* rather than as a bare per-channel count so that a source
+ * vanishing (window closed, socket dropped, webview disposed) can have all of its
+ * demand revoked in one shot - a raw count has no way to un-count a corpse, and a
+ * single crashed window would pin a firehose open forever.
+ */
+export const BINARY_DEMAND_SOURCE_LOCAL_WEBVIEW = 'webview:local';
+export function ClientBinaryDemandSourceKey(windowId: string): string {
+	return `client:${windowId}`;
+}
+export function PseudoServerBinaryDemandSourceKey(identifier: string): string {
+	return `pseudo:${identifier}`;
+}
+
+/** Payload for {@link VSBloomBridgeServer.OnBinaryChannelDemandChanged}. */
+export interface BinaryChannelDemandChangedEvent {
+	channelId: number;
+	hasDemand: boolean;
 }
 
 interface ConnectedPseudoServer {
@@ -94,6 +117,9 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	// Event emitter for when the server disconnects
     // TODO: Look into this event when time permits, doesn't seem like it's actually being fired anywhere
 	private readonly _onServerDisconnected = new vscode.EventEmitter<void>();
+	// Event emitter for when a binary channel gains its first or loses its last consumer
+	private readonly _onBinaryChannelDemandChanged =
+		new vscode.EventEmitter<BinaryChannelDemandChangedEvent>();
 
 	public static outputChannel: vscode.OutputChannel | null = null;
 	public static isServerListening: boolean = false;
@@ -159,6 +185,19 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	 */
 	public readonly OnServerDisconnected: vscode.Event<void> = this._onServerDisconnected.event;
 
+	/**
+	 * Fires on a binary channel's demand *edges* across the whole topology: `true`
+	 * when the first consumer anywhere starts wanting it, `false` when the last one
+	 * stops. Never fires per-consumer.
+	 *
+	 * This is the hook for pushing gating further upstream than the fan-out itself.
+	 * Right now the win for demand-gating is that we skip encoding and sending;
+     * the bigger win is down the line isss
+     * TODO: Tell the native runtime to stop doing things like analyzing audio entirely when nothing is listening.
+	 */
+	public readonly OnBinaryChannelDemandChanged: vscode.Event<BinaryChannelDemandChangedEvent> =
+		this._onBinaryChannelDemandChanged.event;
+
     /**
      * Globally Synchronized State
      */
@@ -170,6 +209,19 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
      * only exists for drop diagnostics (data-plane is drop-newest, not gapless).
      */
     private readonly binaryFrameSeqByChannel: Map<number, number> = new Map();
+
+    /**
+     * Which binary channels each consumer source currently wants, keyed by source
+     * (see ClientBinaryDemandSourceKey etc).
+     *
+     * Deliberately indexed source -> channels rather than channel -> sources: the
+     * mutations that actually matter for correctness are "this source went away"
+     * and "this source got renamed", both O(1) here. `HasBinaryChannelDemand` walks
+     * the sources instead, which is a handful of entries (one per window, plus this
+     * window's webview) and runs once per emitted frame - cheap, and it keeps a
+     * single source of truth rather than two indexes that can silently drift apart.
+     */
+    private readonly binaryChannelDemandBySource: Map<string, Set<number>> = new Map();
 
 	/**
 	 *   Methods
@@ -194,6 +246,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
             this._onPseudoServerDisconnected.dispose();
             this._onPseudoServerMarshalledMessage.dispose();
             this._onServerDisconnected.dispose();
+            this._onBinaryChannelDemandChanged.dispose();
         });
         
 	}
@@ -274,8 +327,15 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
         this.serverJanitor.Add(() => audioDeviceUpdateDisposable.dispose());
 
         // Fan every new audio analysis frame out over the binary plane to all
-        // effects & webviews.
+        // effects & webviews (that are actually listening to it).
+        // The demand check is deliberately *before* we encode: BroadcastBinaryFrame
+        // would drop the frame anyway, but bailing here means we don't allocate and
+        // fill a Float32Array-backed payload dozens of times a second for nobody.
         const audioFrameDisposable = nativeRuntime.receivableMessageEvents['new-audio-analysis-frame']((newAnalyzedAudioFrame) => {
+            if (!this.HasBinaryChannelDemand(BinaryChannelId.AudioAnalysisFrame)) {
+                return;
+            }
+
             this.BroadcastBinaryFrame(
                 BinaryChannelId.AudioAnalysisFrame,
                 EncodeAudioAnalysisPayload(newAnalyzedAudioFrame),
@@ -494,15 +554,116 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	}
 
 	/**
+	 * Whether *any* consumer anywhere in the topology currently wants `channelId`.
+	 *
+	 * Producers should check this before doing the work of building a payload -
+	 * BroadcastBinaryFrame re-checks as a backstop, but by then you've already paid
+	 * for the encode.
+	 */
+	public HasBinaryChannelDemand(channelId: number): boolean {
+		for (const channels of this.binaryChannelDemandBySource.values()) {
+			if (channels.has(channelId)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Record (or revoke) one source's demand for a single channel, firing the
+	 * aggregate demand edge if this flipped the channel's overall state.
+	 */
+	private SetBinaryChannelDemand(sourceKey: string, channelId: number, hasDemand: boolean): void {
+		const hadDemandBefore = this.HasBinaryChannelDemand(channelId);
+
+		let channels = this.binaryChannelDemandBySource.get(sourceKey);
+		if (hasDemand) {
+			if (!channels) {
+				channels = new Set();
+				this.binaryChannelDemandBySource.set(sourceKey, channels);
+			}
+			channels.add(channelId);
+		} else if (channels) {
+			channels.delete(channelId);
+			if (channels.size === 0) {
+				this.binaryChannelDemandBySource.delete(sourceKey);
+			}
+		}
+
+		const hasDemandNow = this.HasBinaryChannelDemand(channelId);
+		if (hadDemandBefore !== hasDemandNow) {
+			this._onBinaryChannelDemandChanged.fire({ channelId, hasDemand: hasDemandNow });
+			this.Log(
+				'debug',
+				`Binary channel ${channelId} demand ${hasDemandNow ? 'opened' : 'closed'}`,
+			);
+		}
+	}
+
+	/**
+	 * Revoke every channel a source was holding. **This is the load-bearing cleanup
+	 * for demand gating**: a window that closes, crashes, or drops its socket never
+	 * gets to release its holds politely, so the transport layer must revoke them on
+	 * its behalf. Miss this and a single dead window pins a firehose open forever,
+	 * which is literally entirely what this gating exists to prevent.
+	 */
+	private ClearBinaryChannelDemandForSource(sourceKey: string): void {
+		const channels = this.binaryChannelDemandBySource.get(sourceKey);
+		if (!channels) {
+			return;
+		}
+		this.binaryChannelDemandBySource.delete(sourceKey);
+
+		for (const channelId of channels) {
+			if (!this.HasBinaryChannelDemand(channelId)) {
+				this._onBinaryChannelDemandChanged.fire({ channelId, hasDemand: false });
+				this.Log('debug', `Binary channel ${channelId} demand closed (source went away)`);
+			}
+		}
+	}
+
+	/**
+	 * Re-key a source's demand without disturbing the aggregate. Needed because a
+	 * client's windowId is not stable (see ChangeClientWindowId) - leaving demand
+	 * filed under the old id would both leak it and orphan the client's later
+	 * release.
+	 */
+	private MigrateBinaryChannelDemandSource(fromSourceKey: string, toSourceKey: string): void {
+		const channels = this.binaryChannelDemandBySource.get(fromSourceKey);
+		if (!channels) {
+			return;
+		}
+		this.binaryChannelDemandBySource.delete(fromSourceKey);
+		this.binaryChannelDemandBySource.set(toSourceKey, channels);
+	}
+
+	/**
+	 * Record demand from this window's own webview (the menu panel). Called by
+	 * MenuPanel, which is the only thing that can see its own webview's messages.
+	 */
+	public SetLocalWebviewBinaryChannelDemand(channelId: number, hasDemand: boolean): void {
+		this.SetBinaryChannelDemand(BINARY_DEMAND_SOURCE_LOCAL_WEBVIEW, channelId, hasDemand);
+	}
+
+	/** Revoke all demand held by this window's webview - call on panel disposal. */
+	public ClearLocalWebviewBinaryChannelDemand(): void {
+		this.ClearBinaryChannelDemandForSource(BINARY_DEMAND_SOURCE_LOCAL_WEBVIEW);
+	}
+
+	/**
 	 * The single fan-out chokepoint for VSBloom's binary data-plane. Frames a
 	 * payload once and pushes the same bytes down every leg that needs it:
 	 *   - all Electron clients (effects, every window) via a WS binary frame;
 	 *   - all pseudo-servers, which relay to their own webviews;
 	 *   - this window's own webview (if the menu panel is open).
 	 *
-	 * TODO: This is a seam which is currently still open - intended to add per-channel demand gating later without touching actual producers.
+	 * No-ops entirely when nothing anywhere holds the channel.
 	 */
 	public BroadcastBinaryFrame(channelId: BinaryChannelId, payload: ArrayBuffer): void {
+		if (!this.HasBinaryChannelDemand(channelId)) {
+			return;
+		}
+
 		const seq = (this.binaryFrameSeqByChannel.get(channelId) ?? 0) + 1;
 		this.binaryFrameSeqByChannel.set(channelId, seq);
 
@@ -688,6 +849,10 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 					this._onPseudoServerDisconnected.fire(identifier);
 					VSBloomBridgeServer.pseudoServerCountCtx.Remove(identifier);
 					this.pseudoServers.delete(identifier);
+					// That window's webview is gone with it - revoke whatever it held.
+					this.ClearBinaryChannelDemandForSource(
+						PseudoServerBinaryDemandSourceKey(identifier),
+					);
 					this.Log('info', `Pseudo-Server disconnected: ${identifier} (code: ${code})`, {
 						identifier,
 					});
@@ -718,7 +883,63 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			case 'request-shared-state-snapshot':
 				this.PseudoServerSharedStateSnapshotRequestReceived(ws, message);
 				break;
+			case 'binary-channel-demand':
+				this.PseudoServerBinaryChannelDemandReceived(ws, message);
+				break;
 		}
+	}
+
+	/**
+	 * Records a pseudo-server's binary channel demand edge on behalf of its local
+	 * webview.
+	 */
+	private PseudoServerBinaryChannelDemandReceived(
+		ws: WebSocket,
+		message: PseudoServerBinaryChannelDemandMessage,
+	): void {
+		if (typeof message.id !== 'string' || message.id.length > MAX_PSEUDO_SERVER_IDENTIFIER_LENGTH) {
+			this.Log(
+				'error',
+				'A pseudo-server binary channel demand message was received with an invalid id property',
+			);
+			return;
+		}
+		if (typeof message.channelId !== 'number' || !Number.isInteger(message.channelId)) {
+			this.Log(
+				'error',
+				'A pseudo-server binary channel demand message was received with a channelId property that was not an integer',
+			);
+			return;
+		}
+		if (typeof message.hasDemand !== 'boolean') {
+			this.Log(
+				'error',
+				'A pseudo-server binary channel demand message was received with a hasDemand property that was not a boolean',
+			);
+			return;
+		}
+
+		const registeredPseudoServer = this.pseudoServers.get(message.id);
+		if (!registeredPseudoServer) {
+			this.Log(
+				'error',
+				'A pseudo-server binary channel demand message was received from a pseudo-server that was not registered with the bridge server',
+			);
+			return;
+		}
+		if (registeredPseudoServer.ws !== ws) {
+			this.Log(
+				'error',
+				'A pseudo-server binary channel demand message was received from a pseudo-server, but it sent an ID corresponding to a different pseudo-server: This is likely an attempt at impersonation.',
+			);
+			return;
+		}
+
+		this.SetBinaryChannelDemand(
+			PseudoServerBinaryDemandSourceKey(message.id),
+			message.channelId,
+			message.hasDemand,
+		);
 	}
 
 	/**
@@ -865,7 +1086,59 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 
         this.SendSharedStateSnapshotToClient(message.windowId);
 	}
-    
+
+    /**
+     * Records a client's binary channel demand edge, after confirming the socket
+     * really is the client it claims to be - validation is important here so malicious
+     * actors can't impersonate other clients and turn data firehoses on in their name.
+     */
+    private ClientBinaryChannelDemandReceived(ws: WebSocket, message: BinaryChannelDemandMessage): void {
+        if (typeof message.windowId !== 'string') {
+            this.Log(
+                'error',
+                'A client binary channel demand message was received with a windowId property that was not a string',
+            );
+            return;
+        }
+        if (typeof message.channelId !== 'number' || !Number.isInteger(message.channelId)) {
+            this.Log(
+                'error',
+                'A client binary channel demand message was received with a channelId property that was not an integer',
+            );
+            return;
+        }
+        if (typeof message.hasDemand !== 'boolean') {
+            this.Log(
+                'error',
+                'A client binary channel demand message was received with a hasDemand property that was not a boolean',
+            );
+            return;
+        }
+
+        const registeredClient = this.clients.get(message.windowId);
+        if (!registeredClient) {
+            this.Log(
+                'error',
+                'A client binary channel demand message was received for a windowId that is not registered with the bridge server',
+            );
+            return;
+        }
+        if (registeredClient.ws !== ws) {
+            this.Log(
+                'error',
+                'A client binary channel demand message was received from a client, but it sent a windowId corresponding to a different client: This is likely an attempt at impersonation.',
+            );
+            return;
+        }
+
+        this.SetBinaryChannelDemand(
+            ClientBinaryDemandSourceKey(message.windowId),
+            message.channelId,
+            message.hasDemand,
+        );
+    }
+
+
     private PseudoServerSharedStateSnapshotRequestReceived(ws: WebSocket, message: PseudoServerRequestSharedStateSnapshotMessage): void {
         //Sanity checks...
         const pseudoServerIdentifier: unknown = typeof message.id === 'string' ? message.id : null;
@@ -931,6 +1204,9 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			for (const [windowId, client] of this.clients.entries()) {
 				if (client.ws === ws) {
 					this.clients.delete(windowId);
+					// A dropped client can't release its holds itself, so revoke them here
+					// rather than its demand pinning the channel open for the rest of the session.
+					this.ClearBinaryChannelDemandForSource(ClientBinaryDemandSourceKey(windowId));
 					this.Log('info', `Client disconnected: ${windowId} (code: ${code})`);
 					//fire the onClientDisconnected event so external code
 					//can react accordingly
@@ -964,6 +1240,9 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 				break;
             case 'request-shared-state-snapshot':
                 this.ClientSharedStateSnapshotRequestReceived(message);
+                break;
+            case 'binary-channel-demand':
+                this.ClientBinaryChannelDemandReceived(ws, message);
                 break;
 
 			default:
@@ -1024,6 +1303,12 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 					windowId: newWindowId,
 					connectedAt: new Date(),
 				});
+				// Demand is filed under the windowId, so it has to follow the rename -
+				// otherwise it's stranded under a key nothing will ever release.
+				this.MigrateBinaryChannelDemandSource(
+					ClientBinaryDemandSourceKey(windowId),
+					ClientBinaryDemandSourceKey(newWindowId),
+				);
 				break;
 			}
 		}

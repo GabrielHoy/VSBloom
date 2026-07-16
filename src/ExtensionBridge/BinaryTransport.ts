@@ -163,6 +163,34 @@ export function DecodeBinaryFrame(input: ArrayBuffer | Uint8Array): RawBinaryFra
 export type BinaryFrameListener<T> = (frame: DecodedBinaryFrame<T>) => void;
 
 /**
+ * A live claim on a channel, handed back by {@link BinaryStreamHub.Listen}.
+ *
+ * Holding one is what tells the producer (across every transport boundary) that
+ * this consumer actually wants the channel's frames - so `GetLatest` lives *here*
+ * rather than on the hub. A passive `hub.GetLatest(channel)` would be invisible to
+ * demand ref-counting, meaning a polling consumer would silently be starved of the
+ * binary frames it's polling for. Making the read only reachable through the hold
+ * makes that failure unrepresentable instead of just-documenting-it.
+ *
+ * **Always Release() when done** (Janitor / effect Stop() / component teardown),
+ * or the channel stays pinned open and keeps burning throughput for nobody.
+ */
+export interface BinaryChannelHold<T> {
+	/** The newest decoded frame on this channel, or `null` if none has arrived yet. */
+	GetLatest(): DecodedBinaryFrame<T> | null;
+	/** Drop this claim. Idempotent; a double Release won't corrupt the ref-count. */
+	Release(): void;
+}
+
+/**
+ * Notified only on demand *edges* for a channel (first hold acquired -> `true`,
+ * last hold released -> `false`), NOT on every Listen/Release. The transport
+ * layer wires this to whatever upstream signal tells the producer to start or
+ * stop emitting the channel.
+ */
+export type BinaryChannelDemandObserver = (channelId: number, hasDemand: boolean) => void;
+
+/**
  * Consumer-side multiplexer, shared by the Electron client and the webview. Feed
  * every received buffer to `Ingest`; the hub decodes each frame's payload ONCE
  * (via the channel's registered decoder) and hands that same decoded `value` to
@@ -170,9 +198,15 @@ export type BinaryFrameListener<T> = (frame: DecodedBinaryFrame<T>) => void;
  * decode per frame, not N.
  *
  * Register channels up front (see BinaryChannels.RegisterBuiltinBinaryChannels);
- * Subscribe also self-registers its channel as a safety net. Frames on an
+ * Listen/Subscribe also self-register their channel as a safety net. Frames on an
  * unregistered channel are dropped, since a producer may emit a channel a given
  * consumer build doesn't understand yet.
+ *
+ * Reading a channel requires *holding* it (`Listen`, or `Subscribe` which holds
+ * on your behalf). Holds are ref-counted per channel, and the hub reports only the
+ * 0<->1 edges to its {@link BinaryChannelDemandObserver} - that signal is what the
+ * transport layer relays upstream so the producer can skip emitting a channel
+ * nobody wants. No holds means no bytes on the wire.
  *
  * Semantics are deliberately last-arrived-wins with no ordering/gap enforcement:
  * this scaffolding is for firehoses, not replicated state. Missed frames are
@@ -185,6 +219,12 @@ export class BinaryStreamHub {
 	private readonly decodersByChannel = new Map<number, BinaryPayloadDecoder<unknown>>();
 	private readonly latestByChannel = new Map<number, DecodedBinaryFrame<unknown>>();
 	private readonly listenersByChannel = new Map<number, Set<BinaryFrameListener<unknown>>>();
+	/**
+	 * Live hold count per channel. A channel is only ever present here while its
+	 * count is >= 1, so the key set *is* the set of channels currently in demand.
+	 */
+	private readonly holdCountByChannel = new Map<number, number>();
+	private demandObserver: BinaryChannelDemandObserver | null = null;
 
 	/**
 	 * Register a channel's decoder so its payloads are decoded on ingest. Idempotent
@@ -192,6 +232,65 @@ export class BinaryStreamHub {
 	 */
 	public RegisterChannel<T>(channel: BinaryChannel<T>): void {
 		this.decodersByChannel.set(channel.id, channel.decode as BinaryPayloadDecoder<unknown>);
+	}
+
+	/**
+	 * Install the observer notified on this hub's demand edges. Set once during
+	 * transport wiring; passing `null` detaches it.
+	 *
+	 * Note this does *NOT* replay existing demand - callers that attach late (or
+	 * re-attach after a reconnect) should announce {@link GetHeldChannels} themselves.
+	 */
+	public SetDemandObserver(observer: BinaryChannelDemandObserver | null): void {
+		this.demandObserver = observer;
+	}
+
+	/**
+	 * Every channel currently held by at least one consumer. Used to re-announce
+	 * demand upstream after a reconnect, since the producer forgets a consumer's
+	 * demand the moment its transport drops.
+	 */
+	public GetHeldChannels(): number[] {
+		return [...this.holdCountByChannel.keys()];
+	}
+
+	/** Whether anything on this hub currently holds `channelId`. */
+	public HasDemandFor(channelId: number): boolean {
+		return this.holdCountByChannel.has(channelId);
+	}
+
+	private AddHold(channelId: number): void {
+		const previous = this.holdCountByChannel.get(channelId) ?? 0;
+		this.holdCountByChannel.set(channelId, previous + 1);
+
+		if (previous === 0) {
+			this.NotifyDemandChanged(channelId, true);
+		}
+	}
+
+	private ReleaseHold(channelId: number): void {
+		const previous = this.holdCountByChannel.get(channelId) ?? 0;
+		if (previous <= 1) {
+			this.holdCountByChannel.delete(channelId);
+			// Nobody's holding this channel anymore, so the cached frame is about to
+			// go stale for however long demand stays dark. Drop it now rather than
+			// letting a later Listen read a frame from minutes ago as if it were live.
+			this.latestByChannel.delete(channelId);
+			if (previous === 1) {
+				this.NotifyDemandChanged(channelId, false);
+			}
+			return;
+		}
+
+		this.holdCountByChannel.set(channelId, previous - 1);
+	}
+
+	private NotifyDemandChanged(channelId: number, hasDemand: boolean): void {
+		try {
+			this.demandObserver?.(channelId, hasDemand);
+		} catch {
+			// A throwing observer must not corrupt the ref-count or take out the caller.
+		}
 	}
 
 	public Ingest(input: ArrayBuffer | Uint8Array): void {
@@ -234,18 +333,56 @@ export class BinaryStreamHub {
 		}
 	}
 
-	/** The newest decoded frame for `channel`, or `null` if none has arrived yet. */
-	public GetLatest<T>(channel: BinaryChannel<T>): DecodedBinaryFrame<T> | null {
-		return (this.latestByChannel.get(channel.id) as DecodedBinaryFrame<T> | undefined) ?? null;
+	/**
+	 * Claim `channel`, marking it as in-demand for as long as the returned hold is
+	 * alive, and returning the handle you read it through.
+	 *
+	 * This is the primitive for *pull*-style consumers - an effect's render loop that
+	 * wants the newest frame whenever it happens to draw, rather than a callback per
+	 * frame. Push-style consumers want {@link Subscribe}, which holds for you.
+	 *
+	 * @example
+	 * const audio = hub.Listen(AudioAnalysisFrameChannel);
+	 * // ...in a rAF loop:
+	 * const frame = audio.GetLatest();
+	 * if (frame) { DrawSpectrum(frame.value.fftBins); }
+	 * // ...on teardown:
+	 * audio.Release();
+	 */
+	public Listen<T>(channel: BinaryChannel<T>): BinaryChannelHold<T> {
+		this.RegisterChannel(channel);
+		this.AddHold(channel.id);
+
+		let released = false;
+		return {
+			GetLatest: (): DecodedBinaryFrame<T> | null => {
+				if (released) {
+					return null;
+				}
+				return (
+					(this.latestByChannel.get(channel.id) as DecodedBinaryFrame<T> | undefined) ?? null
+				);
+			},
+			Release: (): void => {
+				if (released) {
+					return;
+				}
+				released = true;
+				this.ReleaseHold(channel.id);
+			},
+		};
 	}
 
 	/**
 	 * Register a listener fired with the already-decoded frame on every arrival for
-	 * `channel`. Ensures the channel's decoder is registered. Returns an unsubscribe
-	 * callback.
+	 * `channel`, holding the channel for the life of the subscription.
+	 *
+	 * Sugar over {@link Listen} - the returned callback both unsubscribes and drops
+	 * the hold, so demand can't outlive the listener.
+     * Idempotent.
 	 */
 	public Subscribe<T>(channel: BinaryChannel<T>, listener: BinaryFrameListener<T>): () => void {
-		this.RegisterChannel(channel);
+		const hold = this.Listen(channel);
 
 		let listeners = this.listenersByChannel.get(channel.id);
 		if (!listeners) {
@@ -254,11 +391,15 @@ export class BinaryStreamHub {
 		}
 		listeners.add(listener as BinaryFrameListener<unknown>);
 
+		let unsubscribed = false;
 		return () => {
-			const set = this.listenersByChannel.get(channel.id);
-			if (set) {
-				set.delete(listener as BinaryFrameListener<unknown>);
+			if (unsubscribed) {
+				return;
 			}
+			unsubscribed = true;
+
+			this.listenersByChannel.get(channel.id)?.delete(listener as BinaryFrameListener<unknown>);
+			hold.Release();
 		};
 	}
 }

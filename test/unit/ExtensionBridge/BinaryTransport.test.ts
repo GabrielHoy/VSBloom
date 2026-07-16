@@ -131,30 +131,28 @@ describe('BinaryStreamHub', () => {
 	test('decodes once and stores the latest value per channel', () => {
 		const hub = new BinaryStreamHub();
 		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
-		hub.RegisterChannel(channel);
+		const hold = hub.Listen(channel);
 
 		hub.Ingest(frameFor(channel.id, 1, [1]));
 		hub.Ingest(frameFor(channel.id, 2, [2]));
 
-		const latest = hub.GetLatest(channel);
+		const latest = hold.GetLatest();
 		expect(latest?.seq).toBe(2);
 		expect(latest?.value).toEqual(new Float32Array([2]));
 	});
 
 	test('keeps channels independent', () => {
 		const hub = new BinaryStreamHub();
-		const channelA = f32Channel(1);
-		const channelB = f32Channel(2);
-		const channelC = f32Channel(3);
-		hub.RegisterChannel(channelA);
-		hub.RegisterChannel(channelB);
+		const holdA = hub.Listen(f32Channel(1));
+		const holdB = hub.Listen(f32Channel(2));
+		const holdC = hub.Listen(f32Channel(3));
 
-		hub.Ingest(frameFor(channelA.id, 5, [10]));
-		hub.Ingest(frameFor(channelB.id, 1, [20]));
+		hub.Ingest(frameFor(1, 5, [10]));
+		hub.Ingest(frameFor(2, 1, [20]));
 
-		expect(hub.GetLatest(channelA)?.seq).toBe(5);
-		expect(hub.GetLatest(channelB)?.seq).toBe(1);
-		expect(hub.GetLatest(channelC)).toBeNull();
+		expect(holdA.GetLatest()?.seq).toBe(5);
+		expect(holdB.GetLatest()?.seq).toBe(1);
+		expect(holdC.GetLatest()).toBeNull();
 	});
 
 	test('decodes exactly once regardless of subscriber count', () => {
@@ -180,11 +178,12 @@ describe('BinaryStreamHub', () => {
 		hub.Subscribe(channel, (frame) => seen.push(frame.value));
 		hub.Subscribe(channel, (frame) => seen.push(frame.value));
 
+		const hold = hub.Listen(channel);
 		hub.Ingest(frameFor(channel.id, 1, [7]));
 		expect(seen).toHaveLength(2);
 		// Same decoded object across subscribers - not re-decoded per listener.
 		expect(seen[0]).toBe(seen[1]);
-		expect(seen[0]).toBe(hub.GetLatest(channel)?.value);
+		expect(seen[0]).toBe(hold.GetLatest()?.value);
 	});
 
 	test('Subscribe fires once per frame on its channel and unsubscribe stops it', () => {
@@ -211,9 +210,14 @@ describe('BinaryStreamHub', () => {
 
 	test('drops frames on channels with no registered decoder', () => {
 		const hub = new BinaryStreamHub();
-		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame); // never registered
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		// Nothing has registered or held this channel yet, so the frame has no decoder.
 		hub.Ingest(frameFor(channel.id, 1, [1]));
-		expect(hub.GetLatest(channel)).toBeNull();
+
+		// Acquiring registers the decoder - but the earlier frame must have been
+		// dropped outright, not stashed away raw and decoded retroactively.
+		expect(hub.Listen(channel).GetLatest()).toBeNull();
 	});
 
 	test('a throwing decoder drops the frame without notifying', () => {
@@ -226,10 +230,11 @@ describe('BinaryStreamHub', () => {
 			},
 		};
 		hub.Subscribe(channel, listener);
+		const hold = hub.Listen(channel);
 
 		expect(() => hub.Ingest(frameFor(channel.id, 1, [1]))).not.toThrow();
 		expect(listener).not.toHaveBeenCalled();
-		expect(hub.GetLatest(channel)).toBeNull();
+		expect(hold.GetLatest()).toBeNull();
 	});
 
 	test('ignores a malformed frame without throwing or notifying', () => {
@@ -237,10 +242,11 @@ describe('BinaryStreamHub', () => {
 		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
 		const listener = vi.fn();
 		hub.Subscribe(channel, listener);
+		const hold = hub.Listen(channel);
 
 		expect(() => hub.Ingest(new ArrayBuffer(4))).not.toThrow();
 		expect(listener).not.toHaveBeenCalled();
-		expect(hub.GetLatest(channel)).toBeNull();
+		expect(hold.GetLatest()).toBeNull();
 	});
 
 	test('a throwing listener does not wedge others', () => {
@@ -254,5 +260,143 @@ describe('BinaryStreamHub', () => {
 
 		expect(() => hub.Ingest(frameFor(channel.id, 1, [1]))).not.toThrow();
 		expect(good).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('BinaryStreamHub demand gating', () => {
+	function frameFor(channelId: number, seq: number, values: number[]): ArrayBuffer {
+		return EncodeBinaryFrame(channelId, seq, seq, makeF32Payload(values));
+	}
+	function f32Channel(id: number): BinaryChannel<Float32Array> {
+		return { id, decode: (payload) => new Float32Array(payload) };
+	}
+
+	test('reports only demand edges, not every hold', () => {
+		const hub = new BinaryStreamHub();
+		const observer = vi.fn();
+		hub.SetDemandObserver(observer);
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		const first = hub.Listen(channel);
+		const second = hub.Listen(channel);
+		const third = hub.Listen(channel);
+
+		// Three holds, but only the 0 -> 1 transition is worth a round-trip upstream.
+		expect(observer).toHaveBeenCalledTimes(1);
+		expect(observer).toHaveBeenCalledWith(channel.id, true);
+
+		first.Release();
+		second.Release();
+		expect(observer).toHaveBeenCalledTimes(1); // still held by `third`
+
+		third.Release();
+		expect(observer).toHaveBeenCalledTimes(2);
+		expect(observer).toHaveBeenLastCalledWith(channel.id, false);
+	});
+
+	test('Subscribe holds the channel and unsubscribing drops it', () => {
+		const hub = new BinaryStreamHub();
+		const observer = vi.fn();
+		hub.SetDemandObserver(observer);
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		const unsubscribe = hub.Subscribe(channel, () => {});
+		expect(hub.HasDemandFor(channel.id)).toBe(true);
+
+		unsubscribe();
+		expect(hub.HasDemandFor(channel.id)).toBe(false);
+		expect(observer).toHaveBeenLastCalledWith(channel.id, false);
+	});
+
+	test('a double Release does not corrupt the ref-count', () => {
+		const hub = new BinaryStreamHub();
+		const observer = vi.fn();
+		hub.SetDemandObserver(observer);
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		const first = hub.Listen(channel);
+		const second = hub.Listen(channel);
+
+		first.Release();
+		first.Release(); // a sloppy caller must not release `second`'s hold for it
+		expect(hub.HasDemandFor(channel.id)).toBe(true);
+		expect(observer).toHaveBeenCalledTimes(1);
+
+		second.Release();
+		expect(hub.HasDemandFor(channel.id)).toBe(false);
+	});
+
+	test('a double unsubscribe does not corrupt the ref-count', () => {
+		const hub = new BinaryStreamHub();
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		const unsubscribeFirst = hub.Subscribe(channel, () => {});
+		hub.Subscribe(channel, () => {});
+
+		unsubscribeFirst();
+		unsubscribeFirst();
+		expect(hub.HasDemandFor(channel.id)).toBe(true);
+	});
+
+	test('GetHeldChannels reports exactly what is held, for reconnect re-announcement', () => {
+		const hub = new BinaryStreamHub();
+		const holdA = hub.Listen(f32Channel(1));
+		hub.Listen(f32Channel(2));
+
+		expect([...hub.GetHeldChannels()].sort()).toEqual([1, 2]);
+
+		holdA.Release();
+		expect(hub.GetHeldChannels()).toEqual([2]);
+	});
+
+	test('a released hold reads null even if frames are still arriving', () => {
+		const hub = new BinaryStreamHub();
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+		const keepAlive = hub.Listen(channel);
+		const hold = hub.Listen(channel);
+
+		hub.Ingest(frameFor(channel.id, 1, [1]));
+		expect(hold.GetLatest()).not.toBeNull();
+
+		hold.Release();
+		hub.Ingest(frameFor(channel.id, 2, [2]));
+		expect(hold.GetLatest()).toBeNull();
+		// ...but the still-live hold is unaffected.
+		expect(keepAlive.GetLatest()?.seq).toBe(2);
+	});
+
+	test('drops the cached frame when demand goes dark, so a later hold sees no stale data', () => {
+		const hub = new BinaryStreamHub();
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		const hold = hub.Listen(channel);
+		hub.Ingest(frameFor(channel.id, 1, [1]));
+		expect(hold.GetLatest()?.seq).toBe(1);
+		hold.Release();
+
+		// Re-acquiring after a gap must not resurrect a frame from whenever demand
+		// last lapsed - for a firehose, an old frame is worse than no frame.
+		expect(hub.Listen(channel).GetLatest()).toBeNull();
+	});
+
+	test('a throwing demand observer does not corrupt the ref-count', () => {
+		const hub = new BinaryStreamHub();
+		hub.SetDemandObserver(() => {
+			throw new Error('transport is down');
+		});
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+
+		expect(() => hub.Listen(channel)).not.toThrow();
+		expect(hub.HasDemandFor(channel.id)).toBe(true);
+	});
+
+	test('frames still ingest normally while held', () => {
+		const hub = new BinaryStreamHub();
+		const channel = f32Channel(BinaryChannelId.AudioAnalysisFrame);
+		const listener = vi.fn();
+		hub.Subscribe(channel, listener);
+
+		hub.Ingest(frameFor(channel.id, 1, [1]));
+		expect(listener).toHaveBeenCalledTimes(1);
 	});
 });

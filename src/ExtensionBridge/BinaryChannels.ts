@@ -7,7 +7,7 @@
  * them, so producers and consumers can't disagree on the wire format.
  *
  * Consumers import the typed channel handle (e.g. `AudioAnalysisFrameChannel`)
- * and Subscribe / GetLatest with it - `T` flows from the handle, so frames come
+ * and Subscribe / Listen with it - `T` flows from the handle, so frames come
  * back fully typed with no casts. Adding a stream = add a codec, declare a
  * `BinaryChannel<T>` here, and drop it in `ALL_BINARY_CHANNELS`.
  */
@@ -34,8 +34,11 @@ const ALL_BINARY_CHANNELS: readonly BinaryChannel<unknown>[] = [AudioAnalysisFra
 /**
  * Register every built-in channel's decoder on a hub so incoming frames are
  * decoded once on ingest. Call this right after constructing a consumer-side hub
- * (Electron client + webview). Subscribe self-registers too, but this makes
- * GetLatest-only consumers work before any subscription exists.
+ * (Electron client + webview).
+ *
+ * Listen/Subscribe self-register too, so this is belt-and-braces: it just means a
+ * hub can decode any known channel the moment a frame lands, rather than depending
+ * on the order consumers ~happen~ to show up in.
  */
 export function RegisterBuiltinBinaryChannels(hub: BinaryStreamHub): void {
 	for (const channel of ALL_BINARY_CHANNELS) {

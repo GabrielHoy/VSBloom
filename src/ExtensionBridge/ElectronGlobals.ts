@@ -81,8 +81,12 @@ export interface VSBloomGlobals {
     /**
      * The consumer end of VSBloom's binary data-plane. Effects read
      * high-throughput streams (i.e. audio analysis frames) from here via
-     * `Subscribe(channelId, ...)` / `GetLatest(channelId)`.
-     * 
+     * `Subscribe(channel, ...)` for push, or `Listen(channel)` for pull.
+     *
+     * Holding a channel is what makes the extension send it at all - nothing is
+     * broadcast to a channel nobody holds. **Release the hold (or unsubscribe) in
+     * your effect's Stop()**, or you'll pin the stream open for a dead effect.
+     *
      * See BinaryTransport.ts if you're unfamiliar with this pipeline.
      */
     streams: BinaryStreamHub;

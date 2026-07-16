@@ -95,6 +95,7 @@ export class MenuPanel {
 
 	public dispose() {
 		MenuPanel.currentPanel = undefined;
+		this.ClearWebviewBinaryChannelDemand();
 		this.panel.dispose();
 
 		while (this.disposables.length) {
@@ -189,6 +190,48 @@ export class MenuPanel {
         });
     }
 
+    /**
+     * Relays this webview's binary channel demand to whichever bridge role this
+     * window is playing. On the main-server window it's recorded directly; on a
+     * pseudo-server window it gets marshalled over the WebSocket.
+     *
+     * Note we don't gate on the pseudo-server being connected - it records demand
+     * locally and re-announces on reconnect, so a webview holding a channel through
+     * a bridge 'hiccup' still gets its frames back afterward.
+     */
+    private RouteWebviewBinaryChannelDemand(channelId: number, hasDemand: boolean) {
+        if (VSBloomBridgeServer.isServerListening) {
+            VSBloomBridgeServer.GetInstance(this.context).SetLocalWebviewBinaryChannelDemand(
+                channelId,
+                hasDemand,
+            );
+            return;
+        }
+
+        const pseudo = VSBloomPseudoServer.GetInstanceIfExists();
+        if (pseudo) {
+            pseudo.SetLocalWebviewBinaryChannelDemand(channelId, hasDemand);
+        } else {
+            MainOutputChannel.Log(
+                'warn',
+                'The Svelte Webview signalled binary channel demand, but this window is neither the Main Bridge Server nor a Pseudo-Server...demand cannot be routed anywhere.',
+            );
+        }
+    }
+
+    /**
+     * Revoke everything this webview held. The webview is torn down wholesale on
+     * dispose and never releases its own holds, so without this its demand would
+     * keep a firehose running for a panel that no longer exists.
+     */
+    private ClearWebviewBinaryChannelDemand() {
+        if (VSBloomBridgeServer.isServerListening) {
+            VSBloomBridgeServer.GetInstance(this.context).ClearLocalWebviewBinaryChannelDemand();
+            return;
+        }
+        VSBloomPseudoServer.GetInstanceIfExists()?.ClearLocalWebviewBinaryChannelDemand();
+    }
+
 	private SetWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message: SvelteToBloomPayload) => {
@@ -222,6 +265,12 @@ export class MenuPanel {
 						break;
                     case 'request-shared-state-snapshot':
                         this.SyncSharedStateSnapshotToSvelte();
+                        break;
+                    case 'binary-channel-demand':
+                        this.RouteWebviewBinaryChannelDemand(
+                            message.data.channelId,
+                            message.data.hasDemand,
+                        );
                         break;
 				}
 			},

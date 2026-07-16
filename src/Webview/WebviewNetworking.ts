@@ -80,10 +80,27 @@ export interface RequestSharedStateSnapshotMessage {
     type: 'request-shared-state-snapshot';
     data: undefined;
 }
+/**
+ * Announces this webview's demand for a binary data-plane channel (see
+ * BinaryTransport.ts), fired on the webview stream hub's 0<->1 hold edges.
+ *
+ * The host relays it onward - the main bridge server records it directly, while a
+ * pseudo-server window forwards it over its WebSocket. Without this the host has no
+ * way to know a webview cares: frames flow to webviews over `postMessage`, but
+ * that channel is one-way (well, as far as demand is concerned that is).
+ */
+export interface BinaryChannelDemandMessage {
+    type: 'binary-channel-demand';
+    data: {
+        channelId: number;
+        hasDemand: boolean;
+    };
+}
 export type SvelteToBloomPayload =
 	| SendWindowNotificationMessage
 	| WebviewReadyMessage
 	| ChangeWebviewTitleMessage
 	| UpdateSettingMessage
 	| RequestSettingsSyncMessage
-	| RequestSharedStateSnapshotMessage;
+	| RequestSharedStateSnapshotMessage
+	| BinaryChannelDemandMessage;

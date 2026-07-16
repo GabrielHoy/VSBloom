@@ -192,6 +192,13 @@ class VSBloomClient implements IVSBloomClient {
 					type: 'client-ready',
 					windowId: this.windowId,
 				});
+
+				// The server forgets a client's binary channel demand when its socket
+				// drops, so re-announce whatever effects are still holding. Must come
+				// after client-ready, since the server rejects demand from unregistered
+				// windowId's. Any edges that fired while we were disconnected went
+				// nowhere; this is what makes those holds 'real' again.
+				this.AnnounceHeldBinaryChannels();
 			};
 
 			this.ws.onmessage = (event) => {
@@ -667,6 +674,30 @@ class VSBloomClient implements IVSBloomClient {
         });
     }
 
+    /**
+     * Tells the server this window's effects want (or no longer want) a binary
+     * channel. Fired only on the stream hub's demand edges, so this is cheap even
+     * though effects come and go constantly.
+     */
+    private ReportBinaryChannelDemand(channelId: number, hasDemand: boolean): void {
+        this.FireServer({
+            type: 'binary-channel-demand',
+            windowId: this.windowId,
+            channelId,
+            hasDemand,
+        });
+    }
+
+    /**
+     * Re-announces every channel currently held by an effect on this window. Used
+     * after (re)connecting, since demand lives on the server keyed by our socket.
+     */
+    private AnnounceHeldBinaryChannels(): void {
+        for (const channelId of this.binaryStreamHub.GetHeldChannels()) {
+            this.ReportBinaryChannelDemand(channelId, true);
+        }
+    }
+
 	/**
 	 * Sends a log message over to the actual
 	 * VSC extension's websocket server, ensuring
@@ -732,8 +763,14 @@ class VSBloomClient implements IVSBloomClient {
         });
 
         // Register channel decoders so incoming binary frames are decoded once on
-        // ingest, before fan-out to effects that Subscribe / GetLatest.
+        // ingest, before fan-out to effects that Subscribe / hold the channel.
         RegisterBuiltinBinaryChannels(this.binaryStreamHub);
+
+        // Relay demand upstream so the server only bothers framing and sending a
+        // channel while an effect on some window actually holds it.
+        this.binaryStreamHub.SetDemandObserver((channelId, hasDemand) => {
+            this.ReportBinaryChannelDemand(channelId, hasDemand);
+        });
 
 		window.__VSBLOOM__ = {
 			libs: existingLibs,
