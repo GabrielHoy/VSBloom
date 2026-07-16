@@ -230,7 +230,20 @@ export class VSBloomPseudoServer implements VSBloomBridgeServerContract {
 				}
 			});
 
-			this.ws.on('message', (data) => {
+			this.ws.on('message', (data, isBinary) => {
+				if (isBinary) {
+					// A binary frame from the Main Bridge Server;
+                    // We relay it verbatim to any Webviews that VSBloom has
+                    // open on this window, and don't much care for the contents
+                    // ourselves.
+					const bytes = Array.isArray(data) ? Buffer.concat(data) : (data as Buffer);
+					MenuPanel.currentPanel?.PostToSvelte({
+						type: 'binary-frame',
+						data: new Uint8Array(bytes),
+					});
+					return;
+				}
+
 				try {
 					const message = JSON.parse(data.toString()) as ServerToPseudoServerMessage;
 					this.MessageReceivedFromMainServer(message);

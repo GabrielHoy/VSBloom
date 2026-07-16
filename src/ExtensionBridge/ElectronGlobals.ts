@@ -13,6 +13,7 @@
 
 import type { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
 import type { VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue } from './API';
+import type { BinaryStreamHub } from './BinaryTransport';
 import type { VSBloomSharedState } from './SharedState';
 import type { RemoteState } from './SynchronizedState';
 
@@ -76,6 +77,15 @@ export interface VSBloomGlobals {
      * Globally Synchronized State across all VSBloom transport boundaries
      */
     sharedState: RemoteState<VSBloomSharedState>;
+
+    /**
+     * The consumer end of VSBloom's binary data-plane. Effects read
+     * high-throughput streams (i.e. audio analysis frames) from here via
+     * `Subscribe(channelId, ...)` / `GetLatest(channelId)`.
+     * 
+     * See BinaryTransport.ts if you're unfamiliar with this pipeline.
+     */
+    streams: BinaryStreamHub;
 
 	/**
 	 * Send a log message to the VSBloom extension's output channel.

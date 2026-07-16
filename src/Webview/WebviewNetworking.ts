@@ -29,11 +29,23 @@ export interface ReplicateSharedStateMessage {
     data: SyncPayload<VSBloomSharedState>;
 }
 
+/**
+ * A binary data-plane frame (see BinaryTransport.ts) relayed to the webview. The
+ * bytes survive `webview.postMessage`'s structured clone as a `Uint8Array`; the
+ * webview's stream hub decodes them. Kept out of the JSON control-plane message
+ * shapes on purpose...this is intended to be a data firehose.
+ */
+export interface BinaryFrameMessage {
+    type: 'binary-frame';
+    data: Uint8Array;
+}
+
 export type BloomToSveltePayload =
 	| SyncSettingsListMessage
 	| UpdateMetadataMessage
 	| ExternalPageSwapMessage
-	| ReplicateSharedStateMessage;
+	| ReplicateSharedStateMessage
+	| BinaryFrameMessage;
 
 //Svelte -> Bloom Extension
 export interface SendWindowNotificationMessage {

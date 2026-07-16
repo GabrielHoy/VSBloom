@@ -1,10 +1,10 @@
 {
 	"files": [
-		"src/EffectLib/jsonc-module.d.ts"
+		"./src/EffectLib/jsonc-module.d.ts"
 	],
 	"compilerOptions": {
 		"module": "ESNext",
-		"moduleResolution": "Bundler",
+		"moduleResolution": "bundler",
 		"target": "ES2022",
 		"lib": [
 			"ES2022",
@@ -17,12 +17,12 @@
 		"esModuleInterop": true,
 		"isolatedModules": true,
 		"types": [],
-		"baseUrl": ".",
 		"paths": {
-			"bloom": ["src/EffectLib/Bloom/Bloom"],
-			"gsap": ["node_modules/gsap"],
-			"motion": ["node_modules/motion"],
-			"pixi.js": ["node_modules/pixi.js"]
+            "src/*": ["./src/*"],
+			"bloom": ["./src/EffectLib/Bloom/Bloom"],
+			"gsap": ["./node_modules/gsap"],
+			"motion": ["./node_modules/motion"],
+			"pixi.js": ["./node_modules/pixi.js"]
 		}
 	}
 }

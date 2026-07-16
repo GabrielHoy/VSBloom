@@ -26,6 +26,8 @@ import type {
 } from './ElectronGlobals';
 import { defaultVSBloomSharedState, VSBloomSharedState } from './SharedState';
 import { RemoteState, SyncPayload } from './SynchronizedState';
+import { BinaryStreamHub } from './BinaryTransport';
+import { RegisterBuiltinBinaryChannels } from './BinaryChannels';
 
 //these constants are replaced during the esbuild
 //compilation step with their 'actual' values
@@ -66,6 +68,11 @@ class VSBloomClient implements IVSBloomClient {
 	 */
 	private effectHandles: Map<string, LoadedVSBloomEffectHandle> = new Map();
 	private trustedPolicy: TrustedTypePolicy | null = null;
+	/**
+	 * Consumer end of VSBloom's binary data-plane. Fed by binary WS frames in
+	 * `onmessage`; exposed to effects as `window.__VSBLOOM__.streams`.
+	 */
+	private readonly binaryStreamHub = new BinaryStreamHub();
 
 	private _windowId: string = 'WINDOW_ID_NOT_ASSIGNED_FOR_SOME_REASON';
 	private set windowId(value: string) {
@@ -170,6 +177,8 @@ class VSBloomClient implements IVSBloomClient {
 		try {
 			const url = `ws://127.0.0.1:${this.port}?type=client&token=${encodeURIComponent(this.authToken)}`;
 			this.ws = new WebSocket(url);
+			// Binary data-plane frames arrive as ArrayBuffers rather than Blobs.
+			this.ws.binaryType = 'arraybuffer';
 
 			this.ws.onopen = () => {
 				this._isConnected = true;
@@ -186,8 +195,16 @@ class VSBloomClient implements IVSBloomClient {
 			};
 
 			this.ws.onmessage = (event) => {
+				// Binary data-plane frame (things like audio analysis etc.)
+                // get routed to the stream hub, bypassing the JSON control-plane path entirely
+				if (typeof event.data !== 'string') {
+					this.binaryStreamHub.Ingest(event.data as ArrayBuffer);
+					return;
+				}
+
+                // Otherwise, we'll assume it's a JSON message and parse it accordingly
 				try {
-					const message = JSON.parse(event.data as string) as ExtensionToClientMessage;
+					const message = JSON.parse(event.data) as ExtensionToClientMessage;
 					this.HandleMessageFromExtension(message);
 				} catch (error) {
 					this.Log('error', 'Failed to parse message from server', {
@@ -714,11 +731,16 @@ class VSBloomClient implements IVSBloomClient {
             this.RequestNewSharedStateSnapshot();
         });
 
+        // Register channel decoders so incoming binary frames are decoded once on
+        // ingest, before fan-out to effects that Subscribe / GetLatest.
+        RegisterBuiltinBinaryChannels(this.binaryStreamHub);
+
 		window.__VSBLOOM__ = {
 			libs: existingLibs,
 			extensionConfig: undefined,
 			client: this,
             sharedState,
+            streams: this.binaryStreamHub,
 
 			Log: (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: unknown) => {
 				this.Log(level, message, data);

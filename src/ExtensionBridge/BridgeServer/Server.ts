@@ -41,6 +41,8 @@ import {
 import { StatefulVSCodeContext } from './StatefulContext';
 import { SynchronizedState, SyncPayload } from '../SynchronizedState';
 import { defaultVSBloomSharedState, VSBloomSharedState } from '../SharedState';
+import { BinaryChannelId, EncodeBinaryFrame } from '../BinaryTransport';
+import { EncodeAudioAnalysisPayload } from '../../Native/Audio/AudioAnalysisFrameCodec';
 import { MenuPanel } from '../../Extension/WebviewMenuPanel';
 import Janitor from '../../EffectLib/Bloom/Janitors';
 
@@ -162,6 +164,13 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
      */
     public readonly sharedState: SynchronizedState<VSBloomSharedState> = new SynchronizedState(defaultVSBloomSharedState, this.ReplicateSharedStatePayload.bind(this));
 
+    /**
+     * Per-channel sequence counters for VSBloom's binary data-plane. Bumped
+     * once per emitted frame in BroadcastBinaryFrame; consumer-side essentially
+     * only exists for drop diagnostics (data-plane is drop-newest, not gapless).
+     */
+    private readonly binaryFrameSeqByChannel: Map<number, number> = new Map();
+
 	/**
 	 *   Methods
 	 */
@@ -263,6 +272,16 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
             this.sharedState.Commit();
         });
         this.serverJanitor.Add(() => audioDeviceUpdateDisposable.dispose());
+
+        // Fan every new audio analysis frame out over the binary plane to all
+        // effects & webviews.
+        const audioFrameDisposable = nativeRuntime.receivableMessageEvents['new-audio-analysis-frame']((newAnalyzedAudioFrame) => {
+            this.BroadcastBinaryFrame(
+                BinaryChannelId.AudioAnalysisFrame,
+                EncodeAudioAnalysisPayload(newAnalyzedAudioFrame),
+            );
+        });
+        this.serverJanitor.Add(() => audioFrameDisposable.dispose());
     }
 
 	/**
@@ -440,6 +459,61 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 				client.ws.send(data);
 			}
 		}
+	}
+
+	/**
+	 * Broadcast a raw binary buffer to all connected clients as a WebSocket binary
+	 * frame. This is the data-plane counterpart to FireAllClients vs. using JSON;
+     * the buffer is a pre-framed BinaryTransport envelope based on a codec impl.
+	 */
+	public FireAllClientsBinary(buffer: ArrayBuffer): void {
+		if (this.clients.size === 0) {
+			return;
+		}
+		for (const client of this.clients.values()) {
+			if (client.ws.readyState === WebSocket.OPEN) {
+				client.ws.send(buffer, { binary: true });
+			}
+		}
+	}
+
+	/**
+	 * Broadcast a raw binary buffer to all connected pseudo-servers as a WebSocket
+	 * binary frame. Each pseudo-server forwards it verbatim to its local webview
+	 * (it never decodes - see PseudoServer.ts).
+	 */
+	public FireAllPseudoServersBinary(buffer: ArrayBuffer): void {
+		if (this.pseudoServers.size === 0) {
+			return;
+		}
+		for (const pseudoServer of this.pseudoServers.values()) {
+			if (pseudoServer.ws.readyState === WebSocket.OPEN) {
+				pseudoServer.ws.send(buffer, { binary: true });
+			}
+		}
+	}
+
+	/**
+	 * The single fan-out chokepoint for VSBloom's binary data-plane. Frames a
+	 * payload once and pushes the same bytes down every leg that needs it:
+	 *   - all Electron clients (effects, every window) via a WS binary frame;
+	 *   - all pseudo-servers, which relay to their own webviews;
+	 *   - this window's own webview (if the menu panel is open).
+	 *
+	 * TODO: This is a seam which is currently still open - intended to add per-channel demand gating later without touching actual producers.
+	 */
+	public BroadcastBinaryFrame(channelId: BinaryChannelId, payload: ArrayBuffer): void {
+		const seq = (this.binaryFrameSeqByChannel.get(channelId) ?? 0) + 1;
+		this.binaryFrameSeqByChannel.set(channelId, seq);
+
+		const buffer = EncodeBinaryFrame(channelId, seq, Date.now(), payload);
+
+		this.FireAllClientsBinary(buffer);
+		this.FireAllPseudoServersBinary(buffer);
+		MenuPanel.currentPanel?.PostToSvelte({
+			type: 'binary-frame',
+			data: new Uint8Array(buffer),
+		});
 	}
 
 	/**

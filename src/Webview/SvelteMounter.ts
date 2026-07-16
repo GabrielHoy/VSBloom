@@ -10,6 +10,7 @@ import { AssignCurrentEffectSettings } from './Global/Settings.svelte';
 import { vscode } from './Util/VSCodeAPI';
 import WebviewPage from './Webview.svelte';
 import { nonReactiveWebviewSharedState } from './Util/WebviewSharedState.svelte';
+import { webviewBinaryStreamHub } from './Util/WebviewBinaryStreams';
 import type { SyncPayload } from '../ExtensionBridge/SynchronizedState';
 import type { VSBloomSharedState } from '../ExtensionBridge/SharedState';
 
@@ -25,6 +26,11 @@ const webviewPage = mount(WebviewPage, {
 
 vscode.ObserveBloomToSvelteMessage('replicate-shared-state', (payload: SyncPayload<VSBloomSharedState>) => {
     nonReactiveWebviewSharedState.ApplyPayload(payload);
+});
+
+// Feed relayed binary data-plane frames into the stream hub
+vscode.ObserveBloomToSvelteMessage('binary-frame', (data: Uint8Array) => {
+    webviewBinaryStreamHub.Ingest(data);
 });
 
 //Once we've mounted the webview Svelte page,
