@@ -15,7 +15,6 @@
     #include <imgui_impl_opengl3.h>
     #include <mutex>
 
-
     /**
      * Defines a macro for creating a panel factory function that
      * can be used to create a panel of the given type and return
@@ -143,9 +142,17 @@ namespace VSBloom::Debug {
         }
 
         audioPanel = dynamic_cast<AudioDebugPanel*>(panels["audio"].get());
+
+        std::chrono::steady_clock::time_point frameStartTime;
         while (!glfwWindowShouldClose(window)) {
+            frameStartTime = std::chrono::steady_clock::now();
             glfwPollEvents();
             RenderFrame();
+            const std::chrono::steady_clock::duration timeFrameTook = std::chrono::steady_clock::now() - frameStartTime;
+
+            if (timeFrameTook < timePerFrameNS) {
+                std::this_thread::sleep_for(timePerFrameNS - timeFrameTook);
+            }
         }
 
         ImGui_ImplOpenGL3_Shutdown();

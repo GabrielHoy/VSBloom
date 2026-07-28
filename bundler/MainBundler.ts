@@ -1,10 +1,11 @@
 import * as esbuild from "esbuild";
-import chokidar from "chokidar";
-import fs from "fs";
-import * as os from "os";
-import path from "path";
+// import chokidar from "chokidar";
+import fs from "node:fs";
+import * as os from "node:os";
+import path from "node:path";
 import { Worker } from "node:worker_threads";
 import * as jsonc from "jsonc-parser";
+import esbuildSvelte from "esbuild-svelte";
 import * as Colorful from "../src/Debug/Colorful.ts";
 import { IsEffectEnabled } from "./EffectBuildConfigProvider";
 
@@ -306,7 +307,6 @@ function ConditionalPlugins(...plugins: (esbuild.Plugin | undefined)[]): esbuild
 }
 
 async function Main(): Promise<void> {
-    const esbuildSvelte = (await import("esbuild-svelte")).default;
     const { sveltePreprocess } = await import("svelte-preprocess");
     const postcss = (await import("postcss")).default;
     const tailwindcss = (await import("@tailwindcss/postcss")).default;
@@ -330,7 +330,7 @@ async function Main(): Promise<void> {
         }
     }
 
-    RebuildPackageFile();
+    RebuildPackageFile(isProductionBuild);
     console.log(`${BUILD_OUTPUT_PREFIX} ${Colorful.GetColoredString([255,255,0], "package.json", ["bold", "underline"])} file rebuilt`);
 
     const mainCtx = await esbuild.context({
@@ -490,6 +490,7 @@ async function Main(): Promise<void> {
         await Promise.all(allContexts.map((ctx) => ctx.watch()));
         console.log(`[watch] setting up effect ${Colorful.GetColoredString([144,0,255], "CSS file", ["bold"])} watchers...`);
 
+        const chokidar = await import("chokidar");
         const effectAssetWatcher = chokidar.watch(
             effectDirectories.map((dir) => path.join(EFFECTS_DIR, dir, `${dir}.css`)),
             {

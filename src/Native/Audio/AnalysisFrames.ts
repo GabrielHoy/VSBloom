@@ -14,6 +14,15 @@
  * analyzed at once.
  */
 
+export const enum AudioEQBand {
+    SubBass = 0,
+    Bass = 1,
+    Mid = 2,
+    UpperMid = 3,
+    Treble = 4,
+    __Count__ = 5,
+}
+
 export interface AnalyzedAudioFrame {
     /**
      * FFT bins for the analyzed audio frame; bins are in logarithmic
@@ -27,6 +36,25 @@ export interface AnalyzedAudioFrame {
      * to do it for us already haha.
      */
     fftBins: number[];
+
+    /**
+     * Instantaneous Audio EQ bands for the analyzed audio frame, allows for higher
+     * level querying of audio data without having to manually dig into
+     * or aggregate FFT bins if all you care about is 'how much bass is
+     * being outputted right now'.
+     * 
+     * You can query which EQ band the amplitudes in this array represent
+     * via indexing the array with a value from the {@link AudioEQBand} enum.
+     */
+    instEQ: number[];
+
+    /**
+     * Smoothed Audio EQ bands for the analyzed audio frame, instead of
+     * using the instantaneous EQ bands which can be noisy and jittery,
+     * this uses temporal smoothing over a portion of a second in order to
+     * smooth out the EQ band deltas over time.
+     */
+    smoothEQ: number[];
 
     /**
      * The average amplitude of the audio analysis frame.

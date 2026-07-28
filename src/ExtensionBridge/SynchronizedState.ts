@@ -172,6 +172,145 @@ export class SynchronizedState<T extends Objectish> {
 }
 
 /**
+ * Every dot-separated path that can be walked inside `T`, as a union of string
+ * literals - so `Subscribe` gets autocomplete and a compile error on typos
+ * rather than silently watching a path that will never fire.
+ *
+ * Arrays contribute a `${number}` segment, so `audio.availableDevices.0.name`
+ * typechecks just as `audio.availableDevices` does.
+ *
+ * `Depth` bounds the recursion so a (directly or mutually) recursive state type
+ * can't send the typechecker into an infinite expansion. 8 levels is far deeper
+ * than any plausible shared-state shape; raise it only if something legitimately
+ * nests further.
+ */
+export type StatePath<T, Depth extends number = 8> = [Depth] extends [never]
+	? never
+	: T extends readonly (infer Element)[]
+		? `${number}` | `${number}.${StatePath<Element, DecrementDepth[Depth]>}`
+		: T extends object
+			? {
+					[K in Extract<keyof T, string>]:
+						| K
+						| `${K}.${StatePath<T[K], DecrementDepth[Depth]>}`;
+				}[Extract<keyof T, string>]
+			: never;
+
+/** Recursion fuel for {@link StatePath} / {@link PathValue}. */
+type DecrementDepth = [never, 0, 1, 2, 3, 4, 5, 6, 7];
+
+/**
+ * The type sitting at dot-path `P` inside `T`. Lets a path subscriber receive
+ * its value already narrowed, instead of re-walking the path by hand and
+ * casting - which would throw away everything {@link StatePath} just bought us.
+ */
+export type PathValue<T, P extends string> = P extends `${infer Head}.${infer Rest}`
+	? Head extends keyof T
+		? PathValue<T[Head], Rest>
+		: T extends readonly (infer Element)[]
+			? Head extends `${number}`
+				? PathValue<Element, Rest>
+				: never
+			: never
+	: P extends keyof T
+		? T[P]
+		: T extends readonly (infer Element)[]
+			? P extends `${number}`
+				? Element
+				: never
+			: never;
+
+/** A path listener as stored internally, with `T`/`P` erased. */
+type ErasedPathListener = (value: unknown) => void;
+
+/**
+ * One distinct watched path. Keyed by its dot-string in `RemoteState` so a path
+ * is resolved and compared exactly once per payload no matter how many
+ * subscribers share it.
+ */
+interface WatchedPath {
+	/** The dot-path pre-split, so we don't re-split it on every payload. */
+	readonly segments: readonly string[];
+	readonly listeners: Set<ErasedPathListener>;
+}
+
+/**
+ * Walk `segments` into `root`, yielding `undefined` the moment the path runs off
+ * the end of the data (a missing key, or an index past an array's length).
+ *
+ * A path that doesn't resolve is not an error - shared state is allowed to not
+ * have grown a branch yet, and "undefined -> a value" is exactly the transition
+ * a subscriber wants to hear about.
+ */
+function ResolveStatePath(root: unknown, segments: readonly string[]): unknown {
+	let current: unknown = root;
+
+	for (const segment of segments) {
+		if (current === null || typeof current !== 'object') {
+			return undefined;
+		}
+		current = (current as Record<string, unknown>)[segment];
+	}
+
+	return current;
+}
+
+/**
+ * Structural equality for the plain-data values that live in a synchronized
+ * state. Deliberately only handles what survives the wire (primitives, arrays,
+ * plain objects) - a `Map`/`Set`/`Date` in shared state wouldn't survive JSON
+ * marshalling in the first place, so there's nothing here to support.
+ *
+ * The leading `Object.is` is what makes path subscriptions cheap on the patch
+ * path: `applyPatches` shares untouched subtrees by reference, so an unchanged
+ * branch bails on the first comparison instead of being walked.
+ */
+function DeepEquals(a: unknown, b: unknown): boolean {
+	if (Object.is(a, b)) {
+		return true;
+	}
+
+	if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+		return false;
+	}
+
+	const aIsArray = Array.isArray(a);
+	if (aIsArray !== Array.isArray(b)) {
+		return false;
+	}
+
+	if (aIsArray) {
+		const arrayA = a as readonly unknown[];
+		const arrayB = b as readonly unknown[];
+		if (arrayA.length !== arrayB.length) {
+			return false;
+		}
+		for (let i = 0; i < arrayA.length; i++) {
+			if (!DeepEquals(arrayA[i], arrayB[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	const objectA = a as Record<string, unknown>;
+	const objectB = b as Record<string, unknown>;
+	const keysA = Object.keys(objectA);
+	if (keysA.length !== Object.keys(objectB).length) {
+		return false;
+	}
+	for (const key of keysA) {
+		if (!Object.prototype.hasOwnProperty.call(objectB, key)) {
+			return false;
+		}
+		if (!DeepEquals(objectA[key], objectB[key])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
  * A read-only 'mirror' of an external `SynchronizedState`, often times lying
  * across some transport boundary. Feed it received payloads you receive via
  * `ApplyPayload` through however networking is setup for the current boundary;
@@ -185,6 +324,12 @@ export class RemoteState<T extends Objectish> {
 	private _version = -1;
 	private readonly changeListeners = new Set<() => void>();
 	private readonly desyncListeners = new Set<() => void>();
+	/**
+	 * Watched paths keyed by their dot-string. Only paths with at least one live
+	 * subscriber are present, so a mirror nobody path-subscribes to pays literally
+	 * nothing on the apply path.
+	 */
+	private readonly watchedPaths = new Map<string, WatchedPath>();
 
 	/**
 	 * @param initial The 'initial' PRE-SYNC value that `.state` should return before
@@ -221,9 +366,13 @@ export class RemoteState<T extends Objectish> {
 	 */
 	public ApplyPayload(payload: SyncPayload<T>): void {
 		if (payload.k === 'snapshot') {
+			const watchedValuesBefore = this.CaptureWatchedPathValues();
+
 			this.current = structuredClone(payload.state);
 			this._version = payload.ver;
+
 			this.NotifyChange();
+			this.NotifyChangedPaths(watchedValuesBefore);
 			return;
 		}
 
@@ -235,25 +384,102 @@ export class RemoteState<T extends Objectish> {
 
         // If the base version matches, we can apply any&all received
         // patches.
+		const watchedValuesBefore = this.CaptureWatchedPathValues();
+
 		this.current = applyPatches(this.current, payload.ops);
 		this._version = payload.ver;
+
 		this.NotifyChange();
+		this.NotifyChangedPaths(watchedValuesBefore);
 	}
 
 	/**
 	 * Register a listener to be fired after every successfully applied payload
 	 * (snapshot or patch).
-     * 
+     *
      * Returns an unsubscribe function.
 	 *
 	 * For the VSBloom webview Svelte will bind to this hook & provide reactivity:
 	 * `remote.Subscribe(() => (s = remote.state))` - since each apply yields a
 	 * new object, reassigning a `$state` ref is all the reactivity we'll need.
 	 */
-	public Subscribe(listener: () => void): () => void {
-		this.changeListeners.add(listener);
+	public Subscribe(listener: () => void): () => void;
+	/**
+	 * Register a listener fired only when the value at dot-path `path` actually
+	 * *changes* - so an effect that only cares about, say, the audio device list
+	 * isn't woken by every unrelated write anywhere else in shared state.
+	 *
+	 * The listener receives the new value at that path, already narrowed to the
+	 * right type. `path` is checked against {@link StatePath}, so a typo is a
+	 * compile error rather than a subscription that silently never fires.
+	 *
+	 * Semantics worth knowing (they differ from the pathless overload above -
+	 * that one means "a payload was applied", this one means "this value is now
+	 * different"):
+	 * - Ancestor and descendant writes both count. Subscribing to `a.b` fires
+	 *   whether the whole `a` subtree was replaced or just `a.b.c.d` was poked -
+	 *   but *only* if that made `a.b` genuinely different.
+	 * - A snapshot that happens to carry the same value at `path` does NOT fire.
+	 *   This is what keeps a reconnect/desync-recovery snapshot from stampeding
+	 *   every path subscriber in the process over state that never moved.
+	 * - Comparison is structural, not by identity, and the path is *not* fired
+	 *   on initial subscribe (read `.state` directly for the current value).
+	 *
+	 * Cost is one path resolution plus a structural compare per distinct watched
+	 * path per payload - fine for the control plane, which is what this is for.
+	 * High-throughput data belongs on the binary plane (see Binary/BinaryTransport.ts),
+	 * not here.
+	 *
+	 * @example
+	 * const unsubscribe = vsbloom.sharedState.Subscribe(
+	 *     'audio.availableDevices',
+	 *     (devices) => RebuildDeviceMenu(devices),
+	 * );
+	 */
+	public Subscribe<P extends StatePath<T>>(
+		path: P,
+		listener: (value: Immutable<PathValue<T, P>>) => void,
+	): () => void;
+	public Subscribe(
+		pathOrListener: string | (() => void),
+		maybePathListener?: (value: never) => void,
+	): () => void {
+		if (typeof pathOrListener === 'function') {
+			const listener = pathOrListener;
+			this.changeListeners.add(listener);
+			return () => {
+				this.changeListeners.delete(listener);
+			};
+		}
+
+		const path = pathOrListener;
+		const listener = maybePathListener as ErasedPathListener;
+
+		let watched = this.watchedPaths.get(path);
+		if (!watched) {
+			watched = { segments: path.split('.'), listeners: new Set() };
+			this.watchedPaths.set(path, watched);
+		}
+		watched.listeners.add(listener);
+
+		let unsubscribed = false;
 		return () => {
-			this.changeListeners.delete(listener);
+			if (unsubscribed) {
+				return;
+			}
+			unsubscribed = true;
+
+			const stillWatched = this.watchedPaths.get(path);
+			if (!stillWatched) {
+				return;
+			}
+
+			stillWatched.listeners.delete(listener);
+			// Last subscriber out drops the whole entry, so we stop resolving and
+			// comparing a path nobody is watching anymore.
+			if (stillWatched.listeners.size === 0) {
+				this.watchedPaths.delete(path);
+			}
 		};
 	}
 
@@ -285,8 +511,66 @@ export class RemoteState<T extends Objectish> {
 		};
 	}
 
+	/**
+	 * Snapshot the current value at every watched path, to be compared against
+	 * after a payload lands. Returns an empty map when nothing is path-subscribed,
+	 * which is the common case and costs nothing.
+	 *
+	 * These are *references* into the pre-apply state, not clones - safe because
+	 * neither `applyPatches` nor the snapshot assignment mutates the old root in
+	 * place, so what we captured stays valid to compare against.
+	 */
+	private CaptureWatchedPathValues(): Map<string, unknown> {
+		const captured = new Map<string, unknown>();
+		if (this.watchedPaths.size === 0) {
+			return captured;
+		}
+
+		for (const [path, watched] of this.watchedPaths) {
+			captured.set(path, ResolveStatePath(this.current, watched.segments));
+		}
+		return captured;
+	}
+
+	/**
+	 * Fire the subscribers of every watched path whose value differs from what
+	 * {@link CaptureWatchedPathValues} recorded before the payload was applied.
+	 */
+	private NotifyChangedPaths(valuesBefore: Map<string, unknown>): void {
+		if (valuesBefore.size === 0) {
+			return;
+		}
+
+		// Iterate a snapshot of the registry: a listener is free to subscribe or
+		// unsubscribe while we're notifying, and mutating the live Map mid-iteration
+		// would be a mess. Anything subscribed *during* this pass is intentionally
+		// skipped - it has no 'before' value, so we'd have nothing to compare it to.
+		for (const [path, watched] of [...this.watchedPaths]) {
+			// The entry can be dropped (or replaced wholesale) by an earlier
+			// listener in this same pass; don't notify a dead subscription.
+			if (this.watchedPaths.get(path) !== watched) {
+				continue;
+			}
+
+			const valueBefore = valuesBefore.get(path);
+			const valueAfter = ResolveStatePath(this.current, watched.segments);
+			if (DeepEquals(valueBefore, valueAfter)) {
+				continue;
+			}
+
+			for (const listener of [...watched.listeners]) {
+				try {
+					listener(valueAfter);
+				} catch {
+					// Same isolation as NotifyChange - one bad path subscriber
+					// shouldn't take out the others, or the apply itself.
+				}
+			}
+		}
+	}
+
 	private NotifyChange(): void {
-		for (const listener of this.changeListeners) {
+		for (const listener of [...this.changeListeners]) {
 			try {
 				listener();
 			} catch {
@@ -297,7 +581,7 @@ export class RemoteState<T extends Objectish> {
 	}
 
 	private NotifyDesync(): void {
-		for (const listener of this.desyncListeners) {
+		for (const listener of [...this.desyncListeners]) {
 			try {
 				listener();
 			} catch {

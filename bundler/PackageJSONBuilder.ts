@@ -49,6 +49,7 @@ export interface EffectConfig {
 interface EffectCategoryOrdering {
     categoryName: string;
     categoryDescription?: string;
+    debugOnly?: boolean;
     effects: string[];
 }
 
@@ -94,7 +95,7 @@ function GetEffectConfiguration(effectName: string): EffectConfig {
     return jsonc.parse(fs.readFileSync(configFileForEffect, "utf8")) as EffectConfig;
 }
 
-function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
+function BuildContributedConfigurationArray(isProductionBuild: boolean): PackageConfigurationCategory[] {
     const defaultUserConfigs: PackageConfigurationCategory[] = jsonc.parse(
         fs.readFileSync(DEFAULT_PACKAGE_USER_CONFIGS_FILE, "utf8")
     );
@@ -136,6 +137,10 @@ function BuildContributedConfigurationArray(): PackageConfigurationCategory[] {
     );
 
     for (const category of effectConfigOrdering.categories) {
+        if (isProductionBuild && category.debugOnly) {
+            continue;
+        }
+
         if (!category.categoryName) {
             throw new Error(
                 `buildContributedConfigurationArray - Effect configuration ordering file "${EFFECT_CONFIG_ORDERING_FILE}" does not have a category name defined`
@@ -205,8 +210,8 @@ function SavePackageFile(packageJSONObject: PackageJSON): void {
     fs.writeFileSync(OUTPUT_PACKAGE_FILE, JSON.stringify(packageJSONObject, null, "\t"), "utf8");
 }
 
-export function RebuildPackageFile(): void {
+export function RebuildPackageFile(isProductionBuild: boolean): void {
     const packageJSONObject = GetPreBuildPackageObject();
-    packageJSONObject.contributes.configuration = BuildContributedConfigurationArray();
+    packageJSONObject.contributes.configuration = BuildContributedConfigurationArray(isProductionBuild);
     SavePackageFile(packageJSONObject);
 }

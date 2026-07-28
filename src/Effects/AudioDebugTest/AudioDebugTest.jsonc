@@ -1,0 +1,14 @@
+{
+    "effectDisplayName": "Audio Debug Test",
+    "cssVarPrefix": "audioDebugTest",
+    "disabled": false,
+    "configurableProperties": [
+        {
+            "name": "enabled",
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable a test effect for debugging audio analysis pipelines. You shouldn't see this, so if you do a dev messed up haha.",
+            "markdownDescription": "Enable or disable a test effect for debugging audio analysis pipelines. *You shouldn't see this, so if you do a dev messed up haha.*"
+        }
+    ]
+}

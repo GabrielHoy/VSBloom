@@ -32,6 +32,7 @@
 		type PropertySettingsEditorConfiguration,
 	} from '../../../Global/Settings.svelte';
 	import { cn } from '$webview-svelte-lib/utils';
+	import { extensionMetadata } from '../../../Global/Metadata.svelte';
 
 	function GetPrettifiedPropertyPathSegments(internalPath: string): string[] {
 		// skip `vsbloom.` prefix, capitalize first letter, insert space before each capital letter
@@ -50,14 +51,18 @@
 			);
 	}
 
-	const prettifiedCategoryNameMapping: Record<string, string> = {
-		'VS: Bloom': 'General',
-		'Electron Patcher': 'Patcher',
-		'Effect Rendering': 'Renderer',
-		'Editor Effects': 'Editor',
-		'Window Effects': 'Window',
-		'Native Runtime': 'Native',
-	};
+	const prettifiedCategoryNameMapping: Record<string, string> = Object.fromEntries(
+		Object.entries({
+			'VS: Bloom': 'General',
+			'Electron Patcher': 'Patcher',
+			'Effect Rendering': 'Renderer',
+			'Editor Effects': 'Editor',
+			'Window Effects': 'Window',
+			'Native Runtime': 'Native',
+			//only show the debug effects category if we're in a dev environment
+			'Debug Effects': extensionMetadata.isDevEnvironment ? 'Debug' : '',
+		}).filter(([_, value]) => value !== ''),
+	);
 	const blacklistedPathsForWebviewSettingsDisplay: string[] = [
 		'vsbloom.extensionConfigurationsNote', //this just brings the user to the menu when clicked - and they'd already be here if they're on this page
 	];

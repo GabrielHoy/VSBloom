@@ -31,7 +31,10 @@ namespace VSBloom::IPC {
     template <typename T>
     concept IsConceptuallySendableMessage = requires(const T& t) {
         { T::name } -> std::convertible_to<std::string_view>;
-        { t.DataToJSON() } -> std::same_as<json_t>;
+        // { t.DataToJSON() } -> std::same_as<json_t>;
+        requires(requires(const T& t) {
+            { t.DataToJSON() } -> std::same_as<json_t>;
+        } || std::is_convertible_v<T, json_t>);
     };
 
     /**
@@ -67,7 +70,13 @@ namespace VSBloom::IPC {
         template <IsConceptuallySendableMessage T>
         IPCSendable(const T& msg) noexcept
             : payload({{"type", T::name}, {"data", [&msg]() -> std::optional<nlohmann::json> {
-                                               const json_t dataToSend = msg.DataToJSON();
+                                               const json_t dataToSend = ([&msg]() -> json_t {
+                                                   if constexpr (std::is_convertible_v<T, json_t>) {
+                                                       return json_t{msg};
+                                                   } else {
+                                                       return msg.DataToJSON();
+                                                   }
+                                               })();
                                                if (!dataToSend.empty()) {
                                                    return std::make_optional(dataToSend);
                                                } else {
@@ -147,12 +156,13 @@ namespace VSBloom::IPC {
         const std::vector<VSBloom::Audio::AudioDevice> devices;
 
         json_t DataToJSON() const noexcept {
-            json_t audioDeviceList = json_t::array();
-            for (const VSBloom::Audio::AudioDevice& device : devices) {
-                audioDeviceList.push_back(device.ToJSON());
-            }
+            // json_t audioDeviceList = json_t::array();
+            // for (const VSBloom::Audio::AudioDevice& device : devices) {
+            //     audioDeviceList.push_back(device.ToJSON());
+            // }
 
-            return audioDeviceList;
+            // return audioDeviceList;
+            return devices;
         }
     };
 
@@ -163,10 +173,26 @@ namespace VSBloom::IPC {
         const VSBloom::Audio::AnalyzedAudioFrame frame;
 
         json_t DataToJSON() const noexcept {
-            return {{"fftBins", frame.fftBins}, {"avgAmplitude", frame.avgAmplitude}};
+            return {
+                {"fftBins", frame.fftBins},
+                {"smoothEQ", frame.smoothEQ},
+                {"instEQ", frame.instEQ},
+                {"avgAmplitude", frame.avgAmplitude}
+            };
         }
     };
 
     static_assert(IsConceptuallySendableMessage<NewAudioAnalysisFrameMessage>);
+
+    struct CurrentlyCapturedAudioDeviceListMessage {
+        static constexpr const char*                   name = "currently-captured-audio-device-list";
+        const std::vector<VSBloom::Audio::AudioDevice> devicesBeingCaptured;
+
+        json_t DataToJSON() const noexcept {
+            return devicesBeingCaptured;
+        }
+    };
+
+    static_assert(IsConceptuallySendableMessage<CurrentlyCapturedAudioDeviceListMessage>);
 
 } // namespace VSBloom::IPC

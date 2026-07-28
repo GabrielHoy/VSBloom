@@ -26,8 +26,8 @@ import type {
 } from './ElectronGlobals';
 import { defaultVSBloomSharedState, VSBloomSharedState } from './SharedState';
 import { RemoteState, SyncPayload } from './SynchronizedState';
-import { BinaryStreamHub } from './BinaryTransport';
-import { RegisterBuiltinBinaryChannels } from './BinaryChannels';
+import { BinaryStreamHub } from './Binary/BinaryTransport';
+import { RegisterBuiltinBinaryChannels } from './Binary/BinaryChannels';
 
 //these constants are replaced during the esbuild
 //compilation step with their 'actual' values
@@ -712,6 +712,7 @@ class VSBloomClient implements IVSBloomClient {
 		this.FireServer({
 			type: 'replicate-log',
 			level,
+            id: this.windowId,
 			message,
 			data: data ? JSON.stringify(data) : undefined,
 		});

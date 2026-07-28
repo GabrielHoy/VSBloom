@@ -13,7 +13,7 @@
 
 import type { EffectConfigResolver } from '../EffectLib/Bloom/Configs';
 import type { VSBloomClientConfig, VSBloomConfigObject, VSBloomConfigValue } from './API';
-import type { BinaryStreamHub } from './BinaryTransport';
+import type { BinaryStreamHub } from './Binary/BinaryTransport';
 import type { VSBloomSharedState } from './SharedState';
 import type { RemoteState } from './SynchronizedState';
 

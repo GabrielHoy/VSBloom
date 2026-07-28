@@ -6,14 +6,37 @@ import {
 	BinaryStreamHub,
 	DecodeBinaryFrame,
 	EncodeBinaryFrame,
-} from '../../../src/ExtensionBridge/BinaryTransport';
+} from '../../../src/ExtensionBridge/Binary/BinaryTransport';
 import {
 	DecodeAudioAnalysisPayload,
 	EncodeAudioAnalysisPayload,
 } from '../../../src/Native/Audio/AudioAnalysisFrameCodec';
+import {
+	type AnalyzedAudioFrame,
+	AudioEQBand,
+} from '../../../src/Native/Audio/AnalysisFrames';
 
 function makeF32Payload(values: number[]): ArrayBuffer {
 	return Float32Array.from(values).buffer;
+}
+
+/**
+ * Build a frame in exactly the shape the native runtime delivers. Explicitly
+ * typed as `AnalyzedAudioFrame` so that growing the wire format with another
+ * field breaks this at compile time, rather than at `.set(undefined)` inside
+ * the encoder like it did when the EQ bands were introduced.
+ */
+function makeAnalyzedFrame(overrides: Partial<AnalyzedAudioFrame> = {}): AnalyzedAudioFrame {
+	const flatEQ = (value: number): number[] =>
+		Array.from({ length: AudioEQBand.__Count__ }, () => value);
+
+	return {
+		avgAmplitude: 0.5,
+		instEQ: flatEQ(0.25),
+		smoothEQ: flatEQ(0.75),
+		fftBins: [0.1, 0.2, 0.3, 0.4, 0.5],
+		...overrides,
+	};
 }
 
 describe('BinaryTransport envelope', () => {
@@ -87,7 +110,7 @@ describe('BinaryTransport envelope', () => {
 
 describe('AudioAnalysisCodec', () => {
 	test('round-trips avgAmplitude and fftBins through the full envelope', () => {
-		const frame = { avgAmplitude: 0.5, fftBins: [0.1, 0.2, 0.3, 0.4, 0.5] };
+		const frame = makeAnalyzedFrame();
 
 		const envelope = EncodeBinaryFrame(
 			BinaryChannelId.AudioAnalysisFrame,
@@ -109,12 +132,36 @@ describe('AudioAnalysisCodec', () => {
 		}
 	});
 
+	test('round-trips both EQ band sets without cross-contaminating the regions', () => {
+		// Distinct per-band values in each set, so a wrong offset in the codec shows
+		// up as a mismatch rather than being masked by identical placeholder data.
+		const frame = makeAnalyzedFrame({
+			instEQ: [0.1, 0.2, 0.3, 0.4, 0.5],
+			smoothEQ: [0.9, 0.8, 0.7, 0.6, 0.5],
+		});
+
+		const audio = DecodeAudioAnalysisPayload(EncodeAudioAnalysisPayload(frame));
+
+		expect(audio.instEQ).toHaveLength(AudioEQBand.__Count__);
+		expect(audio.smoothEQ).toHaveLength(AudioEQBand.__Count__);
+		for (let band = 0; band < AudioEQBand.__Count__; band++) {
+			expect(audio.instEQ[band]).toBeCloseTo(frame.instEQ[band], 6);
+			expect(audio.smoothEQ[band]).toBeCloseTo(frame.smoothEQ[band], 6);
+		}
+		// The bins region must survive the EQ regions sitting in front of it.
+		expect(audio.fftBins).toHaveLength(frame.fftBins.length);
+		expect(audio.fftBins[0]).toBeCloseTo(frame.fftBins[0], 6);
+	});
+
 	test('handles an empty spectrum', () => {
 		const audio = DecodeAudioAnalysisPayload(
-			EncodeAudioAnalysisPayload({ avgAmplitude: 0, fftBins: [] }),
+			EncodeAudioAnalysisPayload(makeAnalyzedFrame({ avgAmplitude: 0, fftBins: [] })),
 		);
 		expect(audio.fftBins).toHaveLength(0);
 		expect(audio.avgAmplitude).toBe(0);
+		// A binless frame still carries a full, decodable EQ section.
+		expect(audio.instEQ).toHaveLength(AudioEQBand.__Count__);
+		expect(audio.smoothEQ).toHaveLength(AudioEQBand.__Count__);
 	});
 });
 

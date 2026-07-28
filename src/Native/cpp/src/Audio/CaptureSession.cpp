@@ -1,6 +1,9 @@
 #include "CaptureSession.hpp"
-#include "Device/PulseAudio/MonitorSourceResolver.hpp"
 #include <stdexcept>
+
+#if defined(VSBLOOM_AUDIO_BACKEND_PULSEAUDIO)
+    #include "Device/PulseAudio/MonitorSourceResolver.hpp"
+#endif
 
 namespace VSBloom::Audio {
 

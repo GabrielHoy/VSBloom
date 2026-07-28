@@ -69,7 +69,7 @@ namespace VSBloom::Audio {
         }
     }
 
-    void CaptureManager::SetOnFrameAggregatedCallback(std::function<void(const AnalyzedAudioFrame&)> callback) {
+    void CaptureManager::SetOnFrameAggregatedCallback(FrameAggregationCallback_t callback) {
         std::lock_guard<std::mutex> lock(frameAgregCbMutex);
         onFrameAggregatedCallback = std::move(callback);
     }
@@ -106,6 +106,14 @@ namespace VSBloom::Audio {
                     for (std::size_t i = 0; i < mergedSnapshot.fftBins.size() && i < sessionSnapshot.fftBins.size();
                          ++i) {
                         mergedSnapshot.fftBins[i] += sessionSnapshot.fftBins[i];
+                    }
+                    for (std::size_t i = 0; i < mergedSnapshot.instEQ.size() && i < sessionSnapshot.instEQ.size();
+                         ++i) {
+                        mergedSnapshot.instEQ[i] += sessionSnapshot.instEQ[i];
+                    }
+                    for (std::size_t i = 0; i < mergedSnapshot.smoothEQ.size() && i < sessionSnapshot.smoothEQ.size();
+                         ++i) {
+                        mergedSnapshot.smoothEQ[i] += sessionSnapshot.smoothEQ[i];
                     }
                 }
             }

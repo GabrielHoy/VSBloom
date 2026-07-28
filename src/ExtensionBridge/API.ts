@@ -62,6 +62,7 @@ export interface LogMessage {
 	type: 'replicate-log';
 	level: 'info' | 'warn' | 'error' | 'debug';
 	message: string;
+    id: string;
 	data?: unknown;
 }
 export interface WindowIdChangeMessage {

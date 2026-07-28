@@ -15,6 +15,7 @@
 
 #include "FFTWindowing.hpp"
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -23,12 +24,26 @@ struct PFFFT_Setup; // only AudioAnalyzer.cpp needs pffft.h itself; this can rem
 
 namespace VSBloom::Audio {
 
+    typedef std::pair<float, float> frequencyRangeHz;
+
+    enum AudioEQBand {
+        SubBass,
+        Bass,
+        Mid,
+        UpperMid,
+        Treble,
+        __Count__,
+    };
+
     // Miniaudio's data conversion pipeline handles resampling/downmixing
     // behind the scenes so our lives tend to be much easier when attempting
     // to work with audio data in the below formats
     constexpr unsigned int               ANALYSIS_SAMPLE_RATE   = 48'000;
     constexpr unsigned int               ANALYSIS_CHANNELS      = 1;
     constexpr std::size_t                ANALYSIS_FFT_BIN_COUNT = 64;
+    // Frequency ranges in Hz, derived arbitrarily based on rough boundaries of human hearing
+    constexpr float                      FFT_BINS_MIN_FREQUENCY_HZ = 20.0f;
+    constexpr float                      FFT_BINS_MAX_FREQUENCY_HZ = 22'500.0f;
     // Each call to `ProduceAnalysisFrame` consumes `FFT_HOP_SIZE` samples,
     // leaving the remaining `FFT_FRAME_SIZE - FFT_HOP_SIZE` samples buffered
     // and ready to be reused as the start of the next analysis window.
@@ -36,10 +51,46 @@ namespace VSBloom::Audio {
     constexpr std::size_t                FFT_HOP_SIZE   = 512;
     inline const FFTWindowing::FFTWindow FFT_WINDOW     = FFTWindowing::BlackmanHarris<FFT_FRAME_SIZE>();
 
-    struct AnalyzedAudioFrame {
-        std::array<float, ANALYSIS_FFT_BIN_COUNT> fftBins      = std::array<float, ANALYSIS_FFT_BIN_COUNT>{0.0f};
-        float                                     avgAmplitude = 0.0f;
+    typedef std::array<float, ANALYSIS_FFT_BIN_COUNT>            fftBinArray_t;
+    typedef std::array<float, AudioEQBand::__Count__>            eqArray_t;
+    typedef std::array<frequencyRangeHz, AudioEQBand::__Count__> eqFrequencyRangeArray_t;
+
+    constexpr eqFrequencyRangeArray_t EQ_BAND_FREQUENCY_RANGES = eqFrequencyRangeArray_t{
+        // SubBass
+        std::make_pair(20.0f, 63.0f),
+        // Bass
+        std::make_pair(63.0f, 250.0f),
+        // Mid
+        std::make_pair(250.0f, 1000.0f),
+        // UpperMid
+        std::make_pair(1000.0f, 4000.0f),
+        // Treble
+        std::make_pair(4000.0f, 22'500.0f),
     };
+
+    struct AnalyzedAudioFrame {
+        float         avgAmplitude = 0.0f;
+        eqArray_t     smoothEQ     = eqArray_t{0.0f};
+        eqArray_t     instEQ       = eqArray_t{0.0f};
+        fftBinArray_t fftBins      = fftBinArray_t{0.0f};
+    };
+
+    constexpr float HZ_PER_FFT_BIN = static_cast<float>(ANALYSIS_SAMPLE_RATE) / static_cast<float>(FFT_FRAME_SIZE);
+
+    // Precomputed denominator for the log-bin position mapping below.
+    inline const float FFT_BINS_LOG_FREQUENCY_SPAN = std::log(FFT_BINS_MAX_FREQUENCY_HZ / FFT_BINS_MIN_FREQUENCY_HZ);
+
+    /**
+     * Inverse of the log-spaced band-edge mapping used by
+     * `MapMagnitudesToLogBins`.
+     *
+     * @returns the continuous position of `frequencyHz` within the
+     * `ANALYSIS_FFT_BIN_COUNT` log-spaced bins - Not clamped.
+     */
+    inline float FrequencyToLogBinPosition(float frequencyHz) {
+        return static_cast<float>(ANALYSIS_FFT_BIN_COUNT)
+               * (std::log(frequencyHz / FFT_BINS_MIN_FREQUENCY_HZ) / FFT_BINS_LOG_FREQUENCY_SPAN);
+    }
 
     class AudioAnalyzer {
       public:
@@ -98,7 +149,8 @@ namespace VSBloom::Audio {
         static constexpr float SMOOTHING_ALPHA = 0.2f;
 
         void RunAnalysis(AnalyzedAudioFrame& out);
-        void MapMagnitudesToLogBins(std::array<float, ANALYSIS_FFT_BIN_COUNT>& outBins) const;
+        void MapMagnitudesToLogBins(fftBinArray_t& outBins) const;
+        void MapFFTBinsToEQBands(const fftBinArray_t& fftBins, eqArray_t& outEQBands) const;
 
         PFFFT_Setup* fftSetup;
         float*       windowedInput; // FFT_FRAME_SIZE, 16-byte aligned due to pffft requirement
@@ -118,7 +170,7 @@ namespace VSBloom::Audio {
 
         // Persists across ProduceAnalysisFrame calls - this is the state
         // SMOOTHING_ALPHA smooths against.
-        std::array<float, ANALYSIS_FFT_BIN_COUNT> smoothedBins{};
+        fftBinArray_t smoothedBins{};
 
         std::vector<float> accumulator;
     };

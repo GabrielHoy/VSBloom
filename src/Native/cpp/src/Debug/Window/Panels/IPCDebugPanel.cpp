@@ -28,7 +28,7 @@ namespace VSBloom::Debug {
 
     void IPCDebugPanel::Initialize() {
         RegisterNewSendableGenerator("Debug Output", []() -> IPC::DebugOutputMessage {
-            static int debugOutputCounter = 0;
+            static int debugOutputCounter = 1;
 
             return {{"testMessageNumber", debugOutputCounter++}};
         });

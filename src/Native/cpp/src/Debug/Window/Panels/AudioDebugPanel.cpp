@@ -1,7 +1,8 @@
+#include "Audio/AudioAnalyzer.hpp"
 #if defined(DEBUG_WINDOW_ENABLED)
 
-    #include "AudioDebugPanel.hpp"
     #include "Audio/Device/DeviceEnumeration.hpp"
+    #include "AudioDebugPanel.hpp"
     #include "Debug/Window/ImGui/imconfig.hpp"
     #include <algorithm>
     #include <format>
@@ -101,6 +102,62 @@ namespace VSBloom::Debug {
                 1.0f,
                 ImVec2(0, 120)
             );
+
+            // Render out the EQ band values
+            ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::SeparatorText("Instantaneous EQ Bands");
+
+            static const std::array<std::string, Audio::AudioEQBand::__Count__> eqBandNames =
+                {"Sub-Bass", "Bass", "Mid", "Upper-Mid", "Treble"};
+            if (eqBandNames.size() != Audio::AudioEQBand::__Count__) {
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERR: EQ Band names array size mismatch.");
+                ImGui::TextColored(
+                    ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                    "Expected %d bands, got %zu.",
+                    Audio::AudioEQBand::__Count__,
+                    eqBandNames.size()
+                );
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::TextColored(
+                    ImVec4(1.0f, 0.314f, 0.314f, 1.0f),
+                    "Did you forget to update the array of band debug names?"
+                );
+            } else {
+                const float largestTextWidthInEQBandValues = ([]() -> float {
+                    float largestWidth = 0.0f;
+                    for (size_t eqBandIdx = 0; eqBandIdx < Audio::AudioEQBand::__Count__; eqBandIdx++) {
+                        largestWidth = std::max(
+                            largestWidth,
+                            ImGui::CalcTextSize(std::format("{}: ", eqBandNames[eqBandIdx].c_str()).c_str()).x
+                        );
+                    }
+                    return largestWidth;
+                })();
+                const float imGuiItemSpacing               = ImGui::GetStyle().ItemSpacing.x;
+                for (size_t eqBandIdx = 0; eqBandIdx < Audio::AudioEQBand::__Count__; eqBandIdx++) {
+                    ImGui::Text("%s: ", eqBandNames[eqBandIdx].c_str());
+                    ImGui::SameLine(largestTextWidthInEQBandValues + imGuiItemSpacing, -1.0f);
+                    ImGui::ProgressBar(
+                        std::clamp(aggregatedSnapshot.instEQ[eqBandIdx], 0.0f, 1.0f),
+                        ImVec2(-1.0f, 0.0f)
+                    );
+                }
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::SeparatorText("Smoothed EQ Bands");
+                for (size_t eqBandIdx = 0; eqBandIdx < Audio::AudioEQBand::__Count__; eqBandIdx++) {
+                    ImGui::Text("%s: ", eqBandNames[eqBandIdx].c_str());
+                    ImGui::SameLine(largestTextWidthInEQBandValues + imGuiItemSpacing, -1.0f);
+                    ImGui::ProgressBar(
+                        std::clamp(aggregatedSnapshot.smoothEQ[eqBandIdx], 0.0f, 1.0f),
+                        ImVec2(-1.0f, 0.0f)
+                    );
+                }
+            }
 
             ImGui::Spacing();
             ImGui::Separator();

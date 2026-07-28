@@ -17,6 +17,14 @@
                 "QuickInputOverhaul",
                 "DynamicInteractables"
             ]
+        },
+        {
+            "categoryName": "Debug Effects",
+            "categoryDescription": "Effects used for debugging purposes, not intended to be available in prod builds.",
+            "debugOnly": true,
+            "effects": [
+                "AudioDebugTest"
+            ]
         }
     ]
 }

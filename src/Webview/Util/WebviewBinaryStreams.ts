@@ -14,8 +14,8 @@
  * `.svelte.ts` module when a component actually needs live-updating UI...
  */
 
-import { BinaryStreamHub } from '../../ExtensionBridge/BinaryTransport';
-import { RegisterBuiltinBinaryChannels } from '../../ExtensionBridge/BinaryChannels';
+import { BinaryStreamHub } from '../../ExtensionBridge/Binary/BinaryTransport';
+import { RegisterBuiltinBinaryChannels } from '../../ExtensionBridge/Binary/BinaryChannels';
 import { vscode } from './VSCodeAPI';
 
 export const webviewBinaryStreamHub: BinaryStreamHub = new BinaryStreamHub();

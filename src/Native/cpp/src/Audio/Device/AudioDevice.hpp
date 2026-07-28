@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <nlohmann/detail/macro_scope.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -18,6 +19,13 @@ namespace VSBloom::Audio {
         Render,
         Capture,
     };
+    NLOHMANN_JSON_SERIALIZE_ENUM(
+        DeviceDataFlowType,
+        {
+            {DeviceDataFlowType::Render, "Render"},
+            {DeviceDataFlowType::Capture, "Capture"},
+        }
+    );
 
     inline const char* DeviceDataFlowTypeToString(DeviceDataFlowType dataFlowType) noexcept {
         switch (dataFlowType) {
@@ -42,14 +50,16 @@ namespace VSBloom::Audio {
         DeviceDataFlowType dataFlow;
         bool               isDefault;
 
-        nlohmann::json ToJSON() const noexcept {
-            return {
-                {"id", id},
-                {"name", name},
-                {"dataFlow", DeviceDataFlowTypeToString(dataFlow)},
-                {"isDefault", isDefault},
-            };
-        }
+        // nlohmann::json ToJSON() const noexcept {
+        //     return {
+        //         {"id", id},
+        //         {"name", name},
+        //         {"dataFlow", DeviceDataFlowTypeToString(dataFlow)},
+        //         {"isDefault", isDefault},
+        //     };
+        // }
     };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AudioDevice, id, name, dataFlow, isDefault);
 
 } // namespace VSBloom::Audio

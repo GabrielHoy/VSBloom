@@ -20,6 +20,7 @@
 
     #include "Debug/Spring.hpp"
     #include "Panels/BasePanel.hpp"
+    #include <chrono>
     #include <memory>
     #include <string>
     #include <unordered_map>
@@ -49,6 +50,8 @@ namespace VSBloom::Debug {
         void Run();
 
         GLFWwindow* window = nullptr;
+
+        std::chrono::nanoseconds timePerFrameNS = std::chrono::nanoseconds(std::chrono::milliseconds(50));
 
       private:
         // Draws + presents exactly one frame.

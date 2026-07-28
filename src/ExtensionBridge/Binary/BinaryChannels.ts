@@ -20,7 +20,7 @@ import {
 import {
 	DecodeAudioAnalysisPayload,
 	type DecodedAudioAnalysisFrame,
-} from '../Native/Audio/AudioAnalysisFrameCodec';
+} from '../../Native/Audio/AudioAnalysisFrameCodec';
 
 /** Log-binned FFT spectrum + average amplitude, emitted by the native runtime. */
 export const AudioAnalysisFrameChannel: BinaryChannel<DecodedAudioAnalysisFrame> = {

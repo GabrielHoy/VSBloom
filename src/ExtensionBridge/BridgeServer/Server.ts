@@ -43,7 +43,7 @@ import {
 import { StatefulVSCodeContext } from './StatefulContext';
 import { SynchronizedState, SyncPayload } from '../SynchronizedState';
 import { defaultVSBloomSharedState, VSBloomSharedState } from '../SharedState';
-import { BinaryChannelId, EncodeBinaryFrame } from '../BinaryTransport';
+import { BinaryChannelId, EncodeBinaryFrame } from '../Binary/BinaryTransport';
 import { EncodeAudioAnalysisPayload } from '../../Native/Audio/AudioAnalysisFrameCodec';
 import { MenuPanel } from '../../Extension/WebviewMenuPanel';
 import Janitor from '../../EffectLib/Bloom/Janitors';
@@ -1233,7 +1233,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 			case 'i-am-alive':
 				break;
 			case 'replicate-log':
-				this.ReplicateLogMessageFromClient(message);
+				this.ReplicateLogMessageFromClient(ws, message);
 				break;
 			case 'change-window-id':
 				this.ChangeClientWindowId(ws, message.newWindowId);
@@ -1317,8 +1317,17 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 	/**
 	 * Handles log messages from clients
 	 */
-	protected ReplicateLogMessageFromClient(message: LogMessage): void {
-		const prefix = `[Client/${message.level.toUpperCase()}]: `;
+	protected ReplicateLogMessageFromClient(ws: WebSocket, message: LogMessage): void {
+        let clientReplicatingLog: ConnectedClient | undefined;
+        if (typeof message.id === 'string' && message.id.length < 2048) {
+            clientReplicatingLog = this.clients.get(message.id);
+        }
+        if (clientReplicatingLog && clientReplicatingLog.ws !== ws) {
+            this.Log('error', 'A log message was received from a client that sent a valid id property, but the id it sent corresponds to a different client: This is likely an attempt at impersonation.');
+            return;
+        }
+
+		const prefix = `[Client${message.id ? `<${message.id}>` : ""}/${message.level.toUpperCase()}]: `;
 		const logLine = message.data
 			? `${prefix}${message.message} ${JSON.stringify(message.data)}`
 			: `${prefix}${message.message}`;
@@ -1337,11 +1346,11 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
 
 		if (hasDataAssociatedWithLog) {
 			console.log(
-				`${ConstructVSBloomLogPrefix('Client', message.level)}${message.message}`,
+				`${ConstructVSBloomLogPrefix('Client', message.level, message.id)}${message.message}`,
 				dataObject ?? '(Data was supplied but was invalid JSON)',
 			);
 		} else {
-			console.log(`${ConstructVSBloomLogPrefix('Client', message.level)}${message.message}`);
+			console.log(`${ConstructVSBloomLogPrefix('Client', message.level, message.id)}${message.message}`);
 		}
 
 		this.FireAllPseudoServers({

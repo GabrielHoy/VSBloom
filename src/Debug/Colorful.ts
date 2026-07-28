@@ -47,7 +47,12 @@ export const logTypeColoring: Record<string, ColorDefinition> = {
 	warn: { rgb: [255, 165, 0], rgbFunc: colorful.rgb }, //colorful.rgb(255, 165, 0),
 	error: { rgb: [255, 0, 0], rgbFunc: colorful.bold.underline.rgb }, //colorful.redBright.bold.underline
 };
+export const sourceSpecifierColoring: ColorDefinition = {
+	rgb: [75,75,75], //slightly-dark gray
+	rgbFunc: colorful.italic.rgb,
+};
 
+// Yes this is overkill. Look at how nice the logs look though!
 function SlerpColorDefinitions(
 	c1: ColorDefinition,
 	c2: ColorDefinition,
@@ -80,6 +85,7 @@ function SlerpColorDefinitions(
 export function ConstructVSBloomLogPrefix(
 	source: keyof typeof coloredLogSourceNameColors,
 	logType?: keyof typeof logTypeColoring,
+    specifier?: string
 ): string {
 	const logBrandNameColor = vsBloomLogBrandNameColor;
 	const logBrandToSourceSepColor = SlerpColorDefinitions(
@@ -96,10 +102,23 @@ export function ConstructVSBloomLogPrefix(
 			0.5,
 		);
 		const logTypeColor = logTypeColoring[logType];
+        const logSourceToSpecifierSepColor = specifier ? SlerpColorDefinitions(
+            logSourceColor,
+            sourceSpecifierColoring,
+            0.740,
+        ) : null;
+        const specifierStr = (logSourceToSpecifierSepColor) ? `${logSourceColor.rgbFunc(...logSourceToSpecifierSepColor)("<")}${sourceSpecifierColoring.rgbFunc(...sourceSpecifierColoring.rgb)(specifier)}${logSourceColor.rgbFunc(...logSourceToSpecifierSepColor)(">")}` : '';
 
-		return `[${logBrandNameColor.rgbFunc(...logBrandNameColor.rgb)('VSBloom')}${logBrandNameColor.rgbFunc(...logBrandToSourceSepColor)('/')}${logSourceColor.rgbFunc(...logSourceColor.rgb)(source)}${logSourceColor.rgbFunc(...logSourceToTypeSepColor)('/')}${logTypeColor.rgbFunc(...logTypeColor.rgb)(logType.toUpperCase())}]: `;
+		return `[${logBrandNameColor.rgbFunc(...logBrandNameColor.rgb)('VSBloom')}${logBrandNameColor.rgbFunc(...logBrandToSourceSepColor)('/')}${logSourceColor.rgbFunc(...logSourceColor.rgb)(source)}${specifierStr}${logSourceColor.rgbFunc(...logSourceToTypeSepColor)('/')}${logTypeColor.rgbFunc(...logTypeColor.rgb)(logType.toUpperCase())}]: `;
 	} else {
-		return `[${logBrandNameColor.rgbFunc(...logBrandNameColor.rgb)('VSBloom')}${logBrandNameColor.rgbFunc(...logBrandToSourceSepColor)('/')}${logSourceColor.rgbFunc(...logSourceColor.rgb)(source)}]: `;
+        const logSourceToSpecifierSepColor = specifier ? SlerpColorDefinitions(
+            logSourceColor,
+            sourceSpecifierColoring,
+            0.740,
+        ) : null;
+        const specifierStr = logSourceToSpecifierSepColor ? `${logSourceColor.rgbFunc(...logSourceToSpecifierSepColor)("<")}${sourceSpecifierColoring.rgbFunc(...sourceSpecifierColoring.rgb)(specifier)}${logSourceColor.rgbFunc(...logSourceToSpecifierSepColor)(">")}` : '';
+
+		return `[${logBrandNameColor.rgbFunc(...logBrandNameColor.rgb)('VSBloom')}${logBrandNameColor.rgbFunc(...logBrandToSourceSepColor)('/')}${logSourceColor.rgbFunc(...logSourceColor.rgb)(source)}${specifierStr}]: `;
 	}
 }
 

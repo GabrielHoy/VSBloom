@@ -203,7 +203,7 @@ async function BuildFont(fontDef: FontDefinition): Promise<void> {
 
     fs.mkdirSync(GLYPH_OUTPUT_DIR, { recursive: true });
     const woffPath = path.join(GLYPH_OUTPUT_DIR, `${fontDef.fileName}.woff`);
-    fs.writeFileSync(woffPath, result.woff as any, "binary");
+    fs.writeFileSync(woffPath, result.woff as Buffer, "binary");
 
     const stats = fs.statSync(woffPath);
     console.log(`${prettyLogPrefix}Built ${fontDef.fileName}.woff ${Colorful.GetColoredString([255,255,0], `(${FormatBytes(stats.size)})`, ["bold"])}`);
@@ -268,7 +268,7 @@ async function Main(): Promise<void> {
 
     console.log(`${prettyLogPrefix}Updating ${Colorful.GetColoredString([255,255,255], "contributes.icons", ["italic"])} section of ${Colorful.GetColoredString([255,255,0], "package.json", ["italic"])}...`);
     RebuildPackageIcons(fontDefinitions);
-    console.log(`${prettyLogPrefix}${Colorful.GetColoredString([255,255,0], "package.json", ["italic"])} ${Colorful.GetColoredString([255,255,255], "\`contributes.icons\`", ["italic"])} section ${Colorful.GetColoredString([0,255,0], "updated successfully", ["bold", "underline", "italic"])}`);
+    console.log(`${prettyLogPrefix}${Colorful.GetColoredString([255,255,0], "package.json", ["italic"])} ${Colorful.GetColoredString([255,255,255], "`contributes.icons`", ["italic"])} section ${Colorful.GetColoredString([0,255,0], "updated successfully", ["bold", "underline", "italic"])}`);
 
     console.log(`${prettyLogPrefix}All ${Colorful.GetColoredString([144,0,255], "(" + fontDefinitions.length + ")", ["bold"])} Glyph Files were ${Colorful.GetColoredString([0,255,0], "successfully compiled!")}`);
 }
