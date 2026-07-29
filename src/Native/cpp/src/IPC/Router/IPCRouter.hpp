@@ -29,9 +29,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#if defined(DEBUG_WINDOW_ENABLED)
-    #include "Debug/Window/Panels/IPCDebugPanel.hpp"
-#endif // defined(DEBUG_WINDOW_ENABLED)
 
 namespace VSBloom::IPC {
 
@@ -99,14 +96,6 @@ namespace VSBloom::IPC {
 
         void OnNewMessageReceived(const std::string& message);
         void SendMessage(const IPCSendable& sendableMessage);
-
-#if defined(DEBUG_WINDOW_ENABLED)
-        // In DEBUG_WINDOW_ENABLED builds, the IPCDebugPanel needs to
-        // be able to reach into the IPCRouter's methodRequestHandlers map
-        // and wrap a handler to track its invocations since we don't
-        // at the moment have observable signals for things like that.
-        friend class Debug::IPCDebugPanel;
-#endif // defined(DEBUG_WINDOW_ENABLED)
     };
 
 } // namespace VSBloom::IPC
