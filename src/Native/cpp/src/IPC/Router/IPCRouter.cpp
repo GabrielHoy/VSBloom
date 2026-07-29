@@ -24,6 +24,10 @@ namespace VSBloom::IPC {
         encryptionKey = key;
     }
 
+    bool IPCRouter::IsEncryptionKeySet() const noexcept {
+        return encryptionKey.has_value() && !encryptionKey->empty();
+    }
+
     /**
      * Handles a new message received from the parent process.
      * This should be the single point of entry into the program

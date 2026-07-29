@@ -9,14 +9,14 @@
         "debug-tools": {
             "description": "Debug-Build specific tooling",
             "dependencies": [
+                "glfw3",
                 {
                     "name": "imgui",
                     "features": [
                         "glfw-binding",
                         "opengl3-binding"
                     ]
-                },
-                "glfw3"
+                }
             ]
         }
     }

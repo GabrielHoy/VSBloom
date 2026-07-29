@@ -1,5 +1,6 @@
 #include "CaptureManager.hpp"
 #include "Device/DeviceId.hpp"
+#include <algorithm>
 #include <exception>
 #include <unordered_set>
 
@@ -15,13 +16,37 @@ namespace VSBloom::Audio {
         // cleanup and uninitialization behavior, not much to do here.
     }
 
-    void CaptureManager::UpdateCurrentCapturedDevices(const std::vector<std::string>& desiredDeviceIdsHex) {
+    std::vector<std::string> CaptureManager::CollectSessionDeviceIdsLocked() const {
+        std::vector<std::string> deviceIdsHex;
+        deviceIdsHex.reserve(sessions.size());
+
+        for (const auto& sessionEntry : sessions) {
+            deviceIdsHex.push_back(sessionEntry.first);
+        }
+
+        // `sessions` is an unordered_map, so its iteration order is unspecified
+        // and free to change between calls even when the contents did not. Sort
+        // so that "same capture set" always yields the same list - callers
+        // replicate this upward as state, where a jittering order would look
+        // like a change that never happened.
+        std::sort(deviceIdsHex.begin(), deviceIdsHex.end());
+        return deviceIdsHex;
+    }
+
+    std::vector<std::string> CaptureManager::GetCurrentlyCapturedDeviceIds() const {
+        std::lock_guard<std::mutex> lock(sessionsMutex);
+        return CollectSessionDeviceIdsLocked();
+    }
+
+    std::vector<std::string>
+    CaptureManager::UpdateCurrentCapturedDevices(const std::vector<std::string>& desiredDeviceIdsHex) {
         const std::unordered_set<std::string> desiredCaptureDevices(
             desiredDeviceIdsHex.begin(),
             desiredDeviceIdsHex.end()
         );
 
-        bool areAnyLoopbackSessionsActivePostReconcile;
+        bool                     areAnyLoopbackSessionsActivePostReconcile;
+        std::vector<std::string> capturedDeviceIdsPostReconcile;
         {
             std::lock_guard<std::mutex> lock(sessionsMutex);
 
@@ -54,6 +79,11 @@ namespace VSBloom::Audio {
                 }
             }
 
+            // Collected here, inside the same breath of us reconciling
+            // so the returned list is exactly the set that this call
+            // produced - re-locking afterwards would let another reconcile
+            // intermingle & hand the caller another session's result
+            capturedDeviceIdsPostReconcile            = CollectSessionDeviceIdsLocked();
             areAnyLoopbackSessionsActivePostReconcile = !sessions.empty();
         }
 
@@ -67,6 +97,8 @@ namespace VSBloom::Audio {
         } else {
             StartAggregationThreadIfNeeded();
         }
+
+        return capturedDeviceIdsPostReconcile;
     }
 
     void CaptureManager::SetOnFrameAggregatedCallback(FrameAggregationCallback_t callback) {

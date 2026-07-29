@@ -177,6 +177,12 @@ namespace ImGui {
         StyleColorsTrueDark(dst);
     }
 
+    void MultiSpacing(unsigned int numSpacingLevels) {
+        for (unsigned int i = 0; i < numSpacingLevels; ++i) {
+            ImGui::Spacing();
+        }
+    }
+
 } // namespace ImGui
 
 #endif

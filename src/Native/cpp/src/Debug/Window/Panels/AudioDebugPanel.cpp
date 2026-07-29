@@ -32,7 +32,12 @@ namespace VSBloom::Debug {
                 desiredDeviceIds.push_back(entry.first);
             }
         }
-        captureManager.UpdateCurrentCapturedDevices(desiredDeviceIds);
+        // The reconcile reports back which devices actually opened, which may be a
+        // subset of what was ticked. Explicitly dropped rather than implicitly: the
+        // panel currently trusts its own checkbox state, so a device that failed to
+        // open still reads as selected here. Worth feeding back into
+        // `selectedDeviceIds` if that ever becomes misleading in practice.
+        static_cast<void>(captureManager.UpdateCurrentCapturedDevices(desiredDeviceIds));
     }
 
     void AudioDebugPanel::RefreshDeviceList() {

@@ -22,6 +22,7 @@ namespace ImGui {
     void HelpMarker(const char* desc);
     void ExplanationMarker(const char* desc);
     void ColoredHelpMarker(ImVec4 textColor, const char* desc);
+    void MultiSpacing(unsigned int numSpacingLevels);
 
 } // namespace ImGui
 

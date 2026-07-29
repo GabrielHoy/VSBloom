@@ -11,7 +11,8 @@
 #include "Audio/CaptureManager.hpp"
 #include <functional>
 #include <memory>
-#include <mutex>
+#include <string>
+#include <vector>
 
 namespace VSBloom::State {
 
@@ -26,14 +27,37 @@ namespace VSBloom::State {
 
         std::unique_ptr<Audio::CaptureManager> captureManager;
         unsigned int                           curPollsPerSecond;
+
+        /**
+         * Points audio capture at exactly `desiredDeviceIdsHex`, spinning the capture
+         * state up if it isn't running yet, and returns the hex IDs *actually* being
+         * captured afterwards.
+         *
+         * **Passing an empty list tears audio capture down entirely** and returns an
+         * empty list.
+         *
+         * The return is not an echo: devices with malformed IDs or that fail to open
+         * for capture are skipped - so the result may be a strict subset of what was
+         * asked for. This is the only point at which that difference is observable;
+         * compare against the request if the caller needs to report rejections.
+         *
+         * Only IDs are returned, not full `AudioDevice`s - resolve them with
+         * {@link Audio::ResolveAudioDevicesByIds} *after* this returns, never inside a
+         * callback holding the state lock (enumeration is slow and this lock is global).
+         */
+        static std::vector<std::string>
+        SetCurrentlyCapturedDeviceIds(const std::vector<std::string>& desiredDeviceIdsHex);
+
+        /**
+         * The hex IDs of every device currently being captured, or an empty list if
+         * audio capture isn't running at all.
+         *
+         * Purely a read - safe to call to answer a parent-process resync without
+         * disturbing capture. See {@link SetCurrentlyCapturedDeviceIds} on why this
+         * hands back IDs rather than resolved devices.
+         */
+        static std::vector<std::string> GetCurrentlyCapturedDeviceIds();
     };
-
-    namespace {
-
-        extern std::unique_ptr<AudioCaptureState> currentCaptureState;
-        extern std::mutex                         captureStateMutex;
-
-    } // namespace
 
     /**
      * Runs a callback with a reference to the current capture state, as a

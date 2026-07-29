@@ -4,6 +4,7 @@ import type { Janitor } from 'src/EffectLib/Bloom/Janitors';
 import effectConfigJSON from './AudioDebugTest.jsonc';
 import { AudioAnalysisFrameChannel } from 'src/ExtensionBridge/Binary/BinaryChannels';
 
+
 const [effectConfig, effectConfigKeyToCSSVar] =
 	bloom.configs.GetReducedTypeScriptVariablesFromEffectJSON(effectConfigJSON);
 const vsbloom = window.__VSBLOOM__;
@@ -44,6 +45,16 @@ export async function Start(configResolver: EffectConfigResolver) {
     );
     janitor.Add(() => {
         audioDevicesUnsubscriber();
+    });
+
+    const capturedAudioDevicesUnsubscriber = vsbloom.sharedState.Subscribe(
+        'audio.capturedDeviceIds',
+        (capturedDeviceIds) => {
+            vsbloom.Log('debug', 'Captured audio devices changed', capturedDeviceIds);
+        },
+    );
+    janitor.Add(() => {
+        capturedAudioDevicesUnsubscriber();
     });
 }
 

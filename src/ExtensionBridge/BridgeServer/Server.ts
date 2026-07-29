@@ -326,6 +326,14 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
         });
         this.serverJanitor.Add(() => audioDeviceUpdateDisposable.dispose());
 
+        // Same as above, update the shared state whenever the native runtime
+        // gives us a new list of *currently captured* audio devices
+        const currentlyCapturedAudioDevicesUpdateDisposable = nativeRuntime.receivableMessageEvents['currently-captured-audio-device-list']((newCurrentlyCapturedAudioDevices) => {
+            this.sharedState.state.audio.capturedDeviceIds = newCurrentlyCapturedAudioDevices;
+            this.sharedState.Commit();
+        });
+        this.serverJanitor.Add(() => currentlyCapturedAudioDevicesUpdateDisposable.dispose());
+
         // Fan every new audio analysis frame out over the binary plane to all
         // effects & webviews (that are actually listening to it).
         // The demand check is deliberately *before* we encode: BroadcastBinaryFrame

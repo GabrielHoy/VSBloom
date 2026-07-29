@@ -21,12 +21,12 @@ import { VSBloomPseudoServer } from '../ExtensionBridge/BridgeServer/PseudoServe
 import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import { GetPathToNativeBinary, IsNativeCapable, PLATFORM_SLUG } from './NativeCompatibility';
 import type * as NativeMessages from './NativeMessages';
-import type * as NativeReceivables from './MessageTypes/NativeReceivableMessages';
 
 export const NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES = [
     'new-audio-analysis-frame',
-    'available-audio-device-list'
-] as const satisfies readonly (NativeMessages.NativeReceivableMessage["type"])[];
+    'available-audio-device-list',
+    'currently-captured-audio-device-list'
+] as const satisfies readonly (NativeMessages.Receivable.MessagePayload["type"])[];
 
 type NativeReceivableEventMessageName = (typeof NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES)[number]
 
@@ -34,7 +34,7 @@ type NativeReceivableEventMessageName = (typeof NATIVE_RUNTIME_EVENT_BASED_MESSA
  * The `data` payload carried by the receivable message whose `type` is `MSG_TYPE`.
  * */
 type NativeReceivableEventPayload<MSG_TYPE extends NativeReceivableEventMessageName> =
-    Extract<NativeMessages.NativeReceivableMessage, { type: MSG_TYPE }>['data'];
+    Extract<NativeMessages.Receivable.MessagePayload, { type: MSG_TYPE }>['data'];
 
 type NativeReceivableEventEmitterList = {
     [MSG_TYPE in (typeof NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES)[number]]: vscode.EventEmitter<NativeReceivableEventPayload<MSG_TYPE>>;
@@ -372,7 +372,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	private static TryParseNativeReceivedMessage(
 		message: string,
 		sessionKey: Buffer | null,
-	): NativeMessages.NativeReceivableMessage | null {
+	): NativeMessages.Receivable.MessagePayload | null {
 		try {
 			let jsonString = message;
 
@@ -384,7 +384,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 				jsonString = VSBloomNativeRuntimeManager.AESGCMDecrypt(sessionKey, outer.enc);
 			}
 
-			const parsedMessage = JSON.parse(jsonString) as NativeMessages.NativeReceivableMessage;
+			const parsedMessage = JSON.parse(jsonString) as NativeMessages.Receivable.MessagePayload;
 
 			if (!('type' in parsedMessage)) {
 				return null;
@@ -403,7 +403,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * Assumes the message has already been parsed and validated
 	 * as a NativeReceivableMessage-fulfilling interface.
 	 */
-	private HandleNativeReceivedMessage(message: NativeMessages.NativeReceivableMessage): void {
+	private HandleNativeReceivedMessage(message: NativeMessages.Receivable.MessagePayload): void {
 		const messageType = message.type;
 
 		switch (messageType) {
@@ -450,13 +450,13 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	}
 
 	private NativeMethodExceptionRaisedMessageHandler(
-		message: NativeReceivables.NativeReceivableMethodExceptionRaisedMessage,
+		message: NativeMessages.Receivable.Messages["MethodExceptionRaised"]
 	): void {
 		this.Log('error', `EXCEPTION RAISED in Native Runtime:`, message);
 	}
 
 	private NativeSecureAcknowledgementMessageHandler(
-		message: NativeReceivables.NativeReceivableSecureAcknowledgementMessage,
+		message: NativeMessages.Receivable.Messages["SecureAcknowledgement"]
 	): void {
 		const keyByteLength = this.encryptionKey?.length ?? 0;
 
@@ -468,7 +468,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	}
 
 	private NativeRuntimeAliveMessageHandler(
-		message: NativeReceivables.NativeReceivableStartupSuccessMessage,
+		message: NativeMessages.Receivable.Messages["StartupSuccess"],
 	): void {
 		this.encryptionKey = Buffer.from(message.data.k, 'hex');
 
@@ -489,7 +489,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * during the i-am-alive handshake initiation from the native side)
 	 */
 	private static SerializeNativeSendableMessage(
-		messagePayload: NativeMessages.NativeSendableMessage,
+		messagePayload: NativeMessages.Sendable.MessagePayload,
 		keyForEncryption: Buffer | null,
 	): string {
 		const jsonifiedMessage = JSON.stringify(messagePayload);
@@ -507,9 +507,9 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 	 * This is the ***primary and only mechanism of communication***
 	 * to the Native Runtime from the Bridge Server.
 	 */
-	public async SendMessageToNativeRuntime(
-		messageType: NativeMessages.NativeSendableMessage['type'],
-		data: NativeMessages.NativeSendableMessage['data'],
+	public async SendMessageToNativeRuntime<MSG_TYPE extends NativeMessages.Sendable.MessageType>(
+		messageType: MSG_TYPE,
+		data: Extract<NativeMessages.Sendable.MessagePayload, { type: MSG_TYPE }>['data'],
 	) {
 		const payloadToSend = {
 			type: messageType,
@@ -517,7 +517,7 @@ export class VSBloomNativeRuntimeManager implements vscode.Disposable {
 		};
 
 		const serializedPayload = VSBloomNativeRuntimeManager.SerializeNativeSendableMessage(
-			payloadToSend,
+			payloadToSend as NativeMessages.Sendable.MessagePayload,
 			this.encryptionKey,
 		);
 

@@ -14,11 +14,13 @@ import type { AudioDevice } from "../Native/Audio/AudioDevice";
 export interface VSBloomSharedState {
     audio: {
         availableDevices: AudioDevice[];
+        capturedDeviceIds: AudioDevice["id"][];
     };
 }
 
 export const defaultVSBloomSharedState: VSBloomSharedState = {
     audio: {
-        availableDevices: []
+        availableDevices: [],
+        capturedDeviceIds: []
     }
 };

@@ -129,6 +129,7 @@ namespace VSBloom::IPC {
 
     static_assert(IsConceptuallySendableMessage<StartupSuccessMessage>);
 
+    /* A response message to the parent processes test to ensure that our encryption is working */
     struct SecureAcknowledgementMessage {
         static constexpr const char* name = "secure-acknowledgement";
         const std::string            acknowledgement;
@@ -140,6 +141,7 @@ namespace VSBloom::IPC {
 
     static_assert(IsConceptuallySendableMessage<SecureAcknowledgementMessage>);
 
+    /* A general, abstract debug output message to send over arbitrary debug output to the parent process */
     struct DebugOutputMessage {
         static constexpr const char* name = "debug-output";
         const json_t                 dbgOutput;
@@ -151,23 +153,19 @@ namespace VSBloom::IPC {
 
     static_assert(IsConceptuallySendableMessage<DebugOutputMessage>);
 
+    /* Enumerates all available audio devices and metadata about them */
     struct AvailableAudioDeviceListMessage {
         static constexpr const char*                   name = "available-audio-device-list";
         const std::vector<VSBloom::Audio::AudioDevice> devices;
 
         json_t DataToJSON() const noexcept {
-            // json_t audioDeviceList = json_t::array();
-            // for (const VSBloom::Audio::AudioDevice& device : devices) {
-            //     audioDeviceList.push_back(device.ToJSON());
-            // }
-
-            // return audioDeviceList;
             return devices;
         }
     };
 
     static_assert(IsConceptuallySendableMessage<AvailableAudioDeviceListMessage>);
 
+    /* Carries a new audio analysis frame, including FFT bins, smooth/instant EQ bands, and average amplitude. */
     struct NewAudioAnalysisFrameMessage {
         static constexpr const char*             name = "new-audio-analysis-frame";
         const VSBloom::Audio::AnalyzedAudioFrame frame;
@@ -184,12 +182,13 @@ namespace VSBloom::IPC {
 
     static_assert(IsConceptuallySendableMessage<NewAudioAnalysisFrameMessage>);
 
+    /* Carries a list of Audio Device **ID'S** that are currently being successfully captured. */
     struct CurrentlyCapturedAudioDeviceListMessage {
-        static constexpr const char*                   name = "currently-captured-audio-device-list";
-        const std::vector<VSBloom::Audio::AudioDevice> devicesBeingCaptured;
+        static constexpr const char*   name = "currently-captured-audio-device-list";
+        const std::vector<std::string> deviceIdsBeingCaptured;
 
         json_t DataToJSON() const noexcept {
-            return devicesBeingCaptured;
+            return deviceIdsBeingCaptured;
         }
     };
 

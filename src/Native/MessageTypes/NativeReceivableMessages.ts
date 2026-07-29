@@ -15,44 +15,53 @@
 import { AnalyzedAudioFrame } from "../Audio/AnalysisFrames";
 import { AudioDevice } from "../Audio/AudioDevice";
 
-export interface NativeReceivableMethodExceptionRaisedMessage {
-    type: 'method-exception';
-    data: {
-        methodThatThrew: string;
-        exceptionThrown: string;
+interface NativeReceivableInterfaceMapping {
+    'MethodExceptionRaised': {
+        type: 'method-exception';
+        data: {
+            methodThatThrew: string;
+            exceptionThrown: string;
+        };
+    };
+    'StartupSuccess': {
+        type: 'i-am-alive';
+        data: {
+            /**
+             * This will be a hex-encoded 32-byte AES-256 key.
+             * Every message sent (after this one is received from the
+             * Native Runtime) should be AES-256-GCM encrypted with it.
+            */ 
+            k: string;
+        };
+    };
+    'SecureAcknowledgement': {
+        type: 'secure-acknowledgement';
+        data: {
+            acknowledgement: string;
+        };
+    };
+    'AvailableAudioDeviceList': {
+        type: 'available-audio-device-list';
+        data: AudioDevice[];
+    };
+    'CurrentlyCapturedAudioDeviceList': {
+        type: 'currently-captured-audio-device-list';
+        /**
+         * A list of audio device ID's that are currently being captured,
+         * corresponding to the ID's of AudioDevice objects obtained from
+         * the `AvailableAudioDeviceList` message.
+         */
+        data: AudioDevice["id"][];
+    }
+    'NewAudioAnalysisFrame': {
+        type: 'new-audio-analysis-frame';
+        data: AnalyzedAudioFrame;
     };
 }
 
-export interface NativeReceivableStartupSuccessMessage {
-    type: 'i-am-alive';
-    data: {
-        // This will be a hex-encoded 32-byte AES-256 key.
-        // Every message sent after this one is received from the
-        // Native Runtime should be AES-256-GCM encrypted with it.
-        k: string;
-    };
-}
-
-export interface NativeReceivableSecureAcknowledgementMessage {
-    type: 'secure-acknowledgement';
-    data: {
-        acknowledgement: string;
-    };
-}
-
-export interface NativeReceivableAvailableAudioDeviceListMessage {
-    type: 'available-audio-device-list';
-    data: AudioDevice[];
-}
-
-export interface NativeReceivableNewAudioAnalysisFrameMessage {
-    type: 'new-audio-analysis-frame';
-    data: AnalyzedAudioFrame;
-}
-
-export type NativeReceivableMessage =
-    NativeReceivableStartupSuccessMessage |
-    NativeReceivableMethodExceptionRaisedMessage |
-    NativeReceivableSecureAcknowledgementMessage |
-    NativeReceivableAvailableAudioDeviceListMessage | 
-    NativeReceivableNewAudioAnalysisFrameMessage;
+export type Messages = {
+    [K in keyof NativeReceivableInterfaceMapping]: NativeReceivableInterfaceMapping[K]
+};
+export type MessagePayload = Messages[keyof Messages];
+export type MessageData = MessagePayload["data"];
+export type MessageType = MessagePayload["type"];
