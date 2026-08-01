@@ -40,7 +40,16 @@ namespace VSBloom::Debug {
         });
 
         RegisterNewSendableGenerator(
-            "Sync Captured Audio Device List",
+            "Sync Captured Audio Device List [VIS-DBG]",
+            [this]() -> IPC::CurrentlyCapturedAudioDeviceListMessage {
+            AudioDebugPanel* audioDebugPanel = dynamic_cast<AudioDebugPanel*>(mainWindow->panels["audio"].get());
+
+            return {audioDebugPanel->GetCurrentlyCapturedDeviceIds()};
+        }
+        );
+
+        RegisterNewSendableGenerator(
+            "Sync Captured Audio Device List [CORE]",
             []() -> IPC::CurrentlyCapturedAudioDeviceListMessage {
             return {State::AudioCaptureState::GetCurrentlyCapturedDeviceIds()};
         }

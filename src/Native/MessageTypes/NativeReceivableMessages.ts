@@ -50,8 +50,14 @@ interface NativeReceivableInterfaceMapping {
          * A list of audio device ID's that are currently being captured,
          * corresponding to the ID's of AudioDevice objects obtained from
          * the `AvailableAudioDeviceList` message.
+         * 
+         * Might be `null` if the list of captured devices isn't available,
+         * the most likely case for this is when the user isn't capturing
+         * any audio or the AudioCaptureState generally isn't initialized
+         * on the C++ side of things - see `AudioCaptureState.hpp` for more
+         * if something isn't right here
          */
-        data: AudioDevice["id"][];
+        data?: AudioDevice["id"][];
     }
     'NewAudioAnalysisFrame': {
         type: 'new-audio-analysis-frame';

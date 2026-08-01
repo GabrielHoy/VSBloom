@@ -329,7 +329,7 @@ export class VSBloomBridgeServer implements VSBloomBridgeServerContract {
         // Same as above, update the shared state whenever the native runtime
         // gives us a new list of *currently captured* audio devices
         const currentlyCapturedAudioDevicesUpdateDisposable = nativeRuntime.receivableMessageEvents['currently-captured-audio-device-list']((newCurrentlyCapturedAudioDevices) => {
-            this.sharedState.state.audio.capturedDeviceIds = newCurrentlyCapturedAudioDevices;
+            this.sharedState.state.audio.capturedDeviceIds = newCurrentlyCapturedAudioDevices ?? [];
             this.sharedState.Commit();
         });
         this.serverJanitor.Add(() => currentlyCapturedAudioDevicesUpdateDisposable.dispose());

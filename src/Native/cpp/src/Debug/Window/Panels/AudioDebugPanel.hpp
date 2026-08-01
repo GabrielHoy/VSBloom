@@ -32,6 +32,15 @@ namespace VSBloom::Debug {
         void RefreshDeviceList();
 
         /**
+         * Direct equivalent to `AudioCaptureState::GetCurrentlyCapturedDeviceIds()`.
+         *
+         * Pure alias to `captureManager.GetCurrentlyCapturedDeviceIds()`;
+         * wrapping it directly & hoisting the method out of the `captureManager`'s
+         * private state.
+         */
+        std::vector<std::string> GetCurrentlyCapturedDeviceIds();
+
+        /**
          * Draws this frame's ImGui content. Must be called between
          * ImGui::NewFrame() and ImGui::Render().
          */

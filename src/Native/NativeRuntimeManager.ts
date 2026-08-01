@@ -22,6 +22,12 @@ import { VSBloomBridgeServer } from '../ExtensionBridge/BridgeServer/Server';
 import { GetPathToNativeBinary, IsNativeCapable, PLATFORM_SLUG } from './NativeCompatibility';
 import type * as NativeMessages from './NativeMessages';
 
+/**
+ * A list of message types that are *not* generally handled directly
+ * by the Native Runtime Manager itself, but are exposed as events
+ * that get raised when they're sent from the Native Runtime so other
+ * parts of VSBloom can observe them and respond accordingly.
+ */
 export const NATIVE_RUNTIME_EVENT_BASED_MESSAGE_NAMES = [
     'new-audio-analysis-frame',
     'available-audio-device-list',

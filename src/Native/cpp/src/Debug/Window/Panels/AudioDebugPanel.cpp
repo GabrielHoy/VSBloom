@@ -40,6 +40,10 @@ namespace VSBloom::Debug {
         static_cast<void>(captureManager.UpdateCurrentCapturedDevices(desiredDeviceIds));
     }
 
+    std::vector<std::string> AudioDebugPanel::GetCurrentlyCapturedDeviceIds() {
+        return captureManager.GetCurrentlyCapturedDeviceIds();
+    }
+
     void AudioDebugPanel::RefreshDeviceList() {
         std::lock_guard<std::mutex> deviceChangeLock(deviceChangeMutex);
 
